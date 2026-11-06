@@ -96,6 +96,9 @@ export function detectStuck(
   const allTokens = tokens(ordered);
   if (nowMs - lastEndMs > opts.pauseMs && endsIncomplete(allTokens)) return hit('pause');
 
+  // Cue phrases only count once the speaker has gone quiet: mid-flow they are just speech.
+  if (nowMs - lastEndMs < opts.pauseMs / 2) return { stuck: false };
+
   const recent = ordered.slice(-TAIL_WORDS).filter((w) => w.endMs >= nowMs - TAIL_MS);
   const t = tokens(recent).slice(-TAIL_WORDS);
   const text = t.join(' ');

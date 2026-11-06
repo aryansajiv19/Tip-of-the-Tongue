@@ -27,6 +27,11 @@ function afterGap(text: string, gap: number) {
   return detectStuck(words, endMs + gap, opts);
 }
 
+// Detect after a short silence (half the pause threshold), when cue phrases may count.
+function paused(text: string) {
+  return afterGap(text, PAUSE_MS / 2);
+}
+
 const reason = (r: ReturnType<typeof live>) => (r.stuck ? r.reason : null);
 
 describe('fluent speech is never stuck', () => {
@@ -113,25 +118,25 @@ describe('filler cues', () => {
     'we should, you know',
     'the thing',
   ])('triggers filler: %s', (text) => {
-    expect(reason(live(text))).toBe('filler');
+    expect(reason(paused(text))).toBe('filler');
   });
 
   it('"you know" mid-question is not a stall', () => {
-    expect(live('do you know')).toEqual({ stuck: false });
+    expect(paused('do you know')).toEqual({ stuck: false });
   });
 
   it('"that that" is ordinary English, not repetition', () => {
-    expect(live('I think that that is fine')).toEqual({ stuck: false });
+    expect(paused('I think that that is fine')).toEqual({ stuck: false });
   });
 
   it('a filler is not triggered by the filler sound inside another word', () => {
-    expect(live('the summer is here')).toEqual({ stuck: false });
+    expect(paused('the summer is here')).toEqual({ stuck: false });
   });
 
   it('an old filler far back does not fire again', () => {
     const text =
       'um we need that thing for the invoices and then we sent everything to the client on Monday';
-    expect(live(text)).toEqual({ stuck: false });
+    expect(paused(text)).toEqual({ stuck: false });
   });
 
   it('a filler older than the time window does not fire', () => {
@@ -157,13 +162,13 @@ describe('describing cues', () => {
     'the glass thing you screw in',
     'The Place Where They Print Money',
   ])('triggers describing: %s', (text) => {
-    expect(reason(live(text))).toBe('describing');
+    expect(reason(paused(text))).toBe('describing');
   });
 
   it('a description that is far back does not fire', () => {
     const text =
       'the person who does your teeth was lovely and we talked about holidays and weather and football for ages';
-    expect(live(text)).toEqual({ stuck: false });
+    expect(paused(text)).toEqual({ stuck: false });
   });
 });
 
@@ -173,9 +178,9 @@ describe('edge cases', () => {
   });
 
   it('a single word', () => {
-    expect(live('hello')).toEqual({ stuck: false });
+    expect(paused('hello')).toEqual({ stuck: false });
     expect(reason(afterGap('the', 2000))).toBe('pause');
-    expect(live('um').stuck).toBe(true);
+    expect(paused('um').stuck).toBe(true);
   });
 
   it('words with only punctuation are ignored', () => {
@@ -194,19 +199,19 @@ describe('edge cases', () => {
   });
 
   it('a partial (still being spoken) word list works the same', () => {
-    expect(live('send me the th').stuck).toBe(false);
-    expect(reason(live('send me the thing'))).toBe('filler');
+    expect(paused('send me the th').stuck).toBe(false);
+    expect(reason(paused('send me the thing'))).toBe('filler');
   });
 
   it('a very long transcript is judged on its end only', () => {
     const long = Array.from({ length: 2000 }, () => 'we shipped it').join(' ');
-    expect(live(long)).toEqual({ stuck: false });
-    expect(reason(live(`${long} and then the thing`))).toBe('filler');
+    expect(paused(long)).toEqual({ stuck: false });
+    expect(reason(paused(`${long} and then the thing`))).toBe('filler');
   });
 
   it('contextWindow is the recent text, capped at 60 words', () => {
     const text = Array.from({ length: 100 }, (_, i) => `w${i}`).join(' ');
-    const r = live(`${text} the thing`);
+    const r = paused(`${text} the thing`);
     expect(r.stuck && r.contextWindow.split(' ')).toHaveLength(60);
     expect(r.stuck && r.contextWindow.endsWith('the thing')).toBe(true);
   });
@@ -220,7 +225,7 @@ describe('edge cases', () => {
 
   it('multi-word text in one word object is handled', () => {
     const words: Word[] = [{ text: "what's it called", startMs: 0, endMs: 900 }];
-    expect(reason(detectStuck(words, 900, opts))).toBe('filler');
+    expect(reason(detectStuck(words, 900 + PAUSE_MS / 2, opts))).toBe('filler');
   });
 });
 
@@ -235,19 +240,19 @@ describe('data/eval/circumlocutions.json', () => {
   const stalls = items.filter((i) => !['not_stuck', 'self_recovered'].includes(i.category));
 
   it('flags most written circumlocutions from the text alone', () => {
-    const missed = stalls.filter((i) => !live(i.utterance).stuck).map((i) => i.id);
+    const missed = stalls.filter((i) => !paused(i.utterance).stuck).map((i) => i.id);
     expect(stalls.length - missed.length).toBeGreaterThanOrEqual(Math.ceil(stalls.length * 0.7));
   });
 
   it('stays silent on the not_stuck items', () => {
     for (const i of items.filter((x) => x.category === 'not_stuck')) {
-      expect(live(i.utterance), i.id).toEqual({ stuck: false });
+      expect(paused(i.utterance), i.id).toEqual({ stuck: false });
     }
   });
 
   it('stays silent on the self_recovered items once the word is said', () => {
     for (const i of items.filter((x) => x.category === 'self_recovered')) {
-      expect(live(i.utterance), i.id).toEqual({ stuck: false });
+      expect(paused(i.utterance), i.id).toEqual({ stuck: false });
     }
   });
 
@@ -258,5 +263,34 @@ describe('data/eval/circumlocutions.json', () => {
       .filter((x): x is string => Boolean(x));
     expect(cut.length).toBeGreaterThan(0);
     for (const text of cut) expect(afterGap(text, 2000).stuck, text).toBe(true);
+  });
+});
+
+describe('cue phrases need a short silence', () => {
+  it.each([
+    'the thing you said was right',
+    'the man who called yesterday',
+    "it's like a dream",
+    'what is it called in French',
+    'we need the thing',
+    'it was um',
+    'we should you know',
+  ])('fluent, no silence: %s', (text) => {
+    expect(live(text)).toEqual({ stuck: false });
+    expect(afterGap(text, PAUSE_MS / 2 - 1)).toEqual({ stuck: false });
+  });
+
+  it.each([
+    'the thing you said was right',
+    'the man who called yesterday',
+    "it's like a dream",
+    'what is it called in French',
+    'we need the thing',
+  ])('same words followed by a short silence trigger: %s', (text) => {
+    expect(paused(text).stuck).toBe(true);
+  });
+
+  it('exactly half the threshold counts as silence', () => {
+    expect(afterGap('the person who does your teeth', PAUSE_MS / 2).stuck).toBe(true);
   });
 });
