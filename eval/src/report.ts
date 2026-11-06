@@ -1,5 +1,6 @@
 import {
   falseTriggerRate,
+  detectionTime,
   groupBy,
   latency,
   summarizeStalls,
@@ -32,6 +33,7 @@ export function renderMarkdown(meta: RunMeta, results: ItemResult[]): string {
       `| ${name} | ${rs.length} | ${fmtRate({ hits: rs.filter((x) => x.detected).length, total: rs.length })} | ${fmtRate(falseTriggerRate(rs))} |`,
   );
   const lat = latency(results);
+  const det = detectionTime(results);
 
   return [
     `# Evaluation: ${meta.guesser} guesser${meta.model ? ` (${meta.model})` : ''}, split ${meta.split}`,
@@ -48,7 +50,7 @@ export function renderMarkdown(meta: RunMeta, results: ItemResult[]): string {
     '| --- | --- | --- | --- |',
     ...silentRows,
     '',
-    `Guess latency: p50 ${fmtMs(lat.p50)}, p95 ${fmtMs(lat.p95)}.`,
+    `Guess latency: p50 ${fmtMs(lat.p50)}, p95 ${fmtMs(lat.p95)}. Last detection vs end of last word: median ${fmtMs(det.p50)} (negative = before the user finished).`,
     '',
     'Scripted written examples read as text, not speech. Not tested with people with aphasia.',
     '',

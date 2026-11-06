@@ -10,6 +10,8 @@ export interface ItemResult {
   kind: 'stall' | 'silent';
   // The stuck detector fired, so the guesser was called.
   detected: boolean;
+  // Last trigger time minus the end of the last word. Negative = it fired before the user finished.
+  detectAfterMs: number | undefined;
   top1: boolean;
   top3: boolean;
   abstained: boolean;
@@ -79,6 +81,11 @@ export function latency(results: ItemResult[]): {
 } {
   const ms = results.flatMap((r) => (r.latencyMs === undefined ? [] : [r.latencyMs]));
   return { p50: percentile(ms, 50), p95: percentile(ms, 95) };
+}
+
+export function detectionTime(results: ItemResult[]): { p50: number | undefined } {
+  const ms = results.flatMap((r) => (r.detectAfterMs === undefined ? [] : [r.detectAfterMs]));
+  return { p50: percentile(ms, 50) };
 }
 
 export function groupBy<T>(rows: T[], key: (row: T) => string): Map<string, T[]> {

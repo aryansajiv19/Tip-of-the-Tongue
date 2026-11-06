@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  detectionTime,
   detectorFalseTriggerRate,
   falseTriggerRate,
   groupBy,
@@ -14,6 +15,7 @@ const stall = (over: Partial<ItemResult> = {}): ItemResult => ({
   category: 'object',
   kind: 'stall',
   detected: true,
+  detectAfterMs: 500,
   top1: true,
   top3: true,
   abstained: false,
@@ -117,6 +119,20 @@ describe('detector metrics', () => {
   });
   it('is 0/0 with no fluent items', () => {
     expect(detectorFalseTriggerRate([])).toEqual({ hits: 0, total: 0 });
+  });
+});
+
+describe('detectionTime', () => {
+  it('takes the median over items that were detected, negatives included', () => {
+    const rs = [
+      stall({ detectAfterMs: -100 }),
+      stall({ detectAfterMs: 400 }),
+      stall({ detectAfterMs: undefined }),
+    ];
+    expect(detectionTime(rs)).toEqual({ p50: -100 });
+  });
+  it('is undefined when nothing was detected', () => {
+    expect(detectionTime([])).toEqual({ p50: undefined });
   });
 });
 

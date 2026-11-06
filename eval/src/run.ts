@@ -2,27 +2,15 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { config } from '../../server/src/config.js';
-import type { Word } from '../../server/src/events.js';
 import { detectStuck } from '../../server/src/stuck/detect.js';
 import { decideOffer, normalizePhrase } from '../../server/src/gate/index.js';
 import { createGuesser, loadProfile } from '../../server/src/guess/index.js';
 import { dataPath, loadItems, SILENT_CATEGORIES, type Item } from './dataset.js';
 import type { ItemResult } from './metrics.js';
+import { sweep, toTimedWords } from './timeline.js';
 import { renderMarkdown, type RunMeta } from './report.js';
 
-const WORD_MS = 300;
-const WORD_LEN_MS = 100;
-// How long after the last word the item is scored.
-const SCORE_AFTER_MS = 2000;
 const COOLDOWN_MS = 10_000;
-
-// Synthetic timing, as in the server tests: one word every 300 ms, each 100 ms long, then silence.
-function toWords(utterance: string): Word[] {
-  return utterance
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((text, i) => ({ text, startMs: i * WORD_MS, endMs: i * WORD_MS + WORD_LEN_MS }));
-}
 
 const same = (a: string, b: string): boolean =>
   normalizePhrase(a).join(' ') === normalizePhrase(b).join(' ');
@@ -32,22 +20,27 @@ export async function runItem(
   guess: ReturnType<typeof createGuesser>,
   profile: Awaited<ReturnType<typeof loadProfile>>,
 ): Promise<ItemResult> {
-  const words = toWords(item.utterance);
-  // Words after the first "..." are what the user said once they had stalled.
+  const words = toTimedWords(item.utterance);
+  const lastEndMs = words.at(-1)?.endMs ?? 0;
+  // A pop-up is withdrawn once the user says the word, so words said after the first "..." count
+  // as said since the stuck point even if they come after the moment we guessed.
   const stallAt = words.findIndex((w) => w.text.includes('...'));
   const saidSinceStuck = stallAt === -1 ? [] : words.slice(stallAt + 1);
-  const nowMs = (words.at(-1)?.endMs ?? 0) + SCORE_AFTER_MS;
 
   const kind = SILENT_CATEGORIES.includes(item.category) ? 'silent' : 'stall';
   const isRight = (word: string): boolean => item.acceptable.some((a) => same(a, word));
 
-  const stuck = detectStuck(words, nowMs, { pauseMs: config.stuckPauseMs });
-  if (!stuck.stuck) {
+  // Detected = the detector fired at least once. The guess uses the last trigger: the most context.
+  const trigger = sweep(words, (heard, nowMs) =>
+    detectStuck(heard, nowMs, { pauseMs: config.stuckPauseMs }),
+  ).at(-1);
+  if (!trigger) {
     return {
       id: item.id,
       category: item.category,
       kind,
       detected: false,
+      detectAfterMs: undefined,
       top1: false,
       top3: false,
       abstained: false,
@@ -56,10 +49,11 @@ export async function runItem(
       latencyMs: undefined,
     };
   }
+  const { nowMs } = trigger;
 
   const result = await guess({
     conversation: item.context,
-    stuckPhrase: stuck.contextWindow,
+    stuckPhrase: trigger.result.contextWindow,
     ...(item.brief ? { brief: item.brief } : {}),
     profile,
   });
@@ -74,6 +68,7 @@ export async function runItem(
     category: item.category,
     kind,
     detected: true,
+    detectAfterMs: nowMs - lastEndMs,
     top1: kind === 'stall' && result.candidates.slice(0, 1).some((c) => isRight(c.word)),
     top3: kind === 'stall' && result.candidates.slice(0, 3).some((c) => isRight(c.word)),
     abstained: result.abstain,
