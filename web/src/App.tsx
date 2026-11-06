@@ -5,7 +5,7 @@ import { offerReducer } from './offer/offerState';
 import { useSocket } from './socket/useSocket';
 import { speechSupported, useSpeech } from './speech/useSpeech';
 import { stampWords } from './speech/stampWords';
-import { typedSteps } from './speech/typedWords';
+import { TYPED_FINAL_DELAY_MS, typedSteps } from './speech/typedWords';
 
 const MAX_LINES = 50;
 
@@ -53,16 +53,19 @@ export function App() {
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  // No-mic test: words arrive 300 ms apart, then silence (no final), like a real stall.
+  // No-mic test: words arrive 300 ms apart, then ~1 s of silence, then a final (as Chrome does).
   const playTyped = () => {
     timers.current.forEach(clearTimeout);
     let prev: Word[] = [];
-    timers.current = typedSteps(typed).map(({ transcript, delayMs }) =>
+    const steps = typedSteps(typed);
+    const lastMs = steps.at(-1)?.delayMs ?? 0;
+    timers.current = steps.map(({ transcript, delayMs }) =>
       setTimeout(() => {
         prev = stampWords(prev, transcript, Date.now());
         sendPartial(prev);
       }, delayMs),
     );
+    timers.current.push(setTimeout(() => sendFinal(prev), lastMs + TYPED_FINAL_DELAY_MS));
     setTyped('');
   };
 
