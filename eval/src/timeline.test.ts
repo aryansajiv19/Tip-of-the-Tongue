@@ -13,7 +13,7 @@ describe('toTimedWords', () => {
   it('leaves a 2000 ms gap after a word ending in "..."', () => {
     const w = toTimedWords('the... thing here');
     expect(w.map((x) => x.startMs)).toEqual([0, 2100, 2400]);
-    expect(w[1]!.startMs - w[0]!.endMs).toBe(2000);
+    expect(w.map((x) => x.endMs)).toEqual([100, 2200, 2500]);
   });
   it('handles a "..." in the middle of a token and repeated pauses', () => {
     expect(toTimedWords('a... b... c').map((w) => w.startMs)).toEqual([0, 2100, 4200]);
@@ -35,7 +35,7 @@ describe('sweep', () => {
     });
     expect(times[0]).toBe(100);
     expect(times.at(-1)).toBe(2300); // last word ends at 400, so the sweep stops by 2400
-    expect(times.slice(1).every((t, i) => t - times[i]! === 200)).toBe(true);
+    expect(times.slice(1).every((t, i) => t - (times[i] ?? 0) === 200)).toBe(true);
   });
   it('only shows the detector words that have finished', () => {
     const seen: number[] = [];
@@ -50,7 +50,7 @@ describe('sweep', () => {
   it('returns every trigger point, in order', () => {
     const t = sweep(toTimedWords('a b'), (_h, now) => (now >= 1500 ? stuck : { stuck: false }));
     expect(t.map((x) => x.nowMs)).toEqual([1500, 1700, 1900, 2100, 2300]);
-    expect(t[0]!.heard).toHaveLength(2);
+    expect(t[0]?.heard).toHaveLength(2);
   });
   it('returns nothing when the detector stays quiet, or there are no words', () => {
     expect(sweep(toTimedWords('a b'), () => ({ stuck: false }))).toEqual([]);
