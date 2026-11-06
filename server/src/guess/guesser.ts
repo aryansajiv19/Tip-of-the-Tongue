@@ -73,7 +73,7 @@ export function createGuesser(
   if (!cfg.apiKey && !client) return mockGuesser;
   const api = client ?? new Anthropic({ apiKey: cfg.apiKey, maxRetries: 0 });
 
-  return async (input): Promise<GuessResult> => {
+  return async (input, signal): Promise<GuessResult> => {
     const started = Date.now();
     const abstain = (error?: true): GuessResult => ({
       candidates: [],
@@ -89,6 +89,14 @@ export function createGuesser(
         controller.abort();
         resolve(null);
       }, cfg.timeoutMs);
+      signal?.addEventListener(
+        'abort',
+        () => {
+          controller.abort();
+          resolve(null);
+        },
+        { once: true },
+      );
     });
     try {
       const text = await Promise.race([readReply(api, cfg.model, input, controller), timedOut]);

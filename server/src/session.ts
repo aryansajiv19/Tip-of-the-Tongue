@@ -3,7 +3,7 @@ import type { Candidate, ClientEvent, ServerEvent } from './events.js';
 import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck } from './stuck/detect.js';
 import type { Profile } from './guess/profile.js';
-import type { Guesser } from './guess/types.js';
+import type { GuessResult, Guesser } from './guess/types.js';
 import { decideOffer } from './gate/gate.js';
 import { checkAcceptance } from './accept/accept.js';
 
@@ -17,8 +17,23 @@ export interface SessionOptions {
   // Words the user may say after an offer without picking one before we take it down.
   moveOnWords: number;
   now?: () => number;
+  // Silence after which a guess starts early, before the stall is confirmed. 0 or unset: off.
+  speculateAfterMs?: number;
+  // Timing and cost numbers (stall to offer, speculative calls wasted).
+  log?: (info: Record<string, unknown>) => void;
   // Called when the guesser or a timer tick fails; the session carries on.
   onError?: (err: unknown) => void;
+}
+
+// A guess started on the early signal. It is only used if the stall is then confirmed with no
+// new words in between.
+interface Speculation {
+  // End of the last word when it started; new words past this make it stale.
+  lastEndMs: number;
+  sinceMs: number;
+  abort: AbortController;
+  confirmed: boolean;
+  result?: GuessResult;
 }
 
 interface Offer {
@@ -39,7 +54,10 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   let pauseMs = opts.pauseMs;
   let offer: Offer | undefined;
   let lastOfferAtMs: number | undefined;
-  let guessing = false;
+  let spec: Speculation | undefined;
+  // Cost: guesses started early, and how many were thrown away.
+  let speculated = 0;
+  let discarded = 0;
   // End time of the last word we already reacted to, so one stall triggers one guess.
   let handledUpToMs = -Infinity;
   let closed = false;
@@ -72,34 +90,52 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     }
   }
 
-  async function guessFor(sinceMs: number, stuckPhrase: string) {
-    guessing = true;
-    try {
-      await offerFor(sinceMs, stuckPhrase);
-    } catch (err) {
-      // The guesser promises never to throw; if it does, stay silent rather than crash.
-      noteGuess(true);
-      opts.onError?.(err);
-    } finally {
-      guessing = false;
-    }
+  function discardSpeculation() {
+    if (!spec) return;
+    spec.abort.abort();
+    spec = undefined;
+    discarded++;
+    opts.log?.({ speculated, discarded });
   }
 
-  async function offerFor(sinceMs: number, stuckPhrase: string) {
-    const result = await opts.guess({
-      conversation: buffer.recentText(),
-      stuckPhrase,
-      ...(brief ? { brief } : {}),
-      ...(opts.profile ? { profile: opts.profile } : {}),
-    });
-    if (closed) return;
-    noteGuess(result.error === true);
+  // Starts a guess and keeps it in `spec`. Whoever confirms the stall later offers it.
+  function startGuess(lastEndMs: number, sinceMs: number, stuckPhrase: string, confirmed: boolean) {
+    const mine: Speculation = { lastEndMs, sinceMs, abort: new AbortController(), confirmed };
+    spec = mine;
+    if (!confirmed) speculated++;
+    const failed: GuessResult = { candidates: [], abstain: true, latencyMs: 0, error: true };
+    opts
+      .guess(
+        {
+          conversation: buffer.recentText(),
+          stuckPhrase,
+          ...(brief ? { brief } : {}),
+          ...(opts.profile ? { profile: opts.profile } : {}),
+        },
+        mine.abort.signal,
+      )
+      .catch((err: unknown) => {
+        // The guesser promises never to throw; if it does, stay silent rather than crash.
+        opts.onError?.(err);
+        return failed;
+      })
+      .then((result) => {
+        // Stale (new words arrived, or closed): nothing to do, not even count a failure.
+        if (closed || spec !== mine) return;
+        mine.result = result;
+        noteGuess(result.error === true);
+        if (mine.confirmed) offerFrom(mine, result);
+      })
+      .catch((err: unknown) => opts.onError?.(err));
+  }
 
+  function offerFrom(current: Speculation, result: GuessResult) {
+    spec = undefined;
     const decision = decideOffer(
       result,
       {
         // +1 so the word at the stall marker doesn't count as the user finding the answer.
-        saidSinceStuck: buffer.wordsSince(sinceMs + 1),
+        saidSinceStuck: buffer.wordsSince(current.sinceMs + 1),
         nowMs: now(),
         recentlyOffered,
         ...(lastOfferAtMs !== undefined ? { lastOfferAtMs } : {}),
@@ -118,23 +154,41 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
       candidates: decision.candidates,
       latencyMs: result.latencyMs,
     });
+    opts.log?.({
+      stallToOfferMs: offeredAtMs - current.lastEndMs,
+      guessMs: result.latencyMs,
+      speculated,
+      discarded,
+    });
   }
 
   function check() {
     if (closed) return;
     if (offer) return trackOffer(offer);
-    if (guessing) return;
 
     const words = buffer.words();
     const last = words.at(-1);
-    if (!last || last.endMs <= handledUpToMs) return;
+    if (!last) return;
+    // New words since the early guess started: the speaker went on, so its result is stale.
+    if (spec && spec.lastEndMs !== last.endMs) discardSpeculation();
+    if (last.endMs <= handledUpToMs) return;
 
     const stuck = detectStuck(words, now(), { pauseMs });
-    if (!stuck.stuck) return;
+    if (stuck.stuck) {
+      handledUpToMs = last.endMs;
+      send({ type: 'stuck.detected', reason: stuck.reason, contextWindow: stuck.contextWindow });
+      if (!spec) return startGuess(last.endMs, stuck.sinceMs, stuck.contextWindow, true);
+      spec.confirmed = true;
+      // Already answered: offer at once. Otherwise offer the moment it lands.
+      if (spec.result) offerFrom(spec, spec.result);
+      return;
+    }
 
-    handledUpToMs = last.endMs;
-    send({ type: 'stuck.detected', reason: stuck.reason, contextWindow: stuck.contextWindow });
-    void guessFor(stuck.sinceMs, stuck.contextWindow);
+    const earlyMs = opts.speculateAfterMs ?? 0;
+    if (earlyMs > 0 && !spec) {
+      const early = detectStuck(words, now(), { pauseMs, earlyMs });
+      if (early.stuck) startGuess(last.endMs, early.sinceMs, early.contextWindow, false);
+    }
   }
 
   // Pauses are silence, so no event arrives when one passes; poll for them.
@@ -144,7 +198,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     } catch (err) {
       opts.onError?.(err);
     }
-  }, 200);
+  }, 100);
 
   return {
     handle(event: ClientEvent) {
@@ -156,6 +210,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     },
     close() {
       closed = true;
+      spec?.abort.abort();
       clearInterval(timer);
     },
   };
