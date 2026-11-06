@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flushPending, isStale, stampResult, stampWords } from './stampWords';
+import { isStale, stampWords, tokenize } from './stampWords';
 
 const w = (text: string, t: number) => ({ text, startMs: t, endMs: t });
 
@@ -114,47 +114,6 @@ describe('stampWords', () => {
   });
 });
 
-describe('stampResult', () => {
-  it('a partial returns the same words as rest', () => {
-    const r = stampResult([], 'we need', false, 100);
-    expect(r.rest).toEqual(r.words);
-  });
-
-  it('a final that matches the partial leaves nothing over', () => {
-    const p = stampResult([], 'we need the', false, 100).rest;
-    const f = stampResult(p, 'We need the.', true, 5000);
-    expect(f.words.map((x) => x.startMs)).toEqual([100, 100, 100]);
-    expect(f.rest).toEqual([]);
-  });
-
-  it('a sentence split in two results keeps the second part old', () => {
-    const p = stampResult([], 'we need the thing', false, 100).rest;
-    const first = stampResult(p, 'we need the', true, 3000);
-    expect(first.words).toHaveLength(3);
-    expect(first.rest).toEqual([w('thing', 100)]);
-    const second = stampResult(first.rest, 'thing', false, 3100);
-    expect(second.words).toEqual([w('thing', 100)]);
-  });
-
-  it('a split continued with new words stamps only the new ones', () => {
-    const p = stampResult([], 'a b c', false, 100).rest;
-    const first = stampResult(p, 'a b', true, 2000);
-    const second = stampResult(first.rest, 'c d', false, 2100);
-    expect(second.words.map((x) => x.startMs)).toEqual([100, 2100]);
-  });
-
-  it('a final longer than the partial adds only new words and leaves no rest', () => {
-    const p = stampResult([], 'we need', false, 100).rest;
-    const f = stampResult(p, 'we need the thing', true, 700);
-    expect(f.words.map((x) => x.startMs)).toEqual([100, 100, 700, 700]);
-    expect(f.rest).toEqual([]);
-  });
-
-  it('a final with no words (empty result) returns nothing', () => {
-    expect(stampResult([], '  ', true, 1)).toEqual({ words: [], rest: [] });
-  });
-});
-
 describe('isStale', () => {
   it('is stale only while listening and after 20 s of nothing', () => {
     expect(isStale(true, 0, 20_000)).toBe(false);
@@ -167,16 +126,8 @@ describe('isStale', () => {
   });
 });
 
-describe('flushPending', () => {
-  it('sends pending words unchanged and leaves nothing pending', () => {
-    const pending = stampWords([], 'hello there', 100);
-    const { send, rest } = flushPending(pending);
-    expect(send).toBe(pending);
-    expect(send?.map((x) => x.startMs)).toEqual([100, 100]);
-    expect(rest).toEqual([]);
-  });
-
-  it('sends nothing when no partial is pending', () => {
-    expect(flushPending([])).toEqual({ send: null, rest: [] });
+describe('tokenize', () => {
+  it('splits on whitespace and drops bare punctuation', () => {
+    expect(tokenize('  a - b\n,  c ')).toEqual(['a', 'b', 'c']);
   });
 });
