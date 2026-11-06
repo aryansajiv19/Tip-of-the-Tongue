@@ -113,6 +113,8 @@ async function main(): Promise<void> {
     options: {
       split: { type: 'string', default: 'all' },
       guesser: { type: 'string', default: 'mock' },
+      set: { type: 'string', default: 'main' },
+      model: { type: 'string' },
       'no-context': { type: 'boolean', default: false },
       'stt-noise': { type: 'boolean', default: false },
     },
@@ -121,29 +123,33 @@ async function main(): Promise<void> {
   const kind = values.guesser;
   if (split !== 'dev' && split !== 'holdout' && split !== 'all')
     throw new Error(`--split must be dev, holdout or all`);
+  const set = values.set;
+  if (set !== 'main' && set !== 'hard') throw new Error(`--set must be main or hard`);
+  const model = values.model ?? config.anthropicModel;
   if (kind !== 'mock' && kind !== 'claude') throw new Error(`--guesser must be mock or claude`);
   if (kind === 'claude' && !config.anthropicApiKey)
     throw new Error('--guesser claude needs ANTHROPIC_API_KEY');
 
   const guess = createGuesser({
     ...(kind === 'claude' && config.anthropicApiKey ? { apiKey: config.anthropicApiKey } : {}),
-    model: config.anthropicModel,
+    model,
     timeoutMs: config.guessTimeoutMs,
   });
   const profile = await loadProfile(dataPath('profiles/example.json'));
-  const items = await loadItems(split);
+  const items = await loadItems(split, set);
 
   const results: ItemResult[] = [];
   const opts: RunOptions = { context: !values['no-context'], sttNoise: values['stt-noise'] };
   for (const item of items) results.push(await runItem(item, guess, profile, opts));
-  const tag = `${opts.context ? '' : '-nocontext'}${opts.sttNoise ? '-noise' : ''}`;
+  const tag = `${set === 'hard' ? '-hard' : ''}${values.model ? `-${values.model}` : ''}${opts.context ? '' : '-nocontext'}${opts.sttNoise ? '-noise' : ''}`;
 
   const meta: RunMeta = {
     guesser: kind,
     split,
     noContext: !opts.context,
     sttNoise: opts.sttNoise,
-    ...(kind === 'claude' ? { model: config.anthropicModel } : {}),
+    set,
+    ...(kind === 'claude' ? { model } : {}),
   };
   const md = renderMarkdown(meta, results);
   const outDir = fileURLToPath(new URL('../../eval-results/', import.meta.url));
