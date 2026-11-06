@@ -19,14 +19,26 @@ export type Item = z.infer<typeof ItemSchema>;
 
 const FileSchema = z.object({ items: z.array(ItemSchema) });
 
-export const SILENT_CATEGORIES: readonly string[] = ['not_stuck', 'self_recovered'];
+export const SILENT_CATEGORIES: readonly string[] = [
+  'not_stuck',
+  'self_recovered',
+  // Nothing in the text says what the word is, so any offer is wrong.
+  'not_stuck_unknowable',
+];
 
 export const dataPath = (rel: string): string =>
   fileURLToPath(new URL(`../../data/${rel}`, import.meta.url));
 
-export async function loadItems(split: 'dev' | 'holdout' | 'all'): Promise<Item[]> {
-  const { items } = FileSchema.parse(
-    JSON.parse(await readFile(dataPath('eval/circumlocutions.json'), 'utf8')),
-  );
+export type ItemSet = 'main' | 'hard';
+const SET_FILES: Record<ItemSet, string> = {
+  main: 'eval/circumlocutions.json',
+  hard: 'eval/hard.json',
+};
+
+export async function loadItems(
+  split: 'dev' | 'holdout' | 'all',
+  set: ItemSet = 'main',
+): Promise<Item[]> {
+  const { items } = FileSchema.parse(JSON.parse(await readFile(dataPath(SET_FILES[set]), 'utf8')));
   return split === 'all' ? items : items.filter((i) => i.split === split);
 }
