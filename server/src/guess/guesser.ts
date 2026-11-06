@@ -6,7 +6,7 @@ import type { GuessInput, GuessResult, Guesser } from './types.js';
 
 const SYSTEM = `You help someone who has lost a word mid-conversation. From the conversation and what they said, guess the word they are reaching for.
 Reply with JSON only: {"candidates":[{"word":"...","confidence":0.0}],"abstain":false}
-Up to 3 candidates, confidence 0 to 1. Keep multi-word names together as one candidate (e.g. "traffic lights"). Abstaining is good: if you are not fairly sure, reply {"candidates":[],"abstain":true}. A wrong guess is worse than none.`;
+Up to 3 candidates, confidence 0 to 1. Keep multi-word names together as one candidate (e.g. "post office"). Abstaining is good: if you are not fairly sure, reply {"candidates":[],"abstain":true}. A wrong guess is worse than none.`;
 
 function profileTerms(profile: Profile): string {
   return [
