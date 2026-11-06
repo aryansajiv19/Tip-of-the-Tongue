@@ -17,4 +17,5 @@ export interface GuessResult {
 }
 
 // Never throws: errors and timeouts come back as an abstain with `error: true`.
-export type Guesser = (input: GuessInput) => Promise<GuessResult>;
+// `signal` aborts the call when its result is no longer wanted.
+export type Guesser = (input: GuessInput, signal?: AbortSignal) => Promise<GuessResult>;

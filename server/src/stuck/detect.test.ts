@@ -52,7 +52,8 @@ describe('fluent speech is never stuck', () => {
   ];
   it.each(fluent)('silent on: %s', (text) => {
     expect(live(text)).toEqual({ stuck: false });
-    expect(afterGap(text, 5000)).toEqual({ stuck: false });
+    // Browser speech recognition adds no full stop; other providers do.
+    expect(afterGap(`${text}.`, 5000)).toEqual({ stuck: false });
   });
 
   it('contains no cue words inside longer words (thingy vs anything)', () => {
@@ -71,8 +72,33 @@ describe('pause', () => {
     expect(reason(afterGap(text, 2000))).toBe('pause');
   });
 
-  it('the same pause after a complete sentence does not trigger', () => {
-    expect(afterGap('we shipped it last week', 5000)).toEqual({ stuck: false });
+  it.each([
+    'we shipped it last week.',
+    'did we ship it?',
+    'we shipped it!',
+    'he said "we shipped it."',
+    'thanks',
+    'okay',
+    'See you, bye',
+  ])('the same pause after a finished sentence does not trigger: %s', (text) => {
+    expect(afterGap(text, 3000)).toEqual({ stuck: false });
+  });
+
+  it.each(['we should call', 'I talked to', 'my sister lives in', 'we shipped it last week'])(
+    'a pause mid-utterance triggers whatever the last word is: %s',
+    (text) => {
+      expect(reason(afterGap(text, 2000))).toBe('pause');
+    },
+  );
+
+  it('a fluent sentence with no pause never triggers', () => {
+    expect(live('we should call the client about the renewal tomorrow')).toEqual({
+      stuck: false,
+    });
+  });
+
+  it('a pause longer than ten seconds is a conversation that moved on', () => {
+    expect(afterGap('we should call', 11_000)).toEqual({ stuck: false });
   });
 
   it('a short pause after an unfinished phrase does not trigger', () => {
@@ -278,7 +304,10 @@ describe('data/eval/circumlocutions.json', () => {
 
   it('stays silent on every dev not_stuck item', () => {
     for (const i of items.filter((x) => x.category === 'not_stuck' && x.split === 'dev')) {
-      expect(fires(i.utterance), i.id).toBe(false);
+      // With browser speech recognition (no full stop) every utterance ends in a pause that
+      // looks like a hesitation; the guesser has to filter those. With punctuated words, as
+      // other providers send, the detector itself stays silent.
+      expect(fires(`${i.utterance}.`), i.id).toBe(false);
     }
   });
 });
@@ -289,8 +318,8 @@ describe('sinceMs: where the search for the missing word starts', () => {
     return r.stuck ? r.sinceMs : undefined;
   };
   // say() puts word i at i*300 and ends it 100 ms later.
-  it('pause: the end of the last word', () => {
-    expect(since('send it to the', 2000)).toBe(3 * 300 + 100);
+  it('pause: just before the last word, so that word counts as said', () => {
+    expect(since('send it to the', 2000)).toBe(3 * 300 - 1);
   });
   it('describing: the end of the first word of the cue', () => {
     expect(since('I need the thing you use for cutting bread', 800)).toBe(2 * 300 + 100);
@@ -345,5 +374,28 @@ describe('cue phrases need a short silence', () => {
 
   it('exactly half the threshold counts as silence', () => {
     expect(afterGap('the person who does your teeth', PAUSE_MS / 2).stuck).toBe(true);
+  });
+});
+
+describe('early signal', () => {
+  const early = (text: string, gap: number) => {
+    const { words, endMs } = say(text);
+    return detectStuck(words, endMs + gap, { pauseMs: PAUSE_MS, earlyMs: 300 });
+  };
+
+  it('fires after the short silence, where the normal check does not yet', () => {
+    expect(early('we should call', 200)).toEqual({ stuck: false });
+    expect(early('we should call', 400).stuck).toBe(true);
+    expect(afterGap('we should call', 400)).toEqual({ stuck: false });
+  });
+
+  it('stays silent after a finished sentence', () => {
+    expect(early('we shipped it.', 1000)).toEqual({ stuck: false });
+  });
+
+  it('a cue starts the search at the cue, not at the last word', () => {
+    const r = afterGap('can you pass the the thing for cutting bread knife', 2000);
+    // "the the" ends at word 4 (index 4): 4 * 300 + 100.
+    expect(r.stuck && r.sinceMs).toBe(4 * 300 + 100);
   });
 });

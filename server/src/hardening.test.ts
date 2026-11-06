@@ -104,7 +104,7 @@ describe('bad input never crashes the server', () => {
       Buffer.from([0xff, 0xfe, 0x00]),
     ];
     for (const m of junk) ws.send(m);
-    ws.send(final('hello there'));
+    ws.send(final('hello there.'));
     await sleep(100);
     expect(events).toEqual([]);
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();

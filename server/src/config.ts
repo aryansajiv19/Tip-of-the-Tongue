@@ -24,6 +24,9 @@ export const config = {
   stuckPauseMs: num('STUCK_PAUSE_MS', 1500),
   gateMinConfidence: num('GATE_MIN_CONFIDENCE', 0.6),
   guessTimeoutMs: num('GUESS_TIMEOUT_MS', 2500),
+  // Start guessing after this much silence, before the stall is confirmed. 0 turns it off.
+  // Each unconfirmed pause costs one extra Claude call.
+  speculateAfterMs: num('SPECULATE_AFTER_MS', 300),
   // Optional personal profile (see data/profiles/example.json). Off by default.
   profilePath: process.env.PROFILE_PATH || undefined,
   cooldownMs: 8000,
