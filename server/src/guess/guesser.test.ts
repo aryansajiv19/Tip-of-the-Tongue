@@ -148,6 +148,22 @@ describe('Claude guesser', () => {
     expect(signal?.aborted).toBe(true);
   });
 
+  it('aborts the stream when the caller no longer wants the answer', async () => {
+    let signal: AbortSignal | undefined;
+    const guess = createGuesser(
+      { ...cfg, timeoutMs: 5000 },
+      fakeClient((_params, opts) => {
+        signal = (opts as { signal: AbortSignal }).signal;
+        return new Promise(() => undefined);
+      }),
+    );
+    const caller = new AbortController();
+    const pending = guess(input, caller.signal);
+    caller.abort();
+    expect((await pending).error).toBe(true);
+    expect(signal?.aborted).toBe(true);
+  });
+
   it('abstains when the SDK throws', async () => {
     const guess = createGuesser(
       cfg,

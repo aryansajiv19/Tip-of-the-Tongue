@@ -96,7 +96,7 @@ describe('session pipeline', () => {
 
   it('stays silent on fluent speech', async () => {
     const { session, say, events } = setup();
-    say('we shipped the new release on Tuesday and the customers liked it');
+    say('we shipped the new release on Tuesday and the customers liked it.');
     await vi.advanceTimersByTimeAsync(5000);
     expect(events).toEqual([]);
     session.close();

@@ -90,7 +90,7 @@ describe('runItem (mock guesser)', () => {
 
   it('makes no guess when the detector does not fire', async () => {
     const quiet = item({
-      utterance: 'I went to the pharmacy this morning',
+      utterance: 'I went to the pharmacy this morning.',
       category: 'not_stuck',
       target: null,
       acceptable: [],

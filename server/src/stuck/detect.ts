@@ -11,17 +11,17 @@ const TAIL_WORDS = 15;
 const TAIL_MS = 10_000;
 const CONTEXT_WORDS = 60;
 
-// A phrase ending on one of these is unfinished: the speaker is missing the next word.
-// Words that often end a complete clause ("that", "is", "so", "about") are left out on purpose.
-const INCOMPLETE_ENDINGS = new Set(
-  (
-    'the a an my your his her our their some ' +
-    'to of in on at for with from by into ' +
-    'and but or because if when while ' +
-    'will would can could should have has had be been not ' +
-    'um uh er erm hmm ah'
-  ).split(' '),
-);
+// A pause after one of these clearly ends a turn, so it is not a hesitation.
+const SENTENCE_CLOSERS = new Set([
+  'thanks',
+  'okay',
+  'ok',
+  'right',
+  'yeah',
+  'bye',
+  'goodbye',
+  'cheers',
+]);
 
 const FILLER_SOUNDS = new Set(['um', 'uh', 'er', 'erm', 'umm', 'uhh', 'hmm']);
 const DETERMINERS = new Set(['the', 'a', 'an', 'my', 'your', 'his', 'her', 'our', 'their']);
@@ -59,8 +59,13 @@ function tokens(words: readonly Word[]): string[] {
   );
 }
 
-function endsIncomplete(t: string[]): boolean {
-  return t.length > 0 && INCOMPLETE_ENDINGS.has(t[t.length - 1] as string);
+// Browser speech recognition gives no punctuation, so any pause mid-utterance counts as a
+// possible hesitation unless the last word clearly ends a sentence: it has . ? ! on it (the raw
+// text, before the cue rules strip punctuation), or it is a closer like "thanks".
+function endsSentence(last: Word): boolean {
+  if (/[.?!]["')\]]*$/.test(last.text.trim())) return true;
+  const spoken = tokens([last]);
+  return SENTENCE_CLOSERS.has(spoken.at(-1) ?? '');
 }
 
 // endMs of the word each token came from.
@@ -142,7 +147,9 @@ function stallMarkerEnd(recent: readonly Word[], pauseMs: number): number | unde
 export function detectStuck(
   words: readonly Word[],
   nowMs: number,
-  opts: { pauseMs: number },
+  // earlyMs: ask "would this be a stall after only earlyMs of silence?", for speculative
+  // guessing. It replaces both silence requirements; the stall markers still use pauseMs.
+  opts: { pauseMs: number; earlyMs?: number },
 ): StuckResult {
   if (words.length === 0) return { stuck: false };
   const ordered = [...words].sort((a, b) => a.startMs - b.startMs);
@@ -159,12 +166,17 @@ export function detectStuck(
     sinceMs,
   });
 
-  if (nowMs - lastEndMs > opts.pauseMs && endsIncomplete(tokens(ordered))) {
-    return hit('pause', lastEndMs);
-  }
+  const silentMs = nowMs - lastEndMs;
+  const last = ordered[ordered.length - 1] as Word;
+  // Past TAIL_MS nobody is searching for a word any more: the conversation has moved on.
+  const paused =
+    silentMs > (opts.earlyMs ?? opts.pauseMs) &&
+    silentMs <= TAIL_MS &&
+    tokens(ordered).length > 0 &&
+    !endsSentence(last);
 
   // Cue phrases only count once the speaker has gone quiet: mid-flow they are just speech.
-  if (nowMs - lastEndMs < opts.pauseMs / 2) return { stuck: false };
+  if (!paused && silentMs < (opts.earlyMs ?? opts.pauseMs / 2)) return { stuck: false };
 
   const recent = ordered.slice(-TAIL_WORDS).filter((w) => w.endMs >= nowMs - TAIL_MS);
   const t = tokens(recent).slice(-TAIL_WORDS);
@@ -172,10 +184,19 @@ export function detectStuck(
   const text = t.join(' ');
 
   const describing = describingAt(t, text);
-  if (describing !== undefined) return hit('describing', ends[describing] as number);
   const filler = fillerAt(t, text);
-  if (filler !== undefined) return hit('filler', ends[filler] as number);
   const marker = stallMarkerEnd(recent, opts.pauseMs);
+  const cueSince = [
+    describing === undefined ? undefined : ends[describing],
+    filler === undefined ? undefined : ends[filler],
+    marker,
+  ].filter((x): x is number => x !== undefined);
+
+  // The search for the missing word starts at the earliest cue, or at the last word, which
+  // counts as already said: "... the car" then silence must not offer "car".
+  if (paused) return hit('pause', Math.min(last.startMs - 1, ...cueSince));
+  if (describing !== undefined) return hit('describing', ends[describing] as number);
+  if (filler !== undefined) return hit('filler', ends[filler] as number);
   if (marker !== undefined) return hit('describing', marker);
   return { stuck: false };
 }
