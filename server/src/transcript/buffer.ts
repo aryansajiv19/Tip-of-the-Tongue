@@ -1,4 +1,4 @@
-import type { Word } from '../events.js';
+import { MAX_WORDS_PER_EVENT, type Word } from '../events.js';
 
 const MAX_FINAL_WORDS = 500;
 
@@ -8,7 +8,7 @@ export class TranscriptBuffer {
   private partial: Word[] = [];
 
   applyPartial(words: Word[]): void {
-    this.partial = [...words];
+    this.partial = words.slice(-MAX_WORDS_PER_EVENT);
   }
 
   applyFinal(words: Word[]): void {

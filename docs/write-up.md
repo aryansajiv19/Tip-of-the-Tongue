@@ -24,7 +24,19 @@ Listens, notices the struggle, guesses the word from context, and offers it quie
 
 - Scale: ~350,000 people with aphasia in the UK.
 - Prior study: LLM identified the intended word 91.67% of the time from text.
-- **Our results** (paste from `npm run eval`): top-1 …, top-3 …, abstain …, false-offer …, latency p50/p95 …
+- **Our results** (Claude Haiku 5.5 guessing, our detector and gate; 95% Wilson intervals in brackets). Two full runs of the same code, because the guesser is an LLM and results vary between runs:
+
+  | Run | Split   | Stuck items | Top-1                | Top-3                 | False offers (of offers) | Guess latency p50 / p95 |
+  | --- | ------- | ----------- | -------------------- | --------------------- | ------------------------ | ----------------------- |
+  | 1   | dev     | 32          | 94% (30/32) [80-98%] | 94% (30/32) [80-98%]  | 6% (2/32) [2-20%]        | 836 / 1179 ms           |
+  | 1   | holdout | 9           | 89% (8/9) [56-98%]   | 89% (8/9) [56-98%]    | 11% (1/9) [2-44%]        | 831 / 1068 ms           |
+  | 2   | dev     | 32          | 97% (31/32) [84-99%] | 97% (31/32) [84-99%]  | 3% (1/32) [1-16%]        |                         |
+  | 2   | holdout | 9           | 89% (8/9) [56-98%]   | 100% (9/9) [70-100%]  | 0% (0/9) [0-30%]         |                         |
+  | 2   | all     | 41          | 95% (39/41) [84-99%] | 98% (40/41) [87-100%] | 2% (1/41) [0-13%]        | 798 / 1033 ms           |
+
+  In both runs the detector fired on 0 of the 10 fluent items and the app offered nothing on any of the 15 silent items (fluent and self-recovered). Read these with care. The items are scripted written examples that we wrote, read as text with synthetic timing (300 ms per word, 2 s pauses), not real speech. They have not been tested with people with aphasia, and speech-to-text may mishear real aphasic speech. There are only 41 stall items (9 held out), so the intervals are wide: the holdout result is compatible with anything from about 56% to 98%. The few misses are described in `docs/EDGE-CASES.md`.
+
+- **Comparison with the 2023 study (91.67%, text only).** Similar setting, not the same task: they used real circumlocutions and a general chatbot, we use descriptions we wrote ourselves, plus a meeting brief and personal words. Our intervals overlap that figure, which is all we can say; it does not show we do better, and our own items are probably cleaner than real speech.
 
 ## Approach and why
 
