@@ -55,7 +55,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     handledUpToMs = buffer.words().at(-1)?.endMs ?? handledUpToMs;
   }
 
-  async function guessFor(stuckAtMs: number, stuckPhrase: string) {
+  async function guessFor(sinceMs: number, stuckPhrase: string) {
     guessing = true;
     const result = await opts.guess({
       conversation: buffer.recentText(),
@@ -69,8 +69,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     const decision = decideOffer(
       result,
       {
-        // +1 so the word we stalled on doesn't count as the user finding the answer.
-        saidSinceStuck: buffer.wordsSince(stuckAtMs + 1),
+        // +1 so the word at the stall marker doesn't count as the user finding the answer.
+        saidSinceStuck: buffer.wordsSince(sinceMs + 1),
         nowMs: now(),
         recentlyOffered,
         ...(lastOfferAtMs !== undefined ? { lastOfferAtMs } : {}),
@@ -105,7 +105,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
 
     handledUpToMs = last.endMs;
     send({ type: 'stuck.detected', reason: stuck.reason, contextWindow: stuck.contextWindow });
-    void guessFor(last.endMs, stuck.contextWindow);
+    void guessFor(stuck.sinceMs, stuck.contextWindow);
   }
 
   // Pauses are silence, so no event arrives when one passes; poll for them.
