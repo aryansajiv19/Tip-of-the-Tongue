@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { ClientEvent, ServerEvent, Word } from '../../server/src/events';
+import { DebugPanel } from './debug/DebugPanel';
 import { Offer } from './offer/Offer';
 import { offerReducer } from './offer/offerState';
 import { useMic } from './audio/useMic';
@@ -261,6 +262,7 @@ export function App() {
           Send as speech
         </button>
       </section>
+      {DEBUG && <DebugPanel />}
     </main>
   );
 }

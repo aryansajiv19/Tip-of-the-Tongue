@@ -42,3 +42,14 @@ describe('backoffMs', () => {
     expect(backoffMs(-3)).toBe(1000);
   });
 });
+
+describe('parseServerEvent: debug', () => {
+  it('parses debug events', () => {
+    const e = {
+      type: 'debug',
+      atMs: 1,
+      info: { kind: 'gate', offered: false, reason: 'cooldown' },
+    };
+    expect(parseServerEvent(JSON.stringify(e))).toEqual(e);
+  });
+});
