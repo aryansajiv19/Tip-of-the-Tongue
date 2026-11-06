@@ -20,4 +20,9 @@ export const config = {
   stuckPauseMs: num('STUCK_PAUSE_MS', 1500),
   gateMinConfidence: num('GATE_MIN_CONFIDENCE', 0.6),
   guessTimeoutMs: num('GUESS_TIMEOUT_MS', 2500),
+  // Optional personal profile (see data/profiles/example.json). Off by default.
+  profilePath: process.env.PROFILE_PATH || undefined,
+  cooldownMs: 8000,
+  acceptWindowMs: 10_000,
+  moveOnWords: 6,
 };
