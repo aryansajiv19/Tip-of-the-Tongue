@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Word } from '../../../server/src/events';
-import { flushPending, isStale, stampResult } from './stampWords';
+import { applyResults, emptySpeech, flushSpeech, type SpeechState } from './results';
+import { isStale } from './stampWords';
 
 // The Web Speech API is not in TypeScript's DOM types, so declare the little we use.
 interface Alternative {
@@ -48,16 +49,35 @@ const FATAL: Record<string, string> = {
 };
 
 interface Handlers {
+  // Words still being recognised; replaces the previous partial.
   onPartial: (words: Word[]) => void;
+  // Words that just became final: each word arrives here once, in order.
   onFinal: (words: Word[]) => void;
+  // Record raw recognition events so they can be downloaded (?debug=1).
+  debug?: boolean;
 }
 
-export function useSpeech({ onPartial, onFinal }: Handlers) {
+export interface TraceEntry {
+  t: number;
+  event: 'start' | 'result' | 'end' | 'error';
+  resultIndex?: number;
+  results?: { isFinal: boolean; transcript: string }[];
+  error?: string;
+}
+
+export function useSpeech({ onPartial, onFinal, debug = false }: Handlers) {
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const wanted = useRef(false);
   const rec = useRef<Recognition | null>(null);
-  const words = useRef<Word[]>([]);
+  const speech = useRef<SpeechState>(emptySpeech);
+  const trace = useRef<TraceEntry[]>([]);
+  const record = useCallback(
+    (entry: Omit<TraceEntry, 't'>) => {
+      if (debug) trace.current.push({ t: Date.now(), ...entry });
+    },
+    [debug],
+  );
   const handlers = useRef({ onPartial, onFinal });
   useEffect(() => {
     handlers.current = { onPartial, onFinal };
@@ -65,9 +85,9 @@ export function useSpeech({ onPartial, onFinal }: Handlers) {
 
   // Send any unfinalised partial as a final before recognition ends or restarts.
   const flush = useCallback(() => {
-    const { send, rest } = flushPending(words.current);
-    words.current = rest;
-    if (send) handlers.current.onFinal(send);
+    const { state, final } = flushSpeech(speech.current);
+    speech.current = state;
+    if (final) handlers.current.onFinal(final);
   }, []);
 
   const beginRef = useRef<() => void>(() => undefined);
@@ -82,25 +102,24 @@ export function useSpeech({ onPartial, onFinal }: Handlers) {
     r.continuous = true;
     r.interimResults = true;
     r.lang = navigator.language || 'en-GB';
-    r.onstart = touch;
+    r.onstart = () => {
+      touch();
+      record({ event: 'start' });
+    };
     r.onresult = (e) => {
       touch();
-      for (let i = e.resultIndex; i < e.results.length; i++) {
+      const results = Array.from({ length: e.results.length }, (_, i) => {
         const result = e.results[i];
-        if (!result) continue;
-        const { words: heard, rest } = stampResult(
-          words.current,
-          result[0].transcript,
-          result.isFinal,
-          Date.now(),
-        );
-        words.current = rest;
-        if (!heard.length) continue;
-        if (result.isFinal) handlers.current.onFinal(heard);
-        else handlers.current.onPartial(heard);
-      }
+        return { isFinal: result?.isFinal ?? false, transcript: result?.[0].transcript ?? '' };
+      });
+      record({ event: 'result', resultIndex: e.resultIndex, results });
+      const update = applyResults(speech.current, results, Date.now());
+      speech.current = update.state;
+      if (update.final) handlers.current.onFinal(update.final);
+      if (update.partial) handlers.current.onPartial(update.partial);
     };
     r.onerror = (e) => {
+      record({ event: 'error', error: e.error });
       const message = FATAL[e.error];
       if (message) {
         wanted.current = false;
@@ -112,6 +131,7 @@ export function useSpeech({ onPartial, onFinal }: Handlers) {
     r.onend = () => {
       if (rec.current !== r) return; // an instance we already replaced
       touch();
+      record({ event: 'end' });
       flush();
       if (wanted.current) setTimeout(() => wanted.current && beginRef.current(), RESTART_DELAY_MS);
     };
@@ -123,7 +143,7 @@ export function useSpeech({ onPartial, onFinal }: Handlers) {
       wanted.current = false;
       setListening(false);
     }
-  }, [flush]);
+  }, [flush, record]);
 
   useEffect(() => {
     beginRef.current = begin;
@@ -177,5 +197,5 @@ export function useSpeech({ onPartial, onFinal }: Handlers) {
     [],
   );
 
-  return { listening, error, start, stop };
+  return { listening, error, start, stop, trace: () => trace.current };
 }

@@ -7,7 +7,8 @@ import { speechSupported, useSpeech } from './speech/useSpeech';
 import { stampWords } from './speech/stampWords';
 import { TYPED_FINAL_DELAY_MS, typedSteps } from './speech/typedWords';
 
-const MAX_LINES = 50;
+const MAX_WORDS = 60;
+const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
 const PAUSE_KEY = 'tott.pauseSeconds';
 const DEFAULT_PAUSE_S = 1.5;
 
@@ -25,7 +26,7 @@ const text = (words: Word[]) => words.map((w) => w.text).join(' ');
 
 export function App() {
   const [offer, dispatch] = useReducer(offerReducer, null);
-  const [lines, setLines] = useState<string[]>([]);
+  const [heard, setHeard] = useState<string[]>([]);
   const [partial, setPartial] = useState('');
   const [brief, setBrief] = useState('');
   const [briefSent, setBriefSent] = useState<string | null>(null);
@@ -58,15 +59,27 @@ export function App() {
   const sendFinal = useCallback(
     (words: Word[]) => {
       setPartial('');
-      setLines((l) => [...l, text(words)].slice(-MAX_LINES));
+      setHeard((h) => [...h, ...words.map((w) => w.text)].slice(-MAX_WORDS));
       send({ type: 'transcript.final', words });
     },
     [send],
   );
-  const { listening, error, start, stop } = useSpeech({
+  const { listening, error, start, stop, trace } = useSpeech({
     onPartial: sendPartial,
     onFinal: sendFinal,
+    debug: DEBUG,
   });
+
+  const downloadTrace = () => {
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(trace(), null, 1)], { type: 'application/json' }),
+    );
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'speech-trace.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // The brief is session state on the server: send it again after a reconnect.
   useEffect(() => {
@@ -178,12 +191,15 @@ export function App() {
 
       <section aria-labelledby="tx-h">
         <h2 id="tx-h">Transcript</h2>
-        <ul>
-          {lines.map((l, i) => (
-            <li key={i}>{l}</li>
-          ))}
-        </ul>
-        {partial && <p aria-label="Heard so far">{partial}</p>}
+        <p>
+          {heard.join(' ')}
+          {partial && <span style={{ color: '#595959' }}> {partial}</span>}
+        </p>
+        {DEBUG && (
+          <button type="button" onClick={downloadTrace}>
+            Download speech trace
+          </button>
+        )}
       </section>
 
       <section aria-labelledby="test-h">

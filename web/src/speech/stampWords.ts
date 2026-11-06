@@ -8,41 +8,19 @@ const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}']/gu, '');
 // beyond the previous length get `nowMs`. If the browser rewrites a word
 // (e.g. a final result fixing "knead" to "need"), the new text keeps the
 // time of the word it replaced, so a rewrite never resets the pause clock.
-export function stampWords(prev: Word[], transcript: string, nowMs: number): Word[] {
-  return transcript
-    .split(/\s+/)
-    .filter((t) => norm(t) !== '')
-    .map((token, i) => {
-      const old = prev[i];
-      if (!old) return { text: token, startMs: nowMs, endMs: nowMs };
-      if (norm(old.text) === norm(token)) return old;
-      return { ...old, text: token };
-    });
-}
+export const tokenize = (text: string): string[] => text.split(/\s+/).filter((t) => norm(t) !== '');
 
-// One browser result. A final result closes the utterance and returns the words
-// to send; any words of the previous partial that the final did not cover
-// (Chrome sometimes splits one sentence into two results) are kept in `rest`
-// with their old times for the next result. A partial's `rest` is itself.
-export function stampResult(
-  prev: Word[],
-  transcript: string,
-  isFinal: boolean,
-  nowMs: number,
-): { words: Word[]; rest: Word[] } {
-  const words = stampWords(prev, transcript, nowMs);
-  return { words, rest: isFinal ? prev.slice(words.length) : words };
+export function stampWords(prev: Word[], transcript: string, nowMs: number): Word[] {
+  return tokenize(transcript).map((token, i) => {
+    const old = prev[i];
+    if (!old) return { text: token, startMs: nowMs, endMs: nowMs };
+    if (norm(old.text) === norm(token)) return old;
+    return { ...old, text: token };
+  });
 }
 
 // The restart watchdog: true when recognition should be running but has been
 // silent (no start/result/end event) for longer than `staleMs`.
 export function isStale(listening: boolean, lastEventMs: number, nowMs: number, staleMs = 20_000) {
   return listening && nowMs - lastEventMs > staleMs;
-}
-
-// Recognition is ending (or restarting) with words that never got a final.
-// Send them as one, with their original times, so the server keeps them in context
-// instead of losing them when the next partial replaces them.
-export function flushPending(pending: Word[]): { send: Word[] | null; rest: Word[] } {
-  return { send: pending.length ? pending : null, rest: [] };
 }
