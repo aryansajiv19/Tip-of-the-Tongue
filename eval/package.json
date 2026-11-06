@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "eval": "tsx src/run.ts",
+    "compare": "tsx src/compare.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit"
   },

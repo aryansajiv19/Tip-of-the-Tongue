@@ -20,6 +20,8 @@ export interface ItemResult {
   offered: boolean;
   // Offered, but none of the offered words is acceptable. Always true for an offer on a silent item.
   falseOffer: boolean;
+  // Only with --stt-noise: how many words were swapped for mishearings, out of those eligible.
+  noise: { swapped: number; eligible: number } | undefined;
   // For inspecting failures: the expected word, what the guesser returned, and what the gate showed.
   target: string | null;
   guessed: Candidate[];

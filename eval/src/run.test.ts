@@ -17,6 +17,27 @@ const item = (over: Partial<Item>): Item => ({
   ...over,
 });
 
+describe('runItem options', () => {
+  it('leaves out the brief and profile with context off', async () => {
+    const seen: { brief: string | undefined; profile: unknown }[] = [];
+    const spy: typeof guess = (input) => {
+      seen.push({ brief: input.brief, profile: input.profile });
+      return guess(input);
+    };
+    const withBrief = item({ brief: 'Northwind renewal' });
+    await runItem(withBrief, spy, profile, { context: true, sttNoise: false });
+    await runItem(withBrief, spy, profile, { context: false, sttNoise: false });
+    expect(seen[0]).toEqual({ brief: 'Northwind renewal', profile });
+    expect(seen[1]).toEqual({ brief: undefined, profile: undefined });
+  });
+
+  it('records noise counts only with stt noise on', async () => {
+    expect((await runItem(item({}), guess, profile)).noise).toBeUndefined();
+    const noisy = await runItem(item({}), guess, profile, { context: true, sttNoise: true });
+    expect(noisy.noise?.eligible).toBeGreaterThan(0);
+  });
+});
+
 describe('runItem (mock guesser)', () => {
   it('scores a correct offer', async () => {
     const r = await runItem(item({}), guess, profile);
