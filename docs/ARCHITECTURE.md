@@ -16,13 +16,16 @@ Browser mic
 
 ## WebSocket events
 
-| Event | Direction | Payload |
-|---|---|---|
-| `transcript.partial` / `transcript.final` | server → web | words with start/end ms |
-| `stuck.detected` | server → web | reason, context window |
-| `guess.offered` | server → web | candidates, confidence, latency ms |
-| `guess.withdrawn` | server → web | reason (self-recovered, timeout) |
-| `guess.accepted` / `guess.expired` | server → web | word, time to accept |
+Defined once in `server/src/events.ts`. Times are epoch ms.
+
+| Event                                     | Direction    | Payload                                               |
+| ----------------------------------------- | ------------ | ----------------------------------------------------- |
+| `transcript.partial` / `transcript.final` | web → server | words with start/end ms (browser STT)                 |
+| `session.brief`                           | web → server | optional meeting brief text                           |
+| `stuck.detected`                          | server → web | reason (pause, filler, describing), context           |
+| `guess.offered`                           | server → web | offer id, up to 3 candidates with confidence, latency |
+| `guess.withdrawn`                         | server → web | offer id, reason (self-recovered, timeout)            |
+| `guess.accepted` / `guess.expired`        | server → web | offer id; accepted word and time to accept            |
 
 ## Components
 

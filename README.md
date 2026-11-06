@@ -8,13 +8,15 @@ Entry for the Hiya Voice AI Challenge — Accessibility track.
 
 ## Quick start
 
-> To be completed once the code exists. Must work from a clean clone with **no API keys**.
+Works from a clean clone with **no API keys**. You need Node 22 and Chrome or Edge, because they support the browser speech recognition the app uses by default.
 
 ```bash
 nvm use
 npm install
-npm run dev
+npm run dev      # server on :3000, web on http://localhost:5173
 ```
+
+Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
 
 ### Optional keys (`.env`, see `.env.example`)
 
