@@ -47,17 +47,17 @@ describe('runItem (mock guesser)', () => {
     });
   });
 
-  it('abstains on fluent speech', async () => {
-    const fluent = item({
+  it('makes no guess when the detector does not fire', async () => {
+    const quiet = item({
       utterance: 'I went to the pharmacy this morning',
       category: 'not_stuck',
       target: null,
       acceptable: [],
     });
-    expect(await runItem(fluent, guess, profile)).toMatchObject({
-      kind: 'silent',
-      abstained: true,
+    expect(await runItem(quiet, guess, profile)).toMatchObject({
+      detected: false,
       offered: false,
+      latencyMs: undefined,
     });
   });
 });

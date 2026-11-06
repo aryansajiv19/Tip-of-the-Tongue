@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  detectorFalseTriggerRate,
   falseTriggerRate,
   groupBy,
   latency,
@@ -12,6 +13,7 @@ const stall = (over: Partial<ItemResult> = {}): ItemResult => ({
   id: 'x',
   category: 'object',
   kind: 'stall',
+  detected: true,
   top1: true,
   top3: true,
   abstained: false,
@@ -92,6 +94,32 @@ describe('falseTriggerRate', () => {
   });
 });
 
+describe('detector metrics', () => {
+  it('counts the detector hit rate over stall items', () => {
+    const s = summarizeStalls([stall(), stall({ detected: false, offered: false }), silent(false)]);
+    expect(s.detected).toEqual({ hits: 1, total: 2 });
+  });
+  it('counts detector false triggers on not_stuck items only', () => {
+    const fluent = (detected: boolean) => ({ ...silent(false), detected });
+    const selfRecovered = { ...silent(false), category: 'self_recovered', detected: true };
+    expect(
+      detectorFalseTriggerRate([
+        fluent(true),
+        fluent(false),
+        fluent(false),
+        selfRecovered,
+        stall(),
+      ]),
+    ).toEqual({
+      hits: 1,
+      total: 3,
+    });
+  });
+  it('is 0/0 with no fluent items', () => {
+    expect(detectorFalseTriggerRate([])).toEqual({ hits: 0, total: 0 });
+  });
+});
+
 describe('latency', () => {
   it('reports p50 and p95', () => {
     const rs = Array.from({ length: 20 }, (_, i) => stall({ latencyMs: (i + 1) * 10 }));
@@ -99,6 +127,12 @@ describe('latency', () => {
   });
   it('is empty for no results', () => {
     expect(latency([])).toEqual({ p50: undefined, p95: undefined });
+  });
+  it('skips items where no guess was made', () => {
+    expect(latency([stall({ latencyMs: undefined }), stall({ latencyMs: 40 })])).toEqual({
+      p50: 40,
+      p95: 40,
+    });
   });
 });
 

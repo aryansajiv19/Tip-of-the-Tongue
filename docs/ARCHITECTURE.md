@@ -55,10 +55,10 @@ Defined once in `server/src/events.ts`. Times are epoch ms.
 
 ## Evaluation
 
-`npm run eval -- --split dev|holdout|all --guesser mock|claude` runs the hand-written items in `data/eval/circumlocutions.json` through the real modules. Each utterance becomes words at 300 ms each, followed by silence, then the guesser and the gate (the example profile and the item's meeting brief, if any, are passed in). Items are written by us in the documented style of circumlocution and never copied from a corpus. About 20% are `holdout` and are never used for tuning.
+`npm run eval -- --split dev|holdout|all --guesser mock|claude` runs the hand-written items in `data/eval/circumlocutions.json` through the real modules. Each utterance becomes words 300 ms apart (as in the server tests), scored 2000 ms after the last word: first `detectStuck`, then, only if it fires, the guesser and the gate (the example profile and the item's meeting brief, if any, are passed in). Items are written by us in the documented style of circumlocution and never copied from a corpus. About 20% are `holdout` and are never used for tuning.
 
-- Stall items (objects, places, people, meeting terms, personal words): top-1 and top-3 (is an acceptable word first, or among the first three), abstain rate, offered rate, and false-offer rate (of the offers made, the share where no offered word is acceptable).
-- Silent items (`not_stuck` fluent speech, `self_recovered` where the user says the word after stalling): the share where the app offered anyway. Any offer here is wrong.
+- Stall items (objects, places, people, meeting terms, personal words): detector hit rate; then top-1 and top-3 (is an acceptable word first, or among the first three; a stall the detector misses counts as a miss), abstain rate, offered rate, and false-offer rate (of the offers made, the share where no offered word is acceptable).
+- Silent items (`not_stuck` fluent speech, `self_recovered` where the user says the word after stalling): the share where the detector fired and the share where the app offered anyway. Any offer here is wrong.
 - Latency of the guess, p50 and p95.
 
 Results are written to `eval-results/` (gitignored). The `mock` guesser only covers a few dev items, so its numbers show the pipeline works, not how good Claude is. Spoken input, real aphasic speech and speech-to-text errors are not covered.
