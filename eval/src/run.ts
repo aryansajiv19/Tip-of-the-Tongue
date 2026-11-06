@@ -9,10 +9,20 @@ import { createGuesser } from '../../server/src/guess/guesser.js';
 import { loadProfile } from '../../server/src/guess/profile.js';
 import { dataPath, loadItems, SILENT_CATEGORIES, type Item } from './dataset.js';
 import type { ItemResult } from './metrics.js';
+import { degradeWords, hashSeed } from './noise.js';
 import { sweep, toTimedWords } from './timeline.js';
 import { renderMarkdown, type RunMeta } from './report.js';
 
 const COOLDOWN_MS = 10_000;
+// Fixed so the noisy run is repeatable.
+const NOISE_SEED = 1;
+
+export interface RunOptions {
+  // Pass the meeting brief and the profile to the guesser. Off for the no-context ablation.
+  context: boolean;
+  // Simulate Chrome's Web Speech on the transcript.
+  sttNoise: boolean;
+}
 
 const same = (a: string, b: string): boolean =>
   normalizePhrase(a).join(' ') === normalizePhrase(b).join(' ');
@@ -21,8 +31,18 @@ export async function runItem(
   item: Item,
   guess: ReturnType<typeof createGuesser>,
   profile: Awaited<ReturnType<typeof loadProfile>>,
+  opts: RunOptions = { context: true, sttNoise: false },
 ): Promise<ItemResult> {
-  const words = toTimedWords(item.utterance);
+  const timed = toTimedWords(item.utterance);
+  const degraded = opts.sttNoise
+    ? degradeWords(
+        timed,
+        [...(item.target ? [item.target] : []), ...item.acceptable],
+        hashSeed(NOISE_SEED, item.id),
+      )
+    : undefined;
+  const words = degraded?.words ?? timed;
+  const noise = degraded && { swapped: degraded.swapped, eligible: degraded.eligible };
   const lastEndMs = words.at(-1)?.endMs ?? 0;
   const kind = SILENT_CATEGORIES.includes(item.category) ? 'silent' : 'stall';
   const isRight = (word: string): boolean => item.acceptable.some((a) => same(a, word));
@@ -38,6 +58,7 @@ export async function runItem(
       kind,
       detected: false,
       detectAfterMs: undefined,
+      noise,
       top1: false,
       top3: false,
       abstained: false,
@@ -56,8 +77,8 @@ export async function runItem(
   const result = await guess({
     conversation: item.context,
     stuckPhrase: trigger.result.contextWindow,
-    ...(item.brief ? { brief: item.brief } : {}),
-    profile,
+    ...(opts.context && item.brief ? { brief: item.brief } : {}),
+    ...(opts.context ? { profile } : {}),
   });
   const decision = decideOffer(
     result,
@@ -71,6 +92,7 @@ export async function runItem(
     kind,
     detected: true,
     detectAfterMs: nowMs - lastEndMs,
+    noise,
     top1: kind === 'stall' && result.candidates.slice(0, 1).some((c) => isRight(c.word)),
     top3: kind === 'stall' && result.candidates.slice(0, 3).some((c) => isRight(c.word)),
     abstained: result.abstain,
@@ -89,6 +111,8 @@ async function main(): Promise<void> {
     options: {
       split: { type: 'string', default: 'all' },
       guesser: { type: 'string', default: 'mock' },
+      'no-context': { type: 'boolean', default: false },
+      'stt-noise': { type: 'boolean', default: false },
     },
   });
   const split = values.split;
@@ -108,21 +132,25 @@ async function main(): Promise<void> {
   const items = await loadItems(split);
 
   const results: ItemResult[] = [];
-  for (const item of items) results.push(await runItem(item, guess, profile));
+  const opts: RunOptions = { context: !values['no-context'], sttNoise: values['stt-noise'] };
+  for (const item of items) results.push(await runItem(item, guess, profile, opts));
+  const tag = `${opts.context ? '' : '-nocontext'}${opts.sttNoise ? '-noise' : ''}`;
 
   const meta: RunMeta = {
     guesser: kind,
     split,
+    noContext: !opts.context,
+    sttNoise: opts.sttNoise,
     ...(kind === 'claude' ? { model: config.anthropicModel } : {}),
   };
   const md = renderMarkdown(meta, results);
   const outDir = fileURLToPath(new URL('../../eval-results/', import.meta.url));
   await mkdir(outDir, { recursive: true });
   await writeFile(
-    `${outDir}${kind}-${split}.json`,
+    `${outDir}${kind}-${split}${tag}.json`,
     `${JSON.stringify({ meta, results }, null, 2)}\n`,
   );
-  await writeFile(`${outDir}${kind}-${split}.md`, md);
+  await writeFile(`${outDir}${kind}-${split}${tag}.md`, md);
   console.log(md);
 }
 

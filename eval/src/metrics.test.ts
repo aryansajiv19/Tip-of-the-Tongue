@@ -22,6 +22,7 @@ const stall = (over: Partial<ItemResult> = {}): ItemResult => ({
   abstained: false,
   offered: true,
   falseOffer: false,
+  noise: undefined,
   target: 'pharmacy',
   guessed: [],
   offeredWords: [],
