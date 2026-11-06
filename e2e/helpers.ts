@@ -4,6 +4,10 @@ export const offer = (page: Page) => page.getByLabel('Word suggestions');
 
 // Type a phrase into the "Test input (no mic)" box and send it.
 export async function say(page: Page, phrase: string) {
+  const fold = page.locator('details', { hasText: 'Test without a mic' });
+  if (!(await fold.evaluate((el) => (el as HTMLDetailsElement).open))) {
+    await fold.locator('summary').click();
+  }
   await page.getByLabel(/Type a phrase/).fill(phrase);
   await page.getByRole('button', { name: 'Send as speech' }).click();
 }

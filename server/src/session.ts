@@ -66,6 +66,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   let lastDetector = '';
   // Starts from the server default; the user can change it for this connection.
   let pauseMs = opts.pauseMs;
+  let minConfidence = opts.minConfidence;
   let offer: Offer | undefined;
   let lastOfferAtMs: number | undefined;
   let spec: Speculation | undefined;
@@ -207,7 +208,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         recentlyOffered,
         ...(lastOfferAtMs !== undefined ? { lastOfferAtMs } : {}),
       },
-      { minConfidence: opts.minConfidence, cooldownMs: opts.cooldownMs },
+      { minConfidence, cooldownMs: opts.cooldownMs },
     );
     debug(() => ({
       kind: 'gate',
@@ -303,8 +304,10 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   return {
     handle(event: ClientEvent) {
       if (event.type === 'session.brief') setBrief(event.text.trim() || undefined);
-      else if (event.type === 'session.settings') pauseMs = event.pauseMs;
-      else if (event.type === 'session.debug') {
+      else if (event.type === 'session.settings') {
+        pauseMs = event.pauseMs;
+        if (event.minConfidence !== undefined) minConfidence = event.minConfidence;
+      } else if (event.type === 'session.debug') {
         debugOn = event.on;
         debug(sttInfo);
       } else if (event.type === 'guess.picked') pick(event.id, event.word);

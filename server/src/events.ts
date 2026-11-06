@@ -35,7 +35,12 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
   // Turns the developer debug stream on or off for this connection. Off by default.
   z.object({ type: z.literal('session.debug'), on: z.boolean() }),
   // How long the user pauses before we look for a word (slower speakers need longer), in ms.
-  z.object({ type: z.literal('session.settings'), pauseMs: z.number().min(800).max(5000) }),
+  // minConfidence: how sure a guess must be before it is offered (0.3 to 0.9).
+  z.object({
+    type: z.literal('session.settings'),
+    pauseMs: z.number().min(800).max(5000),
+    minConfidence: z.number().min(0.3).max(0.9).optional(),
+  }),
 ]);
 export type ClientEvent = z.infer<typeof ClientEventSchema>;
 

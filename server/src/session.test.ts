@@ -177,6 +177,47 @@ describe('session pipeline', () => {
     });
   });
 
+  it('a higher minConfidence setting holds back a guess that the default would offer', async () => {
+    const { session, say, types } = setup();
+    // The mock's best word for this line is 0.85.
+    session.handle({ type: 'session.settings', pauseMs: 1500, minConfidence: 0.9 });
+    say('I need to go to the the place where you get medicine');
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(types()).not.toContain('guess.offered');
+    session.close();
+  });
+
+  it('a lower minConfidence setting lets a weaker guess through', async () => {
+    const guess: Guesser = async () => ({
+      candidates: [{ word: 'pharmacy', confidence: 0.5 }],
+      abstain: false,
+      latencyMs: 1,
+    });
+    const strict = setup(guess);
+    strict.say('I need to go to the the place where you get medicine');
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(strict.types()).not.toContain('guess.offered');
+    strict.session.close();
+
+    vi.setSystemTime(T0);
+    const eager = setup(guess);
+    eager.session.handle({ type: 'session.settings', pauseMs: 900, minConfidence: 0.45 });
+    eager.say('I need to go to the the place where you get medicine');
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(eager.types()).toContain('guess.offered');
+    eager.session.close();
+  });
+
+  it('settings without minConfidence leave it unchanged', async () => {
+    const { session, say, types } = setup();
+    session.handle({ type: 'session.settings', pauseMs: 1500, minConfidence: 0.9 });
+    session.handle({ type: 'session.settings', pauseMs: 1500 });
+    say('I need to go to the the place where you get medicine');
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(types()).not.toContain('guess.offered');
+    session.close();
+  });
+
   it('stays silent on fluent speech', async () => {
     const { session, say, events } = setup();
     say('we shipped the new release on Tuesday and the customers liked it.');
