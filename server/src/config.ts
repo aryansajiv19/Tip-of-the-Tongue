@@ -16,6 +16,10 @@ export const config = {
   port: num('PORT', 3000),
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || undefined,
   anthropicModel: process.env.ANTHROPIC_MODEL || 'claude-haiku-5-5',
+  // Optional: server-side speech-to-text with real word timings. Without it the browser's own
+  // speech recognition is used.
+  deepgramApiKey: process.env.DEEPGRAM_API_KEY || undefined,
+  deepgramLanguage: process.env.DEEPGRAM_LANGUAGE || 'en',
   // Browser origins allowed to open the WebSocket (stops other web pages from reading it).
   allowedOrigins: (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
     .split(',')

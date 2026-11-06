@@ -6,6 +6,7 @@ import { createGuesser } from './guess/guesser.js';
 import type { Profile } from './guess/profile.js';
 import type { Guesser } from './guess/types.js';
 import { createSession, type SessionOptions } from './session.js';
+import { createDeepgramStream, type DeepgramOptions } from './stt/deepgram.js';
 
 const MAX_MESSAGE_BYTES = 64 * 1024;
 
@@ -14,6 +15,8 @@ export interface AppDeps {
   profile?: Profile;
   // Defaults to config.allowedOrigins.
   allowedOrigins?: string[];
+  // Server-side speech-to-text; defaults to Deepgram when DEEPGRAM_API_KEY is set.
+  deepgram?: Pick<DeepgramOptions, 'apiKey' | 'language' | 'connect' | 'now'>;
   // Lets tests shorten the timings.
   session?: Partial<Omit<SessionOptions, 'guess' | 'profile'>>;
 }
@@ -65,11 +68,42 @@ export async function buildApp(deps: AppDeps = {}) {
       ...(deps.profile ? { profile: deps.profile } : {}),
       ...deps.session,
     });
-    socket.on('close', () => session.close());
+
+    const deepgramOpts =
+      deps.deepgram ??
+      (config.deepgramApiKey
+        ? { apiKey: config.deepgramApiKey, language: config.deepgramLanguage }
+        : undefined);
+    const stt = deepgramOpts
+      ? createDeepgramStream({
+          ...deepgramOpts,
+          onEvent: (event) => {
+            send(event);
+            session.handle(event);
+          },
+          onError: (err) => {
+            app.log.error({ err }, 'deepgram: failed, falling back to browser speech recognition');
+            send({ type: 'session.ready', stt: 'browser' });
+          },
+        })
+      : undefined;
+    send({ type: 'session.ready', stt: stt ? 'deepgram' : 'browser' });
+
+    socket.on('close', () => {
+      stt?.close();
+      session.close();
+    });
     // Oversize or malformed frames surface here; log and let the socket close.
     socket.on('error', (err) => app.log.warn({ err }, 'ws: socket error'));
 
-    socket.on('message', (raw) => {
+    socket.on('message', (raw, isBinary) => {
+      if (isBinary) {
+        // Audio for server-side speech-to-text; ignored when it is off.
+        if (!stt) return;
+        if (Array.isArray(raw)) stt.send(Buffer.concat(raw));
+        else stt.send(Buffer.isBuffer(raw) ? raw : Buffer.from(raw));
+        return;
+      }
       let json: unknown;
       try {
         json = JSON.parse(raw.toString());

@@ -106,7 +106,7 @@ describe('bad input never crashes the server', () => {
     for (const m of junk) ws.send(m);
     ws.send(final('hello there'));
     await sleep(100);
-    expect(events).toEqual([]);
+    expect(events.filter((e) => e.type !== 'session.ready')).toEqual([]);
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
     ws.close();
     expect(await health()).toEqual({ ok: true });
@@ -139,7 +139,7 @@ describe('bad input never crashes the server', () => {
     ws.send(JSON.stringify({ type: 'transcript.final', words: tooManyWords }));
     ws.send(JSON.stringify({ type: 'transcript.final', words: words('x'.repeat(101)) }));
     await sleep(100);
-    expect(events).toEqual([]);
+    expect(events.filter((e) => e.type !== 'session.ready')).toEqual([]);
 
     const done = closed(ws);
     ws.send('x'.repeat(200 * 1024));
@@ -183,7 +183,9 @@ describe('guesser trouble', () => {
     const { ws, events } = await connect();
     ws.send(final('I need the thing explode'));
     await sleep(600);
-    expect(events.map((e) => e.type)).toEqual(['stuck.detected']);
+    expect(events.map((e) => e.type).filter((t) => t !== 'session.ready')).toEqual([
+      'stuck.detected',
+    ]);
     // The same connection still works afterwards.
     ws.send(final('okay so now I need to go to the place where you get medicine'));
     await sleep(800);
