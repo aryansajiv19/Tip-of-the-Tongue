@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isStale, stampResult, stampWords } from './stampWords';
+import { flushPending, isStale, stampResult, stampWords } from './stampWords';
 
 const w = (text: string, t: number) => ({ text, startMs: t, endMs: t });
 
@@ -164,5 +164,19 @@ describe('isStale', () => {
 
   it('honours a custom limit', () => {
     expect(isStale(true, 1000, 1600, 500)).toBe(true);
+  });
+});
+
+describe('flushPending', () => {
+  it('sends pending words unchanged and leaves nothing pending', () => {
+    const pending = stampWords([], 'hello there', 100);
+    const { send, rest } = flushPending(pending);
+    expect(send).toBe(pending);
+    expect(send?.map((x) => x.startMs)).toEqual([100, 100]);
+    expect(rest).toEqual([]);
+  });
+
+  it('sends nothing when no partial is pending', () => {
+    expect(flushPending([])).toEqual({ send: null, rest: [] });
   });
 });

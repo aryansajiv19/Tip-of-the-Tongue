@@ -39,3 +39,10 @@ export function stampResult(
 export function isStale(listening: boolean, lastEventMs: number, nowMs: number, staleMs = 20_000) {
   return listening && nowMs - lastEventMs > staleMs;
 }
+
+// Recognition is ending (or restarting) with words that never got a final.
+// Send them as one, with their original times, so the server keeps them in context
+// instead of losing them when the next partial replaces them.
+export function flushPending(pending: Word[]): { send: Word[] | null; rest: Word[] } {
+  return { send: pending.length ? pending : null, rest: [] };
+}
