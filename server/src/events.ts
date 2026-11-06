@@ -26,6 +26,8 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
   }),
   // Optional meeting brief: agenda, names, terms. Plain text.
   z.object({ type: z.literal('session.brief'), text: z.string().max(5000) }),
+  // How long the user pauses before we look for a word (slower speakers need longer), in ms.
+  z.object({ type: z.literal('session.settings'), pauseMs: z.number().min(800).max(5000) }),
 ]);
 export type ClientEvent = z.infer<typeof ClientEventSchema>;
 

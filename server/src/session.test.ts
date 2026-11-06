@@ -66,6 +66,34 @@ describe('session pipeline', () => {
     session.close();
   });
 
+  it('a longer pause setting delays the trigger', async () => {
+    const { session, say, types } = setup();
+    session.handle({ type: 'session.settings', pauseMs: 3000 });
+    say('I need to go to the');
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(types()).toEqual([]);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(types()).toContain('stuck.detected');
+    session.close();
+  });
+
+  it('a shorter pause setting speeds it up', async () => {
+    const { session, say, types } = setup();
+    session.handle({ type: 'session.settings', pauseMs: 800 });
+    say('I need to go to the');
+    await vi.advanceTimersByTimeAsync(1100);
+    expect(types()).toContain('stuck.detected');
+    session.close();
+  });
+
+  it('the default pause does not trigger that early', async () => {
+    const { session, say, types } = setup();
+    say('I need to go to the');
+    await vi.advanceTimersByTimeAsync(1100);
+    expect(types()).toEqual([]);
+    session.close();
+  });
+
   it('stays silent on fluent speech', async () => {
     const { session, say, events } = setup();
     say('we shipped the new release on Tuesday and the customers liked it');

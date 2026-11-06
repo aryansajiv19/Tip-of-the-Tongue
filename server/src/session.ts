@@ -35,6 +35,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   const buffer = new TranscriptBuffer();
   const recentlyOffered = new Map<string, number>();
   let brief: string | undefined;
+  // Starts from the server default; the user can change it for this connection.
+  let pauseMs = opts.pauseMs;
   let offer: Offer | undefined;
   let lastOfferAtMs: number | undefined;
   let guessing = false;
@@ -127,7 +129,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     const last = words.at(-1);
     if (!last || last.endMs <= handledUpToMs) return;
 
-    const stuck = detectStuck(words, now(), { pauseMs: opts.pauseMs });
+    const stuck = detectStuck(words, now(), { pauseMs });
     if (!stuck.stuck) return;
 
     handledUpToMs = last.endMs;
@@ -147,6 +149,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   return {
     handle(event: ClientEvent) {
       if (event.type === 'session.brief') brief = event.text.trim() || undefined;
+      else if (event.type === 'session.settings') pauseMs = event.pauseMs;
       else if (event.type === 'transcript.partial') buffer.applyPartial(event.words);
       else buffer.applyFinal(event.words);
       check();
