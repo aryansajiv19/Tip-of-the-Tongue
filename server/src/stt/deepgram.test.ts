@@ -56,6 +56,8 @@ describe('toTranscriptEvent', () => {
     expect(url.searchParams.get('interim_results')).toBe('true');
     expect(url.searchParams.get('encoding')).toBe('linear16');
     expect(url.searchParams.get('sample_rate')).toBe('16000');
+    // A full stop at a stall would hide it from the detector.
+    expect(url.searchParams.get('punctuate')).toBe('false');
   });
 });
 

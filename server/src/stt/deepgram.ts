@@ -25,7 +25,7 @@ const ResultsSchema = z.object({
 export type TranscriptEvent = { type: 'transcript.partial' | 'transcript.final'; words: Word[] };
 
 // Deepgram times are seconds from the start of the audio stream; `streamStartMs` maps them to
-// epoch ms. Punctuated text is kept so the detector can tell a finished sentence from a stall.
+// epoch ms.
 export function toTranscriptEvent(message: unknown, streamStartMs: number): TranscriptEvent | null {
   const parsed = ResultsSchema.safeParse(message);
   if (!parsed.success) return null;
@@ -51,7 +51,9 @@ export function deepgramUrl(language: string): string {
     interim_results: 'true',
     // Keep "um"/"uh": they are stall cues for the detector.
     filler_words: 'true',
-    punctuate: 'true',
+    // Off on purpose: Deepgram puts a full stop at long pauses ("the place."), which would make
+    // a real stall look like a finished sentence. The guesser judges completeness instead.
+    punctuate: 'false',
     endpointing: '300',
   });
   return `wss://api.deepgram.com/v1/listen?${params}`;
