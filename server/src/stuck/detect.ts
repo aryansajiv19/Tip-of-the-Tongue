@@ -144,12 +144,27 @@ function stallMarkerEnd(recent: readonly Word[], pauseMs: number): number | unde
   return RECOVERY.test(afterMarker.join(' ')) ? undefined : markerEndMs;
 }
 
+// What the microphone level says (from voice.activity events). Without it only words are used.
+export interface VoiceInfo {
+  voiced: boolean;
+  // When the current state began.
+  sinceMs: number;
+  // The last finished stretch of sound, if any.
+  lastVoiced?: { startMs: number; endMs: number };
+}
+
+// Sound with no words for this long is a hum ("mmm", "uhhh") that speech recognition dropped.
+export const HUM_MS = 800;
+// Browser speech recognition stamps words when it first sees them, up to about this much
+// after they were spoken, so a hum may start slightly "before" the last word ends.
+const HUM_TOLERANCE_MS = 600;
+
 export function detectStuck(
   words: readonly Word[],
   nowMs: number,
   // earlyMs: ask "would this be a stall after only earlyMs of silence?", for speculative
   // guessing. It replaces both silence requirements; the stall markers still use pauseMs.
-  opts: { pauseMs: number; earlyMs?: number },
+  opts: { pauseMs: number; earlyMs?: number; voice?: VoiceInfo },
 ): StuckResult {
   if (words.length === 0) return { stuck: false };
   const ordered = [...words].sort((a, b) => a.startMs - b.startMs);
@@ -168,15 +183,24 @@ export function detectStuck(
 
   const silentMs = nowMs - lastEndMs;
   const last = ordered[ordered.length - 1] as Word;
+  const voice = opts.voice;
+  // Still making sound: words are on their way (speech recognition lags), so this is not a stall.
+  // A hum is judged once it ends.
+  if (voice?.voiced) return { stuck: false };
+  const soundSilentMs = voice ? Math.max(0, nowMs - voice.sinceMs) : undefined;
+  // How long it has really been quiet: no new words, and no sound either.
+  const quietMs = soundSilentMs === undefined ? silentMs : Math.min(silentMs, soundSilentMs);
+
   // Past TAIL_MS nobody is searching for a word any more: the conversation has moved on.
   const paused =
     silentMs > (opts.earlyMs ?? opts.pauseMs) &&
+    quietMs > (opts.earlyMs ?? opts.pauseMs) &&
     silentMs <= TAIL_MS &&
     tokens(ordered).length > 0 &&
     !endsSentence(last);
 
   // Cue phrases only count once the speaker has gone quiet: mid-flow they are just speech.
-  if (!paused && silentMs < (opts.earlyMs ?? opts.pauseMs / 2)) return { stuck: false };
+  if (!paused && quietMs < (opts.earlyMs ?? opts.pauseMs / 2)) return { stuck: false };
 
   const recent = ordered.slice(-TAIL_WORDS).filter((w) => w.endMs >= nowMs - TAIL_MS);
   const t = tokens(recent).slice(-TAIL_WORDS);
@@ -198,5 +222,17 @@ export function detectStuck(
   if (describing !== undefined) return hit('describing', ends[describing] as number);
   if (filler !== undefined) return hit('filler', ends[filler] as number);
   if (marker !== undefined) return hit('describing', marker);
+
+  // A hum after the last word, then quiet, with the sentence unfinished.
+  const hum = voice?.lastVoiced;
+  if (
+    hum &&
+    silentMs <= TAIL_MS &&
+    !endsSentence(last) &&
+    hum.endMs - hum.startMs >= HUM_MS &&
+    hum.startMs >= lastEndMs - HUM_TOLERANCE_MS
+  ) {
+    return hit('hum', hum.startMs);
+  }
   return { stuck: false };
 }
