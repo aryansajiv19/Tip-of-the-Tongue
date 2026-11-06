@@ -261,6 +261,7 @@ describe('data/eval/circumlocutions.json', () => {
     utterance: string;
     category: string;
     split: string;
+    pause?: boolean;
   }
   const file = new URL('../../../data/eval/circumlocutions.json', import.meta.url);
   const items = (JSON.parse(readFileSync(file, 'utf8')) as { items: Item[] }).items;
@@ -303,7 +304,10 @@ describe('data/eval/circumlocutions.json', () => {
   });
 
   it('stays silent on every dev not_stuck item', () => {
-    for (const i of items.filter((x) => x.category === 'not_stuck' && x.split === 'dev')) {
+    // Fluent sentences with a thinking pause (pause: true) fire the detector by design; the guesser is the filter for those.
+    for (const i of items.filter(
+      (x) => x.category === 'not_stuck' && x.split === 'dev' && !x.pause,
+    )) {
       // With browser speech recognition (no full stop) every utterance ends in a pause that
       // looks like a hesitation; the guesser has to filter those. With punctuated words, as
       // other providers send, the detector itself stays silent.

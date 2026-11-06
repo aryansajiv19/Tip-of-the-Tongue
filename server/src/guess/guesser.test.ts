@@ -11,10 +11,22 @@ const input = { conversation: 'errands', stuckPhrase: 'the place where you get m
 const fakeClient = (create: (...args: unknown[]) => unknown): Pick<Anthropic, 'messages'> =>
   ({ messages: { create } }) as unknown as Pick<Anthropic, 'messages'>;
 
-const textReply = (text: string) => ({
-  stop_reason: 'end_turn',
-  content: [{ type: 'text', text }],
+const delta = (text: string) => ({
+  type: 'content_block_delta',
+  index: 0,
+  delta: { type: 'text_delta', text },
 });
+
+// A streamed reply: one text delta per chunk. `after` runs once all chunks are out, so a test can
+// make the stream hang or fail after the JSON has closed (or before it ever does).
+async function* streamOf(chunks: string[], after?: () => Promise<void>) {
+  for (const c of chunks) yield delta(c);
+  await after?.();
+  yield { type: 'message_delta', delta: { stop_reason: 'end_turn' } };
+}
+const streamClient = (chunks: string[], after?: () => Promise<void>) =>
+  fakeClient(() => Promise.resolve(streamOf(chunks, after)));
+const hang = () => new Promise<void>(() => undefined);
 
 describe('mock guesser (no api key)', () => {
   const guess = createGuesser(cfg);
@@ -41,16 +53,74 @@ describe('mock guesser (no api key)', () => {
 });
 
 describe('Claude guesser', () => {
-  it('parses the model reply', async () => {
-    const guess = createGuesser(
-      cfg,
-      fakeClient(() =>
-        Promise.resolve(textReply('{"candidates":[{"word":"renewal","confidence":0.8}]}')),
-      ),
-    );
+  const json = '{"candidates":[{"word":"renewal","confidence":0.8}],"abstain":false}';
+
+  it('parses a streamed reply split across chunks', async () => {
+    const guess = createGuesser(cfg, streamClient([json.slice(0, 20), json.slice(20)]));
     const r = await guess(input);
     expect(r.abstain).toBe(false);
     expect(r.candidates).toEqual([{ word: 'renewal', confidence: 0.8 }]);
+    expect(r.error).toBeUndefined();
+  });
+
+  it('tolerates a fence and prose around the streamed JSON', async () => {
+    const guess = createGuesser(cfg, streamClient(['Sure:\n```json\n', json, '\n```']));
+    expect((await guess(input)).candidates[0]?.word).toBe('renewal');
+  });
+
+  it('returns as soon as the JSON closes, without waiting for the rest of the stream', async () => {
+    let signal: AbortSignal | undefined;
+    const guess = createGuesser(
+      { model: 'test-model', timeoutMs: 5000 },
+      fakeClient((_params, opts) => {
+        signal = (opts as { signal: AbortSignal }).signal;
+        return Promise.resolve(streamOf([json], hang)); // the stream never finishes
+      }),
+    );
+    const r = await guess(input);
+    expect(r.candidates).toEqual([{ word: 'renewal', confidence: 0.8 }]);
+    expect(r.error).toBeUndefined();
+    expect(r.latencyMs).toBeLessThan(1000);
+    expect(signal?.aborted).toBe(true); // the rest of the reply is cancelled
+  });
+
+  it('asks for a stream with a small output cap and no thinking', async () => {
+    let params: Record<string, unknown> = {};
+    const guess = createGuesser(
+      cfg,
+      fakeClient((p) => {
+        params = p as Record<string, unknown>;
+        return Promise.resolve(streamOf([json]));
+      }),
+    );
+    await guess(input);
+    expect(params).toMatchObject({
+      stream: true,
+      model: 'test-model',
+      thinking: { type: 'disabled' },
+    });
+    expect(params.max_tokens).toBeLessThanOrEqual(100);
+    expect(params.max_tokens).toBeGreaterThanOrEqual(70);
+  });
+
+  it('abstains if the stream ends before the JSON closes', async () => {
+    const r = await createGuesser(cfg, streamClient(['{"candidates":[{"word":"ren']))(input);
+    expect(r.abstain).toBe(true);
+    expect(r.error).toBeUndefined();
+  });
+
+  it('abstains with an error if the stream stalls before the JSON closes', async () => {
+    const guess = createGuesser(cfg, streamClient(['{"candidates":['], hang));
+    const r = await guess(input);
+    expect(r.abstain).toBe(true);
+    expect(r.error).toBe(true);
+  });
+
+  it('abstains with an error if the stream fails midway', async () => {
+    const failing = streamClient(['{"cand'], () => Promise.reject(new Error('connection reset')));
+    const r = await createGuesser(cfg, failing)(input);
+    expect(r.abstain).toBe(true);
+    expect(r.error).toBe(true);
   });
 
   it('abstains on a timeout, even if the client ignores the abort signal', async () => {
@@ -65,7 +135,7 @@ describe('Claude guesser', () => {
     expect(r.latencyMs).toBeLessThan(500);
   });
 
-  it('passes an abort signal to the client', async () => {
+  it('aborts the request on a timeout', async () => {
     let signal: AbortSignal | undefined;
     const guess = createGuesser(
       cfg,
@@ -75,6 +145,22 @@ describe('Claude guesser', () => {
       }),
     );
     await guess(input);
+    expect(signal?.aborted).toBe(true);
+  });
+
+  it('aborts the stream when the caller no longer wants the answer', async () => {
+    let signal: AbortSignal | undefined;
+    const guess = createGuesser(
+      { ...cfg, timeoutMs: 5000 },
+      fakeClient((_params, opts) => {
+        signal = (opts as { signal: AbortSignal }).signal;
+        return new Promise(() => undefined);
+      }),
+    );
+    const caller = new AbortController();
+    const pending = guess(input, caller.signal);
+    caller.abort();
+    expect((await pending).error).toBe(true);
     expect(signal?.aborted).toBe(true);
   });
 
@@ -100,18 +186,16 @@ describe('Claude guesser', () => {
     expect(r.error).toBe(true);
   });
 
-  it('abstains on a refusal, garbage, or an empty reply', async () => {
-    const replies = [
-      { stop_reason: 'refusal', content: [] },
-      textReply('I cannot tell.'),
-      { stop_reason: 'end_turn', content: [] },
-    ];
-    for (const reply of replies) {
-      const guess = createGuesser(
-        cfg,
-        fakeClient(() => Promise.resolve(reply)),
-      );
-      const r = await guess(input);
+  it('abstains, without an error, on a refusal, garbage, or an empty reply', async () => {
+    const refusal = fakeClient(() =>
+      Promise.resolve(
+        (async function* () {
+          yield { type: 'message_delta', delta: { stop_reason: 'refusal' } };
+        })(),
+      ),
+    );
+    for (const client of [refusal, streamClient(['I cannot tell.']), streamClient([])]) {
+      const r = await createGuesser(cfg, client)(input);
       expect(r.abstain).toBe(true);
       expect(r.error).toBeUndefined(); // the model chose to abstain; nothing failed
     }

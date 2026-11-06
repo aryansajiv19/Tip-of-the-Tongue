@@ -1,12 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { mockGuesser } from './mock.js';
-import { parseGuess } from './parse.js';
+import { firstObjectEnd, parseGuess } from './parse.js';
 import type { Profile } from './profile.js';
 import type { GuessInput, GuessResult, Guesser } from './types.js';
 
-const SYSTEM = `You help someone who has lost a word mid-conversation. From the conversation and what they said, guess the word they are reaching for.
+const SYSTEM = `Someone has lost a word mid-conversation. Guess the word they are reaching for.
 Reply with JSON only: {"candidates":[{"word":"...","confidence":0.0}],"abstain":false}
-Up to 3 candidates, confidence 0 to 1. Keep multi-word names together as one candidate (e.g. "post office"). Abstaining is good: if you are not fairly sure, reply {"candidates":[],"abstain":true}. A wrong guess is worse than none.`;
+Up to 3 candidates, confidence 0 to 1. Keep multi-word names together as one candidate (e.g. "post office"). If you are not fairly sure, or they are not clearly searching for a specific word (the sentence is complete, or they are just thinking), reply {"candidates":[],"abstain":true}. A wrong guess is worse than none.`;
+
+// 3 candidates of a few words each is about 70 tokens of JSON.
+const MAX_TOKENS = 100;
 
 function profileTerms(profile: Profile): string {
   return [
@@ -25,6 +28,41 @@ export function buildPrompt(input: GuessInput): string {
   parts.push(`Conversation so far:\n${input.conversation}`);
   parts.push(`Just said (they are stuck here):\n${input.stuckPhrase}`);
   return parts.join('\n\n');
+}
+
+// Streams the reply and stops as soon as the JSON object closes, without waiting for the end of
+// the message. Undefined if the model refused.
+async function readReply(
+  api: Pick<Anthropic, 'messages'>,
+  model: string,
+  input: GuessInput,
+  controller: AbortController,
+): Promise<string | undefined> {
+  const stream = await api.messages.create(
+    {
+      model,
+      max_tokens: MAX_TOKENS,
+      thinking: { type: 'disabled' },
+      system: SYSTEM,
+      messages: [{ role: 'user', content: buildPrompt(input) }],
+      stream: true,
+    },
+    { signal: controller.signal },
+  );
+  let text = '';
+  for await (const event of stream) {
+    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+      text += event.delta.text;
+      const end = firstObjectEnd(text);
+      if (end !== undefined) {
+        controller.abort();
+        return text.slice(0, end);
+      }
+    } else if (event.type === 'message_delta' && event.delta.stop_reason === 'refusal') {
+      return undefined;
+    }
+  }
+  return text;
 }
 
 export function createGuesser(
@@ -61,22 +99,9 @@ export function createGuesser(
       );
     });
     try {
-      const reply = await Promise.race([
-        api.messages.create(
-          {
-            model: cfg.model,
-            max_tokens: 200,
-            thinking: { type: 'disabled' },
-            system: SYSTEM,
-            messages: [{ role: 'user', content: buildPrompt(input) }],
-          },
-          { signal: controller.signal },
-        ),
-        timedOut,
-      ]);
-      if (!reply) return abstain(true); // timed out
-      if (reply.stop_reason === 'refusal') return abstain();
-      const text = reply.content.map((b) => (b.type === 'text' ? b.text : '')).join('');
+      const text = await Promise.race([readReply(api, cfg.model, input, controller), timedOut]);
+      if (text === null) return abstain(true); // timed out
+      if (text === undefined) return abstain(); // refused
       return { ...parseGuess(text), latencyMs: Date.now() - started };
     } catch {
       return abstain(true);

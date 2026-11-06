@@ -38,6 +38,23 @@ describe('runItem options', () => {
   });
 });
 
+describe('pause items', () => {
+  it('are reported as their own silent category', async () => {
+    const r = await runItem(
+      item({
+        utterance: 'So I think... we should move the meeting',
+        category: 'not_stuck',
+        target: null,
+        acceptable: [],
+        pause: true,
+      }),
+      guess,
+      profile,
+    );
+    expect(r).toMatchObject({ category: 'not_stuck_pause', kind: 'silent', offered: false });
+  });
+});
+
 describe('runItem (mock guesser)', () => {
   it('scores a correct offer', async () => {
     const r = await runItem(item({}), guess, profile);
