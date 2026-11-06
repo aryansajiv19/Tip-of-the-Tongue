@@ -28,3 +28,14 @@ describe('guess.picked', () => {
     expect(picked({ type: 'guess.picked', word: 'x' })).toBe(false);
   });
 });
+
+describe('session.settings minConfidence', () => {
+  const withConfidence = (minConfidence: unknown) =>
+    ClientEventSchema.safeParse({ type: 'session.settings', pauseMs: 1500, minConfidence }).success;
+
+  it('is optional and clamped to 0.3 to 0.9', () => {
+    expect(settings(1500)).toBe(true);
+    expect([0.3, 0.6, 0.9].map(withConfidence)).toEqual([true, true, true]);
+    expect([0.29, 0.91, 0, 1, -1, '0.6', null].map(withConfidence)).toEqual(Array(7).fill(false));
+  });
+});
