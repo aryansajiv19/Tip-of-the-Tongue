@@ -44,6 +44,8 @@ export async function runItem(
   const words = degraded?.words ?? timed;
   const noise = degraded && { swapped: degraded.swapped, eligible: degraded.eligible };
   const lastEndMs = words.at(-1)?.endMs ?? 0;
+  // Reported apart from other fluent speech: the detector firing on these is expected.
+  const category = item.pause ? 'not_stuck_pause' : item.category;
   const kind = SILENT_CATEGORIES.includes(item.category) ? 'silent' : 'stall';
   const isRight = (word: string): boolean => item.acceptable.some((a) => same(a, word));
 
@@ -54,7 +56,7 @@ export async function runItem(
   if (!trigger) {
     return {
       id: item.id,
-      category: item.category,
+      category,
       kind,
       detected: false,
       detectAfterMs: undefined,
@@ -88,7 +90,7 @@ export async function runItem(
 
   return {
     id: item.id,
-    category: item.category,
+    category,
     kind,
     detected: true,
     detectAfterMs: nowMs - lastEndMs,
