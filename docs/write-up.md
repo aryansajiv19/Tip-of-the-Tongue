@@ -24,7 +24,12 @@ Listens, notices the struggle, guesses the word from context, and offers it quie
 
 - Scale: ~350,000 people with aphasia in the UK.
 - Prior study: LLM identified the intended word 91.67% of the time from text.
-- **Our results** (paste from `npm run eval`): top-1 …, top-3 …, abstain …, false-offer …, latency p50/p95 …
+- **Our results (mock guesser: plumbing only, not accuracy).** The mock knows only a few dev items, so these numbers show that the pipeline runs end to end. Real Claude numbers replace this table; see `docs/ARCHITECTURE.md` (Evaluation) for the method.
+
+  | Split   | Stuck items | Detected    | Top-1      | Top-3      | Abstain     | False offers (of offers) | Fluent items where detector fired | Silent items offered |
+  | ------- | ----------- | ----------- | ---------- | ---------- | ----------- | ------------------------ | --------------------------------- | -------------------- |
+  | dev     | 32          | 97% (31/32) | 19% (6/32) | 19% (6/32) | 78% (25/32) | 0% (0/6)                 | 11% (1/9)                         | 0% (0/13)            |
+  | holdout | 9           | 89% (8/9)   | 0% (0/9)   | 0% (0/9)   | 89% (8/9)   | n/a                      | 0% (0/1)                          | 0% (0/2)             |
 
 ## Approach and why
 

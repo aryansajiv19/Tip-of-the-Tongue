@@ -28,7 +28,7 @@ export function renderMarkdown(meta: RunMeta, results: ItemResult[]): string {
       return `| ${name} | ${s.n} | ${fmtRate(s.detected)} | ${fmtRate(s.top1)} | ${fmtRate(s.top3)} | ${fmtRate(s.abstain)} | ${fmtRate(s.offered)} | ${fmtRate(s.falseOffer)} |`;
     },
   );
-  const silentRows = [...groupBy(silent, (r) => r.category), ['All', silent] as const].map(
+  const silentRows = [...groupBy(silent, (r) => r.category)].map(
     ([name, rs]) =>
       `| ${name} | ${rs.length} | ${fmtRate({ hits: rs.filter((x) => x.detected).length, total: rs.length })} | ${fmtRate(falseTriggerRate(rs))} |`,
   );
@@ -45,6 +45,8 @@ export function renderMarkdown(meta: RunMeta, results: ItemResult[]): string {
     ...stallRows,
     '',
     '## Items where the app should stay silent',
+    '',
+    'The detector firing is expected on self_recovered (the user did stall first) and is a false trigger on not_stuck. An offer is wrong on both.',
     '',
     '| Category | n | Detector fired | Offered anyway |',
     '| --- | --- | --- | --- |',
