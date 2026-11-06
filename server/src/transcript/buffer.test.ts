@@ -66,6 +66,13 @@ describe('TranscriptBuffer', () => {
     expect(all[0]?.text).toBe('w200');
   });
 
+  it('caps a partial at 300 words, keeping the newest', () => {
+    const b = new TranscriptBuffer();
+    b.applyPartial(Array.from({ length: 1000 }, (_, i) => w(`w${i}`, i * 100)));
+    expect(b.words()).toHaveLength(300);
+    expect(b.words().at(-1)?.text).toBe('w999');
+  });
+
   it('does not change when the caller mutates the array it passed in', () => {
     const b = new TranscriptBuffer();
     const input = [w('a', 0)];
