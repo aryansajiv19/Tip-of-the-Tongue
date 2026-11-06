@@ -98,7 +98,10 @@ export function createDeepgramStream(opts: DeepgramOptions) {
   let failed = false;
 
   function fail(socket: WebSocket, err: Error) {
-    if (ws === socket) ws = undefined;
+    // A stream we closed on purpose (restart, idle, hang-up) may still report an error while it
+    // shuts down, for example "closed before the connection was established". That is not a failure.
+    if (ws !== socket) return;
+    ws = undefined;
     if (failed) return;
     failed = true;
     pending = [];

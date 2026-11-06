@@ -143,7 +143,8 @@ describe('createDeepgramStream', () => {
       },
     });
     stream.send(Buffer.alloc(3200));
-    await expect.poll(() => dg.urls.length).toBe(1);
+    await expect.poll(() => dg.wss.clients.size).toBe(1); // connected
+    expect(dg.urls).toHaveLength(1);
     expect(new URL(dg.urls[0] ?? '').searchParams.getAll('keyterm')).toEqual(['Priya']);
 
     terms = ['Priya', 'SOC 2'];
@@ -154,6 +155,27 @@ describe('createDeepgramStream', () => {
     stream.send(Buffer.alloc(3200));
     await expect.poll(() => dg.urls.length).toBe(2);
     expect(new URL(dg.urls[1] ?? '').searchParams.getAll('keyterm')).toEqual(['Priya', 'SOC 2']);
+    stream.close();
+  });
+
+  it('does not count closing a stream that is still connecting as a failure', async () => {
+    const dg = await fakeDeepgram(() => undefined);
+    servers.push(dg.wss);
+    const errors: Error[] = [];
+    const stream = createDeepgramStream({
+      apiKey: 'k',
+      language: 'en',
+      connect: dg.connect,
+      onEvent: () => undefined,
+      onError: (err) => errors.push(err),
+    });
+    stream.send(Buffer.alloc(3200)); // starts connecting
+    stream.restart(); // e.g. the brief changed right away
+    await new Promise((r) => setTimeout(r, 200));
+    expect(errors).toEqual([]);
+    // And it still works afterwards.
+    stream.send(Buffer.alloc(3200));
+    await expect.poll(() => dg.urls.length).toBe(2);
     stream.close();
   });
 
