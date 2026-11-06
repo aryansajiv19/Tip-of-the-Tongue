@@ -40,6 +40,12 @@ export interface Candidate {
 
 // Sent by the server. `id` ties an offer to its later withdrawn/accepted/expired event.
 export type ServerEvent =
+  // Sent on connect, and again with 'browser' if server-side speech-to-text fails.
+  // 'deepgram': the browser streams raw audio as binary frames (16 kHz mono 16-bit PCM).
+  // 'browser': the browser runs its own speech recognition and sends transcript events.
+  | { type: 'session.ready'; stt: 'deepgram' | 'browser' }
+  // Server-side transcript (Deepgram only), so the page can show what was heard.
+  | { type: 'transcript.partial' | 'transcript.final'; words: Word[] }
   | { type: 'stuck.detected'; reason: StuckReason; contextWindow: string }
   | { type: 'guess.offered'; id: string; candidates: Candidate[]; latencyMs: number }
   | { type: 'guess.withdrawn'; id: string; reason: 'self-recovered' | 'timeout' }

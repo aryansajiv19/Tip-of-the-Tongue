@@ -11,6 +11,9 @@ export const ItemSchema = z.object({
   acceptable: z.array(z.string()),
   category: z.string(),
   split: z.enum(['dev', 'holdout']),
+  // Fluent speech with a thinking pause in it. The detector fires on these by design, so what
+  // is measured is whether anything gets offered.
+  pause: z.boolean().optional(),
 });
 export type Item = z.infer<typeof ItemSchema>;
 
