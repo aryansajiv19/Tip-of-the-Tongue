@@ -15,10 +15,12 @@
     "format": "prettier --write .",
     "typecheck": "npm run typecheck --workspaces",
     "test": "vitest run",
-    "build": "npm run build --workspaces"
+    "build": "npm run build --workspaces",
+    "e2e": "playwright test -c e2e/playwright.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
     "@types/node": "^26.6.6",
     "concurrently": "^10.0.6",
     "eslint": "^10.14.0",
