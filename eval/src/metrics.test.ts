@@ -6,6 +6,7 @@ import {
   groupBy,
   latency,
   percentile,
+  wilson,
   summarizeStalls,
   type ItemResult,
 } from './metrics.js';
@@ -21,6 +22,9 @@ const stall = (over: Partial<ItemResult> = {}): ItemResult => ({
   abstained: false,
   offered: true,
   falseOffer: false,
+  target: 'pharmacy',
+  guessed: [],
+  offeredWords: [],
   latencyMs: 100,
   ...over,
 });
@@ -33,6 +37,28 @@ const silent = (offered: boolean): ItemResult =>
     offered,
     falseOffer: offered,
   });
+
+describe('wilson', () => {
+  it('matches hand-computed 95% intervals', () => {
+    const a = wilson({ hits: 30, total: 32 });
+    expect(a?.low).toBeCloseTo(0.7985, 3);
+    expect(a?.high).toBeCloseTo(0.9827, 3);
+    const b = wilson({ hits: 8, total: 9 });
+    expect(b?.low).toBeCloseTo(0.5645, 3);
+    expect(b?.high).toBeCloseTo(0.9801, 3);
+  });
+  it('stays inside 0..1 and is not degenerate at 0 or all', () => {
+    const none = wilson({ hits: 0, total: 6 });
+    expect(none?.low).toBe(0);
+    expect(none?.high).toBeCloseTo(0.3903, 3);
+    const all = wilson({ hits: 6, total: 6 });
+    expect(all?.low).toBeCloseTo(0.6097, 3);
+    expect(all?.high).toBeCloseTo(1, 10);
+  });
+  it('is undefined with no trials', () => {
+    expect(wilson({ hits: 0, total: 0 })).toBeUndefined();
+  });
+});
 
 describe('percentile', () => {
   it('uses nearest rank', () => {

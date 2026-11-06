@@ -32,6 +32,8 @@ describe('runItem (mock guesser)', () => {
   it('counts a wrong offer as a false offer', async () => {
     const r = await runItem(item({ acceptable: ['hospital'], target: 'hospital' }), guess, profile);
     expect(r).toMatchObject({ top1: false, offered: true, falseOffer: true });
+    expect(r.target).toBe('hospital');
+    expect(r.offeredWords).toContain('pharmacy');
   });
 
   it('stays silent when the user already said the word after stalling', async () => {

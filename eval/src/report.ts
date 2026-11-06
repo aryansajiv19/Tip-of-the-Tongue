@@ -6,6 +6,7 @@ import {
   summarizeStalls,
   type ItemResult,
   type Rate,
+  wilson,
 } from './metrics.js';
 
 export interface RunMeta {
@@ -16,6 +17,13 @@ export interface RunMeta {
 
 const fmtRate = ({ hits, total }: Rate): string =>
   total === 0 ? 'n/a' : `${Math.round((hits / total) * 100)}% (${hits}/${total})`;
+// Rate with its 95% Wilson interval, e.g. "94% (30/32) [80-98%]".
+const fmtRateCi = (r: Rate): string => {
+  const ci = wilson(r);
+  return ci
+    ? `${fmtRate(r)} [${Math.round(ci.low * 100)}-${Math.round(ci.high * 100)}%]`
+    : fmtRate(r);
+};
 const fmtMs = (ms: number | undefined): string =>
   ms === undefined ? 'n/a' : `${Math.round(ms)} ms`;
 
@@ -25,7 +33,7 @@ export function renderMarkdown(meta: RunMeta, results: ItemResult[]): string {
   const stallRows = [...groupBy(stalls, (r) => r.category), ['All', stalls] as const].map(
     ([name, rs]) => {
       const s = summarizeStalls(rs);
-      return `| ${name} | ${s.n} | ${fmtRate(s.detected)} | ${fmtRate(s.top1)} | ${fmtRate(s.top3)} | ${fmtRate(s.abstain)} | ${fmtRate(s.offered)} | ${fmtRate(s.falseOffer)} |`;
+      return `| ${name} | ${s.n} | ${fmtRate(s.detected)} | ${fmtRateCi(s.top1)} | ${fmtRate(s.top3)} | ${fmtRate(s.abstain)} | ${fmtRate(s.offered)} | ${fmtRateCi(s.falseOffer)} |`;
     },
   );
   const silentRows = [...groupBy(silent, (r) => r.category)].map(
@@ -53,6 +61,8 @@ export function renderMarkdown(meta: RunMeta, results: ItemResult[]): string {
     ...silentRows,
     '',
     `Guess latency: p50 ${fmtMs(lat.p50)}, p95 ${fmtMs(lat.p95)}. Last detection vs end of last word: median ${fmtMs(det.p50)} (negative = before the user finished).`,
+    '',
+    'Intervals in brackets are 95% Wilson intervals; with this few items they are wide.',
     '',
     'Scripted written examples read as text, not speech. Not tested with people with aphasia.',
     '',

@@ -1,3 +1,5 @@
+import type { Candidate } from '../../server/src/events.js';
+
 export interface Rate {
   hits: number;
   total: number;
@@ -18,6 +20,10 @@ export interface ItemResult {
   offered: boolean;
   // Offered, but none of the offered words is acceptable. Always true for an offer on a silent item.
   falseOffer: boolean;
+  // For inspecting failures: the expected word, what the guesser returned, and what the gate showed.
+  target: string | null;
+  guessed: Candidate[];
+  offeredWords: string[];
   // Undefined when the detector did not fire and no guess was made.
   latencyMs: number | undefined;
 }
@@ -37,6 +43,17 @@ const rate = (results: ItemResult[], hit: (r: ItemResult) => boolean, of = resul
   hits: of.filter(hit).length,
   total: of.length,
 });
+
+// Wilson score interval (95%) for a rate. Better than the plain normal interval at small n and
+// near 0% or 100%, which is where this eval lives. Undefined when there are no trials.
+export function wilson({ hits, total }: Rate, z = 1.96): { low: number; high: number } | undefined {
+  if (total === 0) return undefined;
+  const p = hits / total;
+  const denom = 1 + z ** 2 / total;
+  const centre = (p + z ** 2 / (2 * total)) / denom;
+  const half = (z * Math.sqrt((p * (1 - p)) / total + z ** 2 / (4 * total ** 2))) / denom;
+  return { low: Math.max(0, centre - half), high: Math.min(1, centre + half) };
+}
 
 // Nearest-rank percentile. Undefined for an empty list rather than NaN.
 export function percentile(values: number[], p: number): number | undefined {

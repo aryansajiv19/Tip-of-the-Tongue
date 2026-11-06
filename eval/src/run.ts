@@ -43,6 +43,9 @@ export async function runItem(
       abstained: false,
       offered: false,
       falseOffer: false,
+      target: item.target,
+      guessed: [],
+      offeredWords: [],
       latencyMs: undefined,
     };
   }
@@ -74,6 +77,9 @@ export async function runItem(
     offered: decision.offer,
     falseOffer:
       decision.offer && (kind === 'silent' || !decision.candidates.some((c) => isRight(c.word))),
+    target: item.target,
+    guessed: result.candidates,
+    offeredWords: decision.offer ? decision.candidates.map((c) => c.word) : [],
     latencyMs: result.latencyMs,
   };
 }
