@@ -39,10 +39,16 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
     pauseMs: z.number().min(800).max(5000),
     minConfidence: z.number().min(0.3).max(0.9).optional(),
   }),
+  // The microphone level crossed into (voiced) or out of (silent) speech-like sound. Sent only
+  // on changes; atMs is when the change began. Lets the server tell a real silence from an
+  // STT lag, and hear a hum that speech recognition drops.
+  z.object({ type: z.literal('voice.activity'), voiced: z.boolean(), atMs: z.number().finite() }),
+  // The user asks for a suggestion now (Space key), without waiting for a pause.
+  z.object({ type: z.literal('stuck.manual') }),
 ]);
 export type ClientEvent = z.infer<typeof ClientEventSchema>;
 
-export type StuckReason = 'pause' | 'filler' | 'describing';
+export type StuckReason = 'pause' | 'filler' | 'describing' | 'hum' | 'manual';
 
 export interface Candidate {
   word: string;

@@ -403,3 +403,116 @@ describe('early signal', () => {
     expect(r.stuck && r.sinceMs).toBe(4 * 300 + 100);
   });
 });
+
+describe('with the microphone level (voice)', () => {
+  // Words end at `end`; `voice` is described relative to it.
+  const phrase = (text: string) => say(text);
+  const quietSince = (sinceMs: number, lastVoiced?: { startMs: number; endMs: number }) => ({
+    voiced: false,
+    sinceMs,
+    ...(lastVoiced ? { lastVoiced } : {}),
+  });
+
+  it('confirms a pause: unfinished phrase, silent for the full pause time', () => {
+    const { words, endMs } = phrase('we need to talk about the');
+    const r = detectStuck(words, endMs + 1700, { pauseMs: PAUSE_MS, voice: quietSince(endMs) });
+    expect(reason(r)).toBe('pause');
+  });
+
+  it('rejects a word-gap pause while the user is still making sound (speech recognition lag)', () => {
+    const { words, endMs } = phrase('we need to talk about the');
+    const voiced = { voiced: true, sinceMs: endMs + 1000 };
+    expect(reason(detectStuck(words, endMs + 2000, { pauseMs: PAUSE_MS }))).toBe('pause');
+    expect(detectStuck(words, endMs + 2000, { pauseMs: PAUSE_MS, voice: voiced }).stuck).toBe(
+      false,
+    );
+  });
+
+  it('waits for the sound itself to be silent for the pause time, not just the word gap', () => {
+    const { words, endMs } = phrase('we need to talk about the');
+    // Sound ended 500 ms ago although the last word was 1700 ms ago.
+    const voice = quietSince(endMs + 1200, { startMs: endMs - 600, endMs: endMs + 1200 });
+    expect(detectStuck(words, endMs + 1700, { pauseMs: PAUSE_MS, voice }).stuck).toBe(false);
+    expect(reason(detectStuck(words, endMs + 2800, { pauseMs: PAUSE_MS, voice }))).toBe('pause');
+  });
+
+  it('does not fire after a complete sentence, however long the silence', () => {
+    const { words, endMs } = phrase('we shipped the release on Tuesday.');
+    const voice = quietSince(endMs);
+    expect(detectStuck(words, endMs + 4000, { pauseMs: PAUSE_MS, voice }).stuck).toBe(false);
+    const humAfter = quietSince(endMs + 1200, { startMs: endMs + 200, endMs: endMs + 1200 });
+    expect(detectStuck(words, endMs + 3000, { pauseMs: PAUSE_MS, voice: humAfter }).stuck).toBe(
+      false,
+    );
+  });
+
+  it('ignores a cue phrase while the user is still making sound', () => {
+    const { words, endMs } = phrase('we need the thing you use for');
+    const voiced = { voiced: true, sinceMs: endMs + 100 };
+    expect(detectStuck(words, endMs + 900, { pauseMs: PAUSE_MS, voice: voiced }).stuck).toBe(false);
+    const quiet = quietSince(endMs);
+    expect(detectStuck(words, endMs + 900, { pauseMs: PAUSE_MS, voice: quiet }).stuck).toBe(true);
+  });
+
+  describe('hum', () => {
+    const base = phrase('we need to sort out the');
+    // A 1 s hum starting 300 ms after the last word.
+    const hum = (lengthMs = 1000) => {
+      const startMs = base.endMs + 300;
+      return quietSince(startMs + lengthMs, { startMs, endMs: startMs + lengthMs });
+    };
+
+    it('is a stall cue once the hum has ended and it has been quiet for half the pause time', () => {
+      const v = hum();
+      const humEnd = base.endMs + 1300;
+      const at = (quietFor: number) =>
+        detectStuck(base.words, humEnd + quietFor, { pauseMs: PAUSE_MS, voice: v });
+      expect(at(500).stuck).toBe(false);
+      expect(reason(at(800))).toBe('hum');
+    });
+
+    it('does not trigger on a short sound (a breath, a click)', () => {
+      const r = detectStuck(base.words, base.endMs + 1700, {
+        pauseMs: PAUSE_MS,
+        voice: hum(400),
+      });
+      expect(r.stuck).toBe(false);
+    });
+
+    it('does not trigger while the hum is still going', () => {
+      const voiced = { voiced: true, sinceMs: base.endMs + 300 };
+      expect(
+        detectStuck(base.words, base.endMs + 2000, { pauseMs: PAUSE_MS, voice: voiced }).stuck,
+      ).toBe(false);
+    });
+
+    it('humming and then saying a word does not trigger', () => {
+      const withWord = [
+        ...base.words,
+        { text: 'renewal', startMs: base.endMs + 1500, endMs: base.endMs + 1900 },
+      ];
+      const r = detectStuck(withWord, base.endMs + 2700, { pauseMs: PAUSE_MS, voice: hum() });
+      expect(r.stuck).toBe(false);
+    });
+
+    it('does not count the sound of the last word itself as a hum', () => {
+      // One long stretch of sound that started before the last word ended: ordinary speech.
+      const speech = quietSince(base.endMs + 200, {
+        startMs: base.endMs - 1500,
+        endMs: base.endMs + 200,
+      });
+      const r = detectStuck(base.words, base.endMs + 1000, { pauseMs: PAUSE_MS, voice: speech });
+      expect(r.stuck).toBe(false);
+    });
+
+    it('starts the search at the hum, so words said after it count as the answer', () => {
+      const r = detectStuck(base.words, base.endMs + 2100, { pauseMs: PAUSE_MS, voice: hum() });
+      expect(r.stuck && r.sinceMs).toBe(base.endMs + 300);
+    });
+  });
+
+  it('behaves as before when there is no voice information', () => {
+    const { words, endMs } = phrase('we need to talk about the');
+    expect(reason(detectStuck(words, endMs + 1700, { pauseMs: PAUSE_MS }))).toBe('pause');
+  });
+});

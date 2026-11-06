@@ -286,6 +286,164 @@ describe('session pipeline', () => {
     expect(types()).toEqual(['stuck.detected']);
   });
 
+  describe('voice activity', () => {
+    const voice = (session: ReturnType<typeof setup>['session'], voiced: boolean) =>
+      session.handle({ type: 'voice.activity', voiced, atMs: Date.now() });
+    const stuck = (events: ServerEvent[]) =>
+      events.flatMap((e) => (e.type === 'stuck.detected' ? [e.reason] : []));
+
+    it('a pause while the user is still making sound is not a stall', async () => {
+      const { session, events, say } = setup();
+      say('we need to talk about the');
+      voice(session, true);
+      await vi.advanceTimersByTimeAsync(700);
+      // The words are 1.7 s old by now, but the user is still making sound: speech
+      // recognition is just behind.
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(stuck(events)).toEqual([]);
+      voice(session, false);
+      await vi.advanceTimersByTimeAsync(1700);
+      expect(stuck(events)).toEqual(['hum']); // 1.7 s of sound and still no words
+      session.close();
+    });
+
+    it('a hum the speech recognition dropped is a stall cue', async () => {
+      const { session, events, say } = setup();
+      say('we need to sort out the');
+      await vi.advanceTimersByTimeAsync(300);
+      voice(session, true);
+      await vi.advanceTimersByTimeAsync(1000);
+      voice(session, false);
+      await vi.advanceTimersByTimeAsync(900);
+      expect(stuck(events)).toEqual(['hum']);
+      session.close();
+    });
+
+    it('humming and then saying a word does not trigger', async () => {
+      const { session, events, say } = setup();
+      say('we need to sort out the');
+      await vi.advanceTimersByTimeAsync(100);
+      voice(session, true);
+      await vi.advanceTimersByTimeAsync(850);
+      voice(session, false);
+      await vi.advanceTimersByTimeAsync(350);
+      say('renewal');
+      await vi.advanceTimersByTimeAsync(700);
+      expect(stuck(events)).toEqual([]);
+      session.close();
+    });
+
+    it('ignores a duplicate or out-of-order voice event', async () => {
+      const { session, events, say } = setup();
+      say('we need to talk about the');
+      session.handle({ type: 'voice.activity', voiced: false, atMs: Date.now() });
+      session.handle({ type: 'voice.activity', voiced: true, atMs: Date.now() });
+      session.handle({ type: 'voice.activity', voiced: true, atMs: Date.now() - 5000 });
+      session.handle({ type: 'voice.activity', voiced: false, atMs: Date.now() - 5000 });
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(stuck(events)).toEqual([]); // still voiced
+      session.close();
+    });
+
+    it('stops trusting a "voiced" state that lasts longer than anyone could be searching', async () => {
+      const { session, events, say } = setup();
+      voice(session, true);
+      await vi.advanceTimersByTimeAsync(11_000);
+      say('and then the');
+      await vi.advanceTimersByTimeAsync(1700);
+      expect(stuck(events)).toEqual(['pause']);
+      session.close();
+    });
+  });
+
+  describe('asking for a word now', () => {
+    const offered = (events: ServerEvent[]) =>
+      events.flatMap((e) => (e.type === 'guess.offered' ? [e.candidates.map((c) => c.word)] : []));
+    const reasons = (events: ServerEvent[]) =>
+      events.flatMap((e) => (e.type === 'stuck.detected' ? [e.reason] : []));
+    // Offers a different word each call, with the given confidence.
+    const words = (confidence = 0.9): Guesser => {
+      let n = 0;
+      return async () => ({
+        candidates: [{ word: ['alpha', 'bravo', 'charlie'][n++ % 3] as string, confidence }],
+        abstain: false,
+        latencyMs: 1,
+      });
+    };
+
+    it('Space gets an offer at once, without waiting for a pause', async () => {
+      const { session, events, say } = setup();
+      say('the place where you get medicine');
+      session.handle({ type: 'stuck.manual' });
+      await vi.advanceTimersByTimeAsync(100);
+      expect(reasons(events)).toEqual(['manual']);
+      expect(offered(events)).toEqual([['pharmacy', 'chemist']]);
+      session.close();
+    });
+
+    it('does nothing when nothing has been said yet', async () => {
+      const { session, events } = setup(words());
+      session.handle({ type: 'stuck.manual' });
+      await vi.advanceTimersByTimeAsync(500);
+      expect(events).toEqual([]);
+      session.close();
+    });
+
+    it('is still gated by confidence', async () => {
+      const { session, events, say } = setup(words(0.3));
+      say('we need the');
+      session.handle({ type: 'stuck.manual' });
+      await vi.advanceTimersByTimeAsync(500);
+      expect(reasons(events)).toEqual(['manual']);
+      expect(offered(events)).toEqual([]);
+      session.close();
+    });
+
+    it('works during the offer cooldown', async () => {
+      const { session, events, say } = setup(words());
+      say('we need the');
+      session.handle({ type: 'stuck.manual' });
+      await vi.advanceTimersByTimeAsync(100);
+      say('alpha');
+      await vi.advanceTimersByTimeAsync(300);
+      expect(events.map((e) => e.type)).toContain('guess.accepted');
+      say('and also the');
+      session.handle({ type: 'stuck.manual' }); // a second or two later, well inside the 8 s cooldown
+      await vi.advanceTimersByTimeAsync(100);
+      expect(offered(events)).toEqual([['alpha'], ['bravo']]);
+      session.close();
+    });
+
+    it('is ignored while an offer is already showing', async () => {
+      const { session, events, say } = setup(words());
+      say('we need the');
+      session.handle({ type: 'stuck.manual' });
+      await vi.advanceTimersByTimeAsync(100);
+      session.handle({ type: 'stuck.manual' });
+      session.handle({ type: 'stuck.manual' });
+      await vi.advanceTimersByTimeAsync(100);
+      expect(offered(events)).toEqual([['alpha']]);
+      session.close();
+    });
+
+    it('saying "what\'s the word for" asks at once', async () => {
+      const { session, events, say } = setup(words());
+      say("we need the uh what's the word for");
+      await vi.advanceTimersByTimeAsync(100);
+      expect(reasons(events)).toEqual(['manual']);
+      expect(offered(events)).toEqual([['alpha']]);
+      session.close();
+    });
+
+    it('"what\'s the word" in the middle of a sentence does not', async () => {
+      const { session, events, say } = setup(words());
+      say("I forgot what's the word you used yesterday in the meeting");
+      await vi.advanceTimersByTimeAsync(100);
+      expect(reasons(events)).toEqual([]);
+      session.close();
+    });
+  });
+
   describe('guesser status', () => {
     const failing: Guesser = async () => ({
       candidates: [],
