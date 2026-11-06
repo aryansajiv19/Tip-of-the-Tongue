@@ -8,12 +8,18 @@ import type { GuessResult, Guesser } from './guess/types.js';
 import { decideOffer } from './gate/gate.js';
 import { checkAcceptance } from './accept/accept.js';
 import { normalizePhrase } from './gate/normalize.js';
+import { selectKeyterms } from './stt/keyterms.js';
+import type { DebugInfo } from './events.js';
 
 export interface SessionOptions {
   guess: Guesser;
   profile?: Profile;
   // Summarises a long pasted brief into key terms; one background call per brief.
   buildGlossary?: GlossaryBuilder;
+  // Called when the words worth teaching the speech recogniser change (brief or glossary).
+  onKeytermsChange?: () => void;
+  // How speech-to-text is running now; reported in the debug stream.
+  sttMode?: () => 'deepgram' | 'browser';
   pauseMs: number;
   minConfidence: number;
   cooldownMs: number;
@@ -55,6 +61,9 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   const recentlyOffered = new Map<string, number>();
   let brief: string | undefined;
   let glossary: string | undefined;
+  let keyterms: string[] = opts.profile ? selectKeyterms({ profile: opts.profile }) : [];
+  let debugOn = false;
+  let lastDetector = '';
   // Starts from the server default; the user can change it for this connection.
   let pauseMs = opts.pauseMs;
   let offer: Offer | undefined;
@@ -69,6 +78,29 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   // The guesser counts as down after two failures in a row, and up again on the next success.
   let guessFailures = 0;
   let guesserDown = false;
+
+  // Debug events carry what was said, so nothing is built or sent unless the client asked.
+  function debug(info: () => DebugInfo) {
+    if (debugOn) send({ type: 'debug', atMs: now(), info: info() });
+  }
+
+  function refreshKeyterms() {
+    const next = selectKeyterms({
+      ...(opts.profile ? { profile: opts.profile } : {}),
+      ...(brief ? { brief } : {}),
+      ...(glossary ? { glossary } : {}),
+    });
+    if (next.join('\n') === keyterms.join('\n')) return;
+    keyterms = next;
+    debug(sttInfo);
+    opts.onKeytermsChange?.();
+  }
+
+  const sttInfo = (): DebugInfo => ({
+    kind: 'stt',
+    mode: opts.sttMode?.() ?? 'browser',
+    keyterms,
+  });
 
   function trackOffer(current: Offer) {
     const spoken = buffer.wordsSince(current.offeredAtMs);
@@ -145,8 +177,18 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         return failed;
       })
       .then((result) => {
+        const stale = closed || spec !== mine;
+        debug(() => ({
+          kind: 'guess',
+          speculative: !confirmed,
+          stale,
+          candidates: result.candidates,
+          abstain: result.abstain,
+          error: result.error === true,
+          latencyMs: result.latencyMs,
+        }));
         // Stale (new words arrived, or closed): nothing to do, not even count a failure.
-        if (closed || spec !== mine) return;
+        if (stale) return;
         mine.result = result;
         noteGuess(result.error === true);
         if (mine.confirmed) offerFrom(mine, result);
@@ -167,6 +209,13 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
       },
       { minConfidence: opts.minConfidence, cooldownMs: opts.cooldownMs },
     );
+    debug(() => ({
+      kind: 'gate',
+      offered: decision.offer,
+      ...(decision.offer
+        ? { words: decision.candidates.map((c) => c.word) }
+        : { reason: decision.reason }),
+    }));
     if (!decision.offer) return;
 
     const offeredAtMs = now();
@@ -199,6 +248,16 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     if (last.endMs <= handledUpToMs) return;
 
     const stuck = detectStuck(words, now(), { pauseMs });
+    const decision = stuck.stuck ? `${stuck.reason}@${stuck.sinceMs}` : 'no';
+    if (decision !== lastDetector) {
+      lastDetector = decision;
+      debug(() => ({
+        kind: 'detector',
+        stuck: stuck.stuck,
+        silenceMs: now() - last.endMs,
+        ...(stuck.stuck ? { reason: stuck.reason, sinceMs: stuck.sinceMs } : {}),
+      }));
+    }
     if (stuck.stuck) {
       handledUpToMs = last.endMs;
       send({ type: 'stuck.detected', reason: stuck.reason, contextWindow: stuck.contextWindow });
@@ -221,11 +280,14 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   function setBrief(next: string | undefined) {
     brief = next;
     glossary = undefined;
+    refreshKeyterms();
     if (!next || next.length <= LONG_BRIEF_CHARS || !opts.buildGlossary) return;
     opts
       .buildGlossary(next)
       .then((terms) => {
-        if (!closed && brief === next) glossary = terms;
+        if (closed || brief !== next) return;
+        glossary = terms;
+        refreshKeyterms();
       })
       .catch((err: unknown) => opts.onError?.(err));
   }
@@ -242,11 +304,23 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     handle(event: ClientEvent) {
       if (event.type === 'session.brief') setBrief(event.text.trim() || undefined);
       else if (event.type === 'session.settings') pauseMs = event.pauseMs;
-      else if (event.type === 'guess.picked') pick(event.id, event.word);
-      else if (event.type === 'transcript.partial') buffer.applyPartial(event.words);
-      else buffer.applyFinal(event.words);
+      else if (event.type === 'session.debug') {
+        debugOn = event.on;
+        debug(sttInfo);
+      } else if (event.type === 'guess.picked') pick(event.id, event.word);
+      else {
+        debug(() => ({
+          kind: 'transcript',
+          final: event.type === 'transcript.final',
+          text: event.words.map((w) => w.text).join(' '),
+        }));
+        if (event.type === 'transcript.partial') buffer.applyPartial(event.words);
+        else buffer.applyFinal(event.words);
+      }
       check();
     },
+    // The words worth teaching the speech recogniser right now.
+    keyterms: () => keyterms,
     close() {
       closed = true;
       spec?.abort.abort();

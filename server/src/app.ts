@@ -15,6 +15,8 @@ const GLOSSARY_TIMEOUT_MS = 20_000;
 const MAX_MESSAGE_BYTES = 256 * 1024;
 
 export interface AppDeps {
+  // Receives the server log lines (one JSON object per line); tests use it to check what is logged.
+  logStream?: { write(line: string): void };
   guess?: Guesser;
   profile?: Profile;
   buildGlossary?: GlossaryBuilder;
@@ -27,7 +29,12 @@ export interface AppDeps {
 }
 
 export async function buildApp(deps: AppDeps = {}) {
-  const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? 'info' } });
+  const app = Fastify({
+    logger: {
+      level: process.env.LOG_LEVEL ?? 'info',
+      ...(deps.logStream ? { stream: deps.logStream } : {}),
+    },
+  });
   await app.register(websocket, { options: { maxPayload: MAX_MESSAGE_BYTES } });
 
   const guess =
@@ -70,7 +77,32 @@ export async function buildApp(deps: AppDeps = {}) {
       app.log.debug({ event }, 'ws: payload');
       if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(event));
     };
+    const deepgramOpts =
+      deps.deepgram ??
+      (config.deepgramApiKey
+        ? { apiKey: config.deepgramApiKey, language: config.deepgramLanguage }
+        : undefined);
+    let sttMode: 'deepgram' | 'browser' = deepgramOpts ? 'deepgram' : 'browser';
+    // The stream and the session refer to each other, but only after both exist.
+    const stt = deepgramOpts
+      ? createDeepgramStream({
+          ...deepgramOpts,
+          keyterms: () => session.keyterms(),
+          onEvent: (event) => {
+            send(event);
+            session.handle(event);
+          },
+          onError: (err) => {
+            app.log.error({ err }, 'deepgram: failed, falling back to browser speech recognition');
+            sttMode = 'browser';
+            send({ type: 'session.ready', stt: 'browser' });
+          },
+        })
+      : undefined;
     const session = createSession(send, {
+      sttMode: () => sttMode,
+      // Keyterms are fixed when a stream opens; restart so the next audio uses the new ones.
+      onKeytermsChange: () => stt?.restart(),
       guess,
       buildGlossary,
       pauseMs: config.stuckPauseMs,
@@ -84,25 +116,6 @@ export async function buildApp(deps: AppDeps = {}) {
       ...(deps.profile ? { profile: deps.profile } : {}),
       ...deps.session,
     });
-
-    const deepgramOpts =
-      deps.deepgram ??
-      (config.deepgramApiKey
-        ? { apiKey: config.deepgramApiKey, language: config.deepgramLanguage }
-        : undefined);
-    const stt = deepgramOpts
-      ? createDeepgramStream({
-          ...deepgramOpts,
-          onEvent: (event) => {
-            send(event);
-            session.handle(event);
-          },
-          onError: (err) => {
-            app.log.error({ err }, 'deepgram: failed, falling back to browser speech recognition');
-            send({ type: 'session.ready', stt: 'browser' });
-          },
-        })
-      : undefined;
     send({ type: 'session.ready', stt: stt ? 'deepgram' : 'browser' });
 
     socket.on('close', () => {

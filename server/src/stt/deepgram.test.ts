@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 import { buildApp } from '../app.js';
 import type { ServerEvent } from '../events.js';
 import { mockGuesser } from '../guess/mock.js';
+import { ProfileSchema } from '../guess/profile.js';
 import { createDeepgramStream, deepgramUrl, toTranscriptEvent } from './deepgram.js';
 
 const results = (isFinal: boolean, words: [string, number, number][]) => ({
@@ -59,6 +60,14 @@ describe('toTranscriptEvent', () => {
     // A full stop at a stall would hide it from the detector.
     expect(url.searchParams.get('punctuate')).toBe('false');
   });
+
+  it('adds one keyterm parameter per term, encoded, and none when there are no terms', () => {
+    expect(new URL(deepgramUrl('en')).searchParams.has('keyterm')).toBe(false);
+    const url = new URL(deepgramUrl('en', ['SOC 2', 'Corner Mart', 'R&D', 'naïve']));
+    expect(url.searchParams.getAll('keyterm')).toEqual(['SOC 2', 'Corner Mart', 'R&D', 'naïve']);
+    expect(url.searchParams.get('model')).toBe('nova-3');
+    expect(deepgramUrl('en', ['R&D'])).toContain('keyterm=R%26D');
+  });
 });
 
 // A stand-in for Deepgram: records what it receives and replies with scripted results.
@@ -66,6 +75,7 @@ async function fakeDeepgram(onAudio: (ws: WebSocket, chunk: Buffer) => void) {
   const wss = new WebSocketServer({ port: 0 });
   await new Promise<void>((resolve) => wss.once('listening', () => resolve()));
   const headers: (string | undefined)[] = [];
+  const urls: string[] = [];
   wss.on('connection', (ws, req) => {
     headers.push(req.headers.authorization);
     ws.on('message', (data, isBinary) => {
@@ -73,9 +83,13 @@ async function fakeDeepgram(onAudio: (ws: WebSocket, chunk: Buffer) => void) {
     });
   });
   const port = (wss.address() as AddressInfo).port;
-  const connect = (_url: string, apiKey: string) =>
-    new WebSocket(`ws://127.0.0.1:${port}`, { headers: { Authorization: `Token ${apiKey}` } });
-  return { wss, headers, connect };
+  const connect = (url: string, apiKey: string) => {
+    urls.push(url);
+    return new WebSocket(`ws://127.0.0.1:${port}`, {
+      headers: { Authorization: `Token ${apiKey}` },
+    });
+  };
+  return { wss, headers, urls, connect };
 }
 
 const servers: { close: () => void }[] = [];
@@ -112,6 +126,51 @@ describe('createDeepgramStream', () => {
       words: [{ text: 'pharmacy', startMs: 10_900, endMs: 11_300 }],
     });
     stream.close();
+  });
+
+  it('opens a new stream with the new keyterms after restart, and not before', async () => {
+    const dg = await fakeDeepgram(() => undefined);
+    servers.push(dg.wss);
+    let terms = ['Priya'];
+    const stream = createDeepgramStream({
+      apiKey: 'k',
+      language: 'en',
+      keyterms: () => terms,
+      connect: dg.connect,
+      onEvent: () => undefined,
+      onError: (err) => {
+        throw err;
+      },
+    });
+    stream.send(Buffer.alloc(3200));
+    await expect.poll(() => dg.urls.length).toBe(1);
+    expect(new URL(dg.urls[0] ?? '').searchParams.getAll('keyterm')).toEqual(['Priya']);
+
+    terms = ['Priya', 'SOC 2'];
+    stream.send(Buffer.alloc(3200)); // same stream: terms cannot change mid-stream
+    expect(dg.urls).toHaveLength(1);
+
+    stream.restart();
+    stream.send(Buffer.alloc(3200));
+    await expect.poll(() => dg.urls.length).toBe(2);
+    expect(new URL(dg.urls[1] ?? '').searchParams.getAll('keyterm')).toEqual(['Priya', 'SOC 2']);
+    stream.close();
+  });
+
+  it('does nothing on restart when no stream is open', () => {
+    let opened = 0;
+    const stream = createDeepgramStream({
+      apiKey: 'k',
+      language: 'en',
+      connect: () => {
+        opened++;
+        return new WebSocket('ws://127.0.0.1:1');
+      },
+      onEvent: () => undefined,
+      onError: () => undefined,
+    });
+    stream.restart();
+    expect(opened).toBe(0);
   });
 
   it('reports a refused connection once and then stops trying', async () => {
@@ -158,6 +217,31 @@ describe('server with Deepgram', () => {
     await expect.poll(() => events[0]).toEqual({ type: 'session.ready', stt: 'deepgram' });
     ws.send(Buffer.alloc(3200));
     await expect.poll(() => events.some((e) => e.type === 'transcript.partial')).toBe(true);
+    ws.close();
+    await app.close();
+  });
+
+  it('teaches Deepgram the profile words, and the brief names once a brief is sent', async () => {
+    const dg = await fakeDeepgram(() => undefined);
+    servers.push(dg.wss);
+    const profile = ProfileSchema.parse({ pets: { dog: 'Biscuit' } });
+    const { app, ws } = await connectClient({
+      profile,
+      deepgram: { apiKey: 'k', language: 'en', connect: dg.connect },
+    });
+    const terms = (url: string | undefined) => new URL(url ?? '').searchParams.getAll('keyterm');
+
+    ws.send(Buffer.alloc(3200));
+    await expect.poll(() => dg.urls.length).toBe(1);
+    expect(terms(dg.urls[0])).toEqual(['Biscuit']);
+
+    ws.send(
+      JSON.stringify({ type: 'session.brief', text: 'Review with Northwind and the SOC 2 audit.' }),
+    );
+    await new Promise((r) => setTimeout(r, 100)); // let the brief reach the session
+    ws.send(Buffer.alloc(3200));
+    await expect.poll(() => dg.urls.length).toBe(2);
+    expect(terms(dg.urls[1])).toEqual(['Biscuit', 'Northwind', 'SOC 2']);
     ws.close();
     await app.close();
   });

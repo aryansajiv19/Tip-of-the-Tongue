@@ -41,7 +41,9 @@ export function toTranscriptEvent(message: unknown, streamStartMs: number): Tran
   return { type: parsed.data.is_final ? 'transcript.final' : 'transcript.partial', words };
 }
 
-export function deepgramUrl(language: string): string {
+// `keyterm` is repeated once per term (Nova-3 only). Callers keep the list inside Deepgram's limits
+// (see keyterms.ts); over the limit, Deepgram refuses the connection.
+export function deepgramUrl(language: string, keyterms: readonly string[] = []): string {
   const params = new URLSearchParams({
     model: 'nova-3',
     language,
@@ -56,12 +58,15 @@ export function deepgramUrl(language: string): string {
     punctuate: 'false',
     endpointing: '300',
   });
+  for (const term of keyterms) params.append('keyterm', term);
   return `wss://api.deepgram.com/v1/listen?${params}`;
 }
 
 export interface DeepgramOptions {
   apiKey: string;
   language: string;
+  // Asked for each time a stream opens, so a change shows up after `restart()`.
+  keyterms?: () => readonly string[];
   onEvent: (event: TranscriptEvent) => void;
   onError: (err: Error) => void;
   // Injectable for tests.
@@ -112,7 +117,7 @@ export function createDeepgramStream(opts: DeepgramOptions) {
   function open() {
     streamStartMs = now() - CHUNK_MS;
     const origin = streamStartMs;
-    const socket = connect(deepgramUrl(opts.language), opts.apiKey);
+    const socket = connect(deepgramUrl(opts.language, opts.keyterms?.() ?? []), opts.apiKey);
     ws = socket;
     socket.on('open', () => {
       for (const chunk of pending) socket.send(chunk);
@@ -149,5 +154,10 @@ export function createDeepgramStream(opts: DeepgramOptions) {
       idleTimer = setTimeout(close, IDLE_CLOSE_MS);
     },
     close,
+    // Keyterms can only be set when a stream opens. Drop the current one; the next chunk of audio
+    // opens a new stream with the current keyterms.
+    restart() {
+      if (ws) close();
+    },
   };
 }

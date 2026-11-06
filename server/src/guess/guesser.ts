@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { mockGuesser } from './mock.js';
 import { firstObjectEnd, parseGuess } from './parse.js';
-import type { Profile } from './profile.js';
+import { profileTermList } from './profile.js';
 import type { GuessInput, GuessResult, Guesser } from './types.js';
 
 const SYSTEM = `Someone has lost a word mid-conversation. Guess the word they are reaching for.
@@ -11,20 +11,11 @@ Up to 3 candidates, confidence 0 to 1. Keep multi-word names together as one can
 // 3 candidates of a few words each is about 70 tokens of JSON.
 const MAX_TOKENS = 100;
 
-function profileTerms(profile: Profile): string {
-  return [
-    ...Object.values(profile.people),
-    ...Object.values(profile.pets),
-    ...Object.values(profile.places),
-    ...profile.hobbies,
-    ...profile.frequentlyLostWords,
-  ].join(', ');
-}
-
 export function buildPrompt(input: GuessInput): string {
   const parts: string[] = [];
   if (input.brief) parts.push(`Meeting brief:\n${input.brief}`);
-  if (input.profile) parts.push(`Their personal words: ${profileTerms(input.profile)}`);
+  if (input.profile)
+    parts.push(`Their personal words: ${profileTermList(input.profile).join(', ')}`);
   parts.push(`Conversation so far:\n${input.conversation}`);
   parts.push(`Just said (they are stuck here):\n${input.stuckPhrase}`);
   return parts.join('\n\n');
