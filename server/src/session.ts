@@ -6,6 +6,7 @@ import type { Profile } from './guess/profile.js';
 import type { GuessResult, Guesser } from './guess/types.js';
 import { decideOffer } from './gate/gate.js';
 import { checkAcceptance } from './accept/accept.js';
+import { normalizePhrase } from './gate/normalize.js';
 
 export interface SessionOptions {
   guess: Guesser;
@@ -77,8 +78,28 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     } else {
       return;
     }
+    closeOffer();
+  }
+
+  function closeOffer() {
     offer = undefined;
     handledUpToMs = buffer.words().at(-1)?.endMs ?? handledUpToMs;
+  }
+
+  // The user clicked a word. Only the open offer, one of its own words, inside the accept
+  // window counts; anything else (stale id, unknown word, late click) is ignored.
+  function pick(id: string, word: string) {
+    if (!offer || offer.id !== id || now() - offer.offeredAtMs > opts.acceptWindowMs) return;
+    const key = normalizePhrase(word).join(' ');
+    const chosen = offer.candidates.find((c) => normalizePhrase(c.word).join(' ') === key);
+    if (!chosen) return;
+    send({
+      type: 'guess.accepted',
+      id,
+      word: chosen.word,
+      afterMs: now() - offer.offeredAtMs,
+    });
+    closeOffer();
   }
 
   function noteGuess(failed: boolean) {
@@ -204,6 +225,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     handle(event: ClientEvent) {
       if (event.type === 'session.brief') brief = event.text.trim() || undefined;
       else if (event.type === 'session.settings') pauseMs = event.pauseMs;
+      else if (event.type === 'guess.picked') pick(event.id, event.word);
       else if (event.type === 'transcript.partial') buffer.applyPartial(event.words);
       else buffer.applyFinal(event.words);
       check();

@@ -1,6 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it } from 'vitest';
-import { buildPrompt, createGuesser } from './guesser.js';
+import { buildPrompt, createGuesser, modelOptions } from './guesser.js';
 import { ProfileSchema } from './profile.js';
 
 const cfg = { model: 'test-model', timeoutMs: 50 };
@@ -199,6 +199,23 @@ describe('Claude guesser', () => {
       expect(r.abstain).toBe(true);
       expect(r.error).toBeUndefined(); // the model chose to abstain; nothing failed
     }
+  });
+});
+
+describe('modelOptions', () => {
+  it('turns thinking off the way each model allows', () => {
+    expect(modelOptions('claude-haiku-5-5').thinking).toEqual({ type: 'disabled' });
+    expect(modelOptions('claude-sonnet-5-5').thinking).toEqual({ type: 'between_tools' });
+  });
+  it('never sends a disabled thinking config to Opus, and keeps effort low with room to think', () => {
+    const o = modelOptions('claude-opus-5-5');
+    expect(o.thinking).toBeUndefined();
+    expect(o.output_config).toEqual({ effort: 'low' });
+    expect(o.max_tokens).toBeGreaterThan(1000);
+  });
+  it('keeps the small output cap for the fast models', () => {
+    expect(modelOptions('claude-haiku-5-5').max_tokens).toBeLessThanOrEqual(100);
+    expect(modelOptions('claude-sonnet-5-5').max_tokens).toBeLessThanOrEqual(100);
   });
 });
 

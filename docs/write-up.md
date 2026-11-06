@@ -68,6 +68,18 @@ Listens, notices the struggle, guesses the word from context, and offers it quie
 
   The detector fires on every thinking-pause sentence by design, so the guesser is the filter: it offered nothing on any of them. Latency was about 820 / 1050 ms before streaming, so streaming helps a little; most of the time is the model's time to first token. In run 2, one correct guess (airport, confidence 0.4) was held back by the confidence gate, which is a miss by silence rather than a wrong offer. The 16 new items were written by us after seeing results, are dev only, and the prompt change was made with them in view, so treat these numbers as tuned on dev; the holdout has not been rerun with this prompt. Prompt caching was not added: Haiku 5.5 needs a prefix of at least 512 tokens and our system prompt plus a typical brief is well below that.
 
+- **Which model? A harder set, dev only, two runs each** (`data/eval/hard.json`: 24 stall items where the word follows from earlier lines, or is a verb, adjective or idiom, or a technical term from a brief, or a repeated-start sentence; plus items that cannot be known; 95% Wilson intervals).
+
+  | Model                    | Top-1 (run 1 / run 2)              | False offers | Abstain on stalls | Guess latency p50 / p95  |
+  | ------------------------ | ---------------------------------- | ------------ | ----------------- | ------------------------ |
+  | Haiku 5.5 (default)      | 79% (19/24) [60-91%] / 79%         | 1 / 1        | 3 / 3             | about 800 ms / 0.9-1.1 s |
+  | Sonnet 5.5               | 88% (21/24) [69-96%] / 88%         | 1 / 1        | 1 / 1             | about 1.5 s / 1.9 s      |
+  | Opus 5.5 (lowest effort) | 88% (21/24) / 75% (18/24) [55-88%] | 0 / 0        | 2 / 5             | about 1.75 s / 2.5 s     |
+
+  By category, all three models got the technical terms right (8/8 in nearly every run, with the brief in the prompt) and the repeated-start items (4/4, Opus once 3/4). The weak spot is abstract targets (verbs and idioms): Haiku 2/6, Sonnet 3-4/6, Opus 3-4/6. All three offered nothing on any of the 5 dev items that cannot be known (for example "my name is…") or on the thinking-pause sentence. With 24 items the intervals overlap heavily, so the differences between models are within noise, and Opus varied by three items between its own two runs.
+
+  **Decision: keep Haiku as the default.** The larger models are not clearly better on this set and cost 0.7 to 1 second more. With a guess starting about 300 ms after a pause and a confirmation window of about 1.5 s, Sonnet would land near 1.8 s, too late to feel instant, and Opus later still. Sonnet stays available as `ANTHROPIC_MODEL=claude-sonnet-5-5` for people who prefer accuracy over speed. We did not build a router that picks a model per request; that is more machinery than these numbers justify. The holdout of this set (10 items) has not been run.
+
 ## Approach and why
 
 No training; speech-to-text + rules + Claude + a confidence gate. Silence is a feature.

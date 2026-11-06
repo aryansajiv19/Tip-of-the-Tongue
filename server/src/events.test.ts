@@ -15,3 +15,16 @@ describe('session.settings', () => {
     );
   });
 });
+
+describe('guess.picked', () => {
+  const picked = (value: unknown) => ClientEventSchema.safeParse(value).success;
+
+  it('needs an id and a word of sensible size', () => {
+    expect(picked({ type: 'guess.picked', id: 'abc', word: 'pharmacy' })).toBe(true);
+    expect(picked({ type: 'guess.picked', id: 'abc', word: '' })).toBe(false);
+    expect(picked({ type: 'guess.picked', id: 'a'.repeat(65), word: 'x' })).toBe(false);
+    expect(picked({ type: 'guess.picked', id: 'abc', word: 'x'.repeat(101) })).toBe(false);
+    expect(picked({ type: 'guess.picked', id: 5, word: 'x' })).toBe(false);
+    expect(picked({ type: 'guess.picked', word: 'x' })).toBe(false);
+  });
+});

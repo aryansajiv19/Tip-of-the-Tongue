@@ -41,8 +41,7 @@ async function readReply(
   const stream = await api.messages.create(
     {
       model,
-      max_tokens: MAX_TOKENS,
-      thinking: { type: 'disabled' },
+      ...modelOptions(model),
       system: SYSTEM,
       messages: [{ role: 'user', content: buildPrompt(input) }],
       stream: true,
@@ -63,6 +62,19 @@ async function readReply(
     }
   }
   return text;
+}
+
+// Newer models reject thinking: {type: 'disabled'}. Sonnet 5.5 turns thinking off with
+// 'between_tools'. Opus 5.5 cannot turn it off, so it gets the lowest effort and room for the
+// thinking tokens that count against max_tokens. Everything else (Haiku) uses 'disabled'.
+export function modelOptions(model: string): {
+  max_tokens: number;
+  thinking?: { type: 'disabled' } | { type: 'between_tools' };
+  output_config?: { effort: 'low' };
+} {
+  if (/opus|fable/.test(model)) return { max_tokens: 2000, output_config: { effort: 'low' } };
+  if (/sonnet/.test(model)) return { max_tokens: MAX_TOKENS, thinking: { type: 'between_tools' } };
+  return { max_tokens: MAX_TOKENS, thinking: { type: 'disabled' } };
 }
 
 export function createGuesser(

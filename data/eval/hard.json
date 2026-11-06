@@ -1,0 +1,377 @@
+{
+  "note": "A harder set written for this project to compare models: context only in earlier lines, abstract and non-noun targets, technical terms from a brief, repeated starts written plainly, items that cannot be known and must get no offer (not_stuck_unknowable), and fluent pauses. Not copied from any corpus. Scripted written text, not real speech. Do not tune on split \"holdout\".",
+  "items": [
+    {
+      "id": "h01",
+      "context": "We've been planning Maya's retirement party all week. Everyone agreed Maya must not find out. Tom is booking the hall and I'm doing the cake.",
+      "utterance": "Remember, the whole point is that it's a... when she walks in and doesn't expect any of it",
+      "target": "surprise",
+      "acceptable": ["surprise", "surprise party"],
+      "category": "context",
+      "split": "dev"
+    },
+    {
+      "id": "h02",
+      "context": "Dad's flight from Lisbon was cancelled twice. The airline offered a seat on Thursday instead. He's stuck near the airport and his phone is nearly dead.",
+      "utterance": "We could ask the airline to pay for the... where he's sleeping tonight",
+      "target": "hotel",
+      "acceptable": ["hotel", "accommodation"],
+      "category": "context",
+      "split": "dev"
+    },
+    {
+      "id": "h03",
+      "context": "I'm making Nan's lasagne for Sunday. The sauce has been simmering since noon and the pasta sheets are ready. It needs forty minutes in the oven.",
+      "utterance": "Is the oven even on? I never set the... for the right heat, the number of degrees",
+      "target": "temperature",
+      "acceptable": ["temperature"],
+      "category": "context",
+      "split": "dev"
+    },
+    {
+      "id": "h04",
+      "context": "The car made a grinding noise on the way to work. The garage said the front pads were worn right down. They'll replace them tomorrow and check the discs too.",
+      "utterance": "I just hope it's not the whole... the part that slows the car down, not only the pads",
+      "target": "brakes",
+      "acceptable": ["brakes", "brake system", "braking system"],
+      "category": "context",
+      "split": "holdout"
+    },
+    {
+      "id": "h05",
+      "context": "We're renting out the flat from March. The agent drew up a document for the tenant to sign. It lists the monthly rent, the deposit and how long the tenant can stay.",
+      "utterance": "Once it's signed it's a legally binding... the paper between the landlord and the tenant",
+      "target": "lease",
+      "acceptable": ["lease", "tenancy agreement", "contract", "agreement"],
+      "category": "context",
+      "split": "dev"
+    },
+    {
+      "id": "h06",
+      "context": "Lena's school is closed on Friday for teacher training. I'm working from home, so I can't take her to my sister's. Her grandma might be free though.",
+      "utterance": "Could you ask if grandma can... look after her for the day, mind her while we're at work",
+      "target": "babysit",
+      "acceptable": ["babysit", "look after her", "mind her", "have her"],
+      "category": "context",
+      "split": "dev"
+    },
+    {
+      "id": "h07",
+      "context": "The tomatoes are doing well but something is eating the lettuce. There are holes in the leaves and shiny trails on the path. It's worst after rain.",
+      "utterance": "I bet it's the... little creatures with shells that leave the trails",
+      "target": "snails",
+      "acceptable": ["snails", "slugs", "snail", "slug"],
+      "category": "context",
+      "split": "dev"
+    },
+    {
+      "id": "h08",
+      "context": "Priya's laptop has been very slow all week. IT looked at it this morning. They said the disk is fine but the machine only has a small amount of working memory.",
+      "utterance": "So they suggested we upgrade the... the chips you slot in to give it more room",
+      "target": "RAM",
+      "acceptable": ["ram", "memory"],
+      "category": "context",
+      "split": "holdout"
+    },
+    {
+      "id": "h09",
+      "context": "Chatting about the weekend chores",
+      "utterance": "I know I should file the tax form but I keep... putting it off till tomorrow, every single day, that habit",
+      "target": "procrastinating",
+      "acceptable": ["procrastinating", "procrastinate", "procrastination", "putting it off"],
+      "category": "abstract",
+      "split": "dev"
+    },
+    {
+      "id": "h10",
+      "context": "Talking about a colleague",
+      "utterance": "She never spends anything, always saving every penny, she's so... the opposite of generous",
+      "target": "stingy",
+      "acceptable": ["stingy", "mean", "tight", "miserly"],
+      "category": "abstract",
+      "split": "dev"
+    },
+    {
+      "id": "h11",
+      "context": "Comforting a friend who broke a vase",
+      "utterance": "Well, there's no use crying over... the milk that's been knocked over, what's done is done",
+      "target": "spilt milk",
+      "acceptable": ["spilt milk", "spilled milk"],
+      "category": "abstract",
+      "split": "dev"
+    },
+    {
+      "id": "h12",
+      "context": "Sorting out an email chain",
+      "utterance": "You should... pass the email on to Dan so he can see it as well",
+      "target": "forward",
+      "acceptable": ["forward"],
+      "category": "abstract",
+      "split": "holdout"
+    },
+    {
+      "id": "h13",
+      "context": "Reviewing a film",
+      "utterance": "The film was so... the kind that's long and slow where nothing happens and you keep checking the time",
+      "target": "boring",
+      "acceptable": ["boring", "tedious", "dull"],
+      "category": "abstract",
+      "split": "dev"
+    },
+    {
+      "id": "h14",
+      "context": "Family gossip at a wedding",
+      "utterance": "He's always been the black... the odd one out in the family, the different one",
+      "target": "black sheep",
+      "acceptable": ["black sheep"],
+      "category": "abstract",
+      "split": "dev"
+    },
+    {
+      "id": "h15",
+      "context": "News about the company",
+      "utterance": "The company is going to... let a lot of people go, cut jobs to save money",
+      "target": "downsize",
+      "acceptable": ["downsize", "lay off", "make redundancies"],
+      "category": "abstract",
+      "split": "dev"
+    },
+    {
+      "id": "h16",
+      "context": "Talking about leaving home",
+      "utterance": "It was a very... when you're so happy you could cry but also sad, both at once",
+      "target": "bittersweet",
+      "acceptable": ["bittersweet"],
+      "category": "abstract",
+      "split": "holdout"
+    },
+    {
+      "id": "h17",
+      "context": "Quarterly review, leadership team",
+      "brief": "Lumenfield (fictional) is a subscription software company selling scheduling tools to clinics. This quarter's review focuses on retention. Our monthly churn rate rose from 1.8% to 2.4% after the price change, and the leadership team wants it back under 2% by year end.\n\nEnterprise deals now depend on security. The Henley Health contract will not be signed until we hand over our SOC 2 report, and the auditors are due on site in March.\n\nFinance tracks growth through annual recurring revenue (ARR), currently 14.2 million, and net revenue retention (NRR), which stood at 108% last quarter because existing customers upgraded their plans.",
+      "utterance": "Our biggest worry this quarter is the... the percentage of customers who leave each month",
+      "target": "churn rate",
+      "acceptable": ["churn rate", "churn"],
+      "category": "technical",
+      "split": "dev"
+    },
+    {
+      "id": "h18",
+      "context": "Preparing for the Henley Health deal",
+      "brief": "Lumenfield (fictional) is a subscription software company selling scheduling tools to clinics. This quarter's review focuses on retention. Our monthly churn rate rose from 1.8% to 2.4% after the price change, and the leadership team wants it back under 2% by year end.\n\nEnterprise deals now depend on security. The Henley Health contract will not be signed until we hand over our SOC 2 report, and the auditors are due on site in March.\n\nFinance tracks growth through annual recurring revenue (ARR), currently 14.2 million, and net revenue retention (NRR), which stood at 108% last quarter because existing customers upgraded their plans.",
+      "utterance": "Before the hospital group signs we need the... the security audit report, the two-word name with a number",
+      "target": "SOC 2",
+      "acceptable": ["soc 2", "soc2"],
+      "category": "technical",
+      "split": "dev"
+    },
+    {
+      "id": "h19",
+      "context": "Board prep, finance",
+      "brief": "Lumenfield (fictional) is a subscription software company selling scheduling tools to clinics. This quarter's review focuses on retention. Our monthly churn rate rose from 1.8% to 2.4% after the price change, and the leadership team wants it back under 2% by year end.\n\nEnterprise deals now depend on security. The Henley Health contract will not be signed until we hand over our SOC 2 report, and the auditors are due on site in March.\n\nFinance tracks growth through annual recurring revenue (ARR), currently 14.2 million, and net revenue retention (NRR), which stood at 108% last quarter because existing customers upgraded their plans.",
+      "utterance": "Finance wants the number for... the yearly money we can count on from subscriptions",
+      "target": "annual recurring revenue",
+      "acceptable": ["annual recurring revenue", "arr"],
+      "category": "technical",
+      "split": "dev"
+    },
+    {
+      "id": "h20",
+      "context": "Board prep, finance",
+      "brief": "Lumenfield (fictional) is a subscription software company selling scheduling tools to clinics. This quarter's review focuses on retention. Our monthly churn rate rose from 1.8% to 2.4% after the price change, and the leadership team wants it back under 2% by year end.\n\nEnterprise deals now depend on security. The Henley Health contract will not be signed until we hand over our SOC 2 report, and the auditors are due on site in March.\n\nFinance tracks growth through annual recurring revenue (ARR), currently 14.2 million, and net revenue retention (NRR), which stood at 108% last quarter because existing customers upgraded their plans.",
+      "utterance": "And then the... how much existing customers spend compared with last year, including upgrades",
+      "target": "net revenue retention",
+      "acceptable": ["net revenue retention", "nrr"],
+      "category": "technical",
+      "split": "holdout"
+    },
+    {
+      "id": "h21",
+      "context": "Year-end finance review",
+      "brief": "Harbourview Logistics (fictional) finance review, year end. The new routing platform was capitalised at 2.5 million and will be written off through amortisation over five years, starting in January.\n\nThe board focuses on EBITDA rather than net profit, since the depreciation charge distorts the picture this year. Working capital is tight because several customers pay on 90-day terms.\n\nAnnual contracts are invoiced up front, so most of that cash sits on the balance sheet as deferred revenue until the service has been delivered.",
+      "utterance": "We spread the cost of the platform over five years, that's the... the accounting word for it",
+      "target": "amortisation",
+      "acceptable": ["amortisation", "amortization"],
+      "category": "technical",
+      "split": "dev"
+    },
+    {
+      "id": "h22",
+      "context": "Year-end finance review",
+      "brief": "Harbourview Logistics (fictional) finance review, year end. The new routing platform was capitalised at 2.5 million and will be written off through amortisation over five years, starting in January.\n\nThe board focuses on EBITDA rather than net profit, since the depreciation charge distorts the picture this year. Working capital is tight because several customers pay on 90-day terms.\n\nAnnual contracts are invoiced up front, so most of that cash sits on the balance sheet as deferred revenue until the service has been delivered.",
+      "utterance": "The board only looks at the... profit before interest, tax and the rest, the abbreviation",
+      "target": "EBITDA",
+      "acceptable": ["ebitda"],
+      "category": "technical",
+      "split": "dev"
+    },
+    {
+      "id": "h23",
+      "context": "Year-end finance review",
+      "brief": "Harbourview Logistics (fictional) finance review, year end. The new routing platform was capitalised at 2.5 million and will be written off through amortisation over five years, starting in January.\n\nThe board focuses on EBITDA rather than net profit, since the depreciation charge distorts the picture this year. Working capital is tight because several customers pay on 90-day terms.\n\nAnnual contracts are invoiced up front, so most of that cash sits on the balance sheet as deferred revenue until the service has been delivered.",
+      "utterance": "Money we've been paid for work we haven't delivered yet, we show it as... on the balance sheet",
+      "target": "deferred revenue",
+      "acceptable": ["deferred revenue", "unearned revenue"],
+      "category": "technical",
+      "split": "dev"
+    },
+    {
+      "id": "h24",
+      "context": "Kestrel cutover planning",
+      "brief": "Project Kestrel (fictional) is the migration of the booking service to the new cloud platform, scheduled for the second weekend of May. The target is an uptime SLA of 99.9% throughout the cutover.\n\nWe will use a blue-green deployment: the new environment is built next to the live one, tested, and traffic is switched over in a single step. Anything not yet ready ships behind a feature flag and is turned on for a small group of users first.\n\nIf error rates rise above 2% in the first hour, the on-call engineer follows the rollback plan and switches traffic back to the old environment.",
+      "utterance": "We'll switch the traffic across using the... two identical environments, one live and one waiting",
+      "target": "blue-green deployment",
+      "acceptable": ["blue-green deployment", "blue green deployment", "blue-green", "blue green"],
+      "category": "technical",
+      "split": "holdout"
+    },
+    {
+      "id": "h25",
+      "context": "Kestrel cutover planning",
+      "brief": "Project Kestrel (fictional) is the migration of the booking service to the new cloud platform, scheduled for the second weekend of May. The target is an uptime SLA of 99.9% throughout the cutover.\n\nWe will use a blue-green deployment: the new environment is built next to the live one, tested, and traffic is switched over in a single step. Anything not yet ready ships behind a feature flag and is turned on for a small group of users first.\n\nIf error rates rise above 2% in the first hour, the on-call engineer follows the rollback plan and switches traffic back to the old environment.",
+      "utterance": "Anything unfinished ships switched off behind a... the on and off toggles we turn on for a few users",
+      "target": "feature flag",
+      "acceptable": ["feature flag", "feature flags", "feature toggle"],
+      "category": "technical",
+      "split": "dev"
+    },
+    {
+      "id": "h26",
+      "context": "Kestrel cutover planning",
+      "brief": "Project Kestrel (fictional) is the migration of the booking service to the new cloud platform, scheduled for the second weekend of May. The target is an uptime SLA of 99.9% throughout the cutover.\n\nWe will use a blue-green deployment: the new environment is built next to the live one, tested, and traffic is switched over in a single step. Anything not yet ready ships behind a feature flag and is turned on for a small group of users first.\n\nIf error rates rise above 2% in the first hour, the on-call engineer follows the rollback plan and switches traffic back to the old environment.",
+      "utterance": "And the on-call engineer needs the... plan for undoing the release if it goes wrong",
+      "target": "rollback plan",
+      "acceptable": ["rollback plan", "rollback", "roll back plan"],
+      "category": "technical",
+      "split": "dev"
+    },
+    {
+      "id": "h27",
+      "context": "Cooking soup",
+      "utterance": "Pass me the... the... the s-... the long wooden one for stirring the soup",
+      "target": "spoon",
+      "acceptable": ["spoon", "ladle", "wooden spoon"],
+      "category": "stammer",
+      "split": "dev"
+    },
+    {
+      "id": "h28",
+      "context": "On the train",
+      "utterance": "We get off at the n-... the next... the next s-... where the train stops, the next place",
+      "target": "stop",
+      "acceptable": ["stop", "station", "next stop"],
+      "category": "stammer",
+      "split": "holdout"
+    },
+    {
+      "id": "h29",
+      "context": "Filling in a form",
+      "utterance": "Have you got a b-... a b-... something for writing, with ink, you click the top",
+      "target": "pen",
+      "acceptable": ["pen", "biro", "ballpoint"],
+      "category": "stammer",
+      "split": "dev"
+    },
+    {
+      "id": "h30",
+      "context": "Looking after the dog",
+      "utterance": "I'll take the dog to the v-... the v-... the animal doctor",
+      "target": "vet",
+      "acceptable": ["vet", "veterinarian"],
+      "category": "stammer",
+      "split": "dev"
+    },
+    {
+      "id": "h31",
+      "context": "Morning routine",
+      "utterance": "I need a c-... a c-... hot drink made from beans, to wake up",
+      "target": "coffee",
+      "acceptable": ["coffee"],
+      "category": "stammer",
+      "split": "dev"
+    },
+    {
+      "id": "h32",
+      "context": "A stuffy room",
+      "utterance": "Could you open the w-... the w-... the glass in the wall that lets the light in",
+      "target": "window",
+      "acceptable": ["window"],
+      "category": "stammer",
+      "split": "holdout"
+    },
+    {
+      "id": "h33",
+      "context": "Round-the-table introductions at a conference",
+      "utterance": "Hello everyone, my name is...",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck_unknowable",
+      "split": "dev"
+    },
+    {
+      "id": "h34",
+      "context": "Giving contact details at the end of a call",
+      "utterance": "You can reach me on zero seven seven... and then the rest of the number",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck_unknowable",
+      "split": "dev"
+    },
+    {
+      "id": "h35",
+      "context": "Chatting with a new colleague",
+      "utterance": "I grew up in a little town called...",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck_unknowable",
+      "split": "dev"
+    },
+    {
+      "id": "h36",
+      "context": "Helping a visitor get online",
+      "utterance": "The wifi password is...",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck_unknowable",
+      "split": "holdout"
+    },
+    {
+      "id": "h37",
+      "context": "Choosing music for the drive",
+      "utterance": "My favourite song of all time is...",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck_unknowable",
+      "split": "dev"
+    },
+    {
+      "id": "h38",
+      "context": "Handing over a message",
+      "utterance": "The person who emailed yesterday was called...",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck_unknowable",
+      "split": "dev"
+    },
+    {
+      "id": "h39",
+      "context": "Fluent speech with a thinking pause - should NOT offer",
+      "utterance": "I think... we should wait until the figures come in",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev",
+      "pause": true
+    },
+    {
+      "id": "h40",
+      "context": "Fluent speech with a thinking pause - should NOT offer",
+      "utterance": "That's... actually a fair point, let me think about it",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "holdout",
+      "pause": true
+    }
+  ]
+}

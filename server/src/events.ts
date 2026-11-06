@@ -26,6 +26,12 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
   }),
   // Optional meeting brief: agenda, names, terms. Plain text.
   z.object({ type: z.literal('session.brief'), text: z.string().max(5000) }),
+  // The user clicked a suggested word. Counts like saying it.
+  z.object({
+    type: z.literal('guess.picked'),
+    id: z.string().max(64),
+    word: z.string().min(1).max(100),
+  }),
   // How long the user pauses before we look for a word (slower speakers need longer), in ms.
   z.object({ type: z.literal('session.settings'), pauseMs: z.number().min(800).max(5000) }),
 ]);
