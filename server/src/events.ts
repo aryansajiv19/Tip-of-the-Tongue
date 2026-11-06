@@ -33,7 +33,12 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
     word: z.string().min(1).max(100),
   }),
   // How long the user pauses before we look for a word (slower speakers need longer), in ms.
-  z.object({ type: z.literal('session.settings'), pauseMs: z.number().min(800).max(5000) }),
+  // minConfidence: how sure a guess must be before it is offered (0.3 to 0.9).
+  z.object({
+    type: z.literal('session.settings'),
+    pauseMs: z.number().min(800).max(5000),
+    minConfidence: z.number().min(0.3).max(0.9).optional(),
+  }),
   // The microphone level crossed into (voiced) or out of (silent) speech-like sound. Sent only
   // on changes; atMs is when the change began. Lets the server tell a real silence from an
   // STT lag, and hear a hum that speech recognition drops.

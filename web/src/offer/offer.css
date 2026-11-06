@@ -158,3 +158,8 @@
     opacity: 0;
   }
 }
+
+/* The live region itself takes no room in the page layout; only its card is visible. */
+aside[aria-label='Word suggestions'] {
+  position: fixed;
+}
