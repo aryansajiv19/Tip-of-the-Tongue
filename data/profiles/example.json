@@ -1,0 +1,9 @@
+{
+  "note": "Fictional example profile. Personal words are added to the guesser prompt.",
+  "name": "Alex (fictional)",
+  "people": { "daughter": "Priya", "doctor": "Dr Okafor" },
+  "pets": { "dog": "Biscuit" },
+  "places": { "local shop": "Corner Mart", "park": "Victoria Park" },
+  "hobbies": ["gardening", "snooker"],
+  "frequentlyLostWords": ["pharmacy", "remote", "kettle"]
+}
