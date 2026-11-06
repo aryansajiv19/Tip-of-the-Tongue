@@ -1,15 +1,95 @@
 {
   "note": "Seed set written for this project in the documented style of circumlocution. Not copied from any corpus. Expand to 40-60 items; keep ~20% as holdout and don't tune on them.",
   "items": [
-    { "id": "c01", "context": "Talking about errands", "utterance": "I need to go to the... the place... where you get medicine, with the man in the white coat", "target": "pharmacy", "acceptable": ["pharmacy", "chemist", "chemist's"], "category": "place", "split": "dev" },
-    { "id": "c02", "context": "Getting ready to go out", "utterance": "Where's my... the thing I wear on my wrist, it tells the time", "target": "watch", "acceptable": ["watch", "wristwatch"], "category": "object", "split": "dev" },
-    { "id": "c03", "context": "In the kitchen", "utterance": "Can you pass the... you know, the thing for cutting bread, sharp", "target": "knife", "acceptable": ["knife", "bread knife"], "category": "object", "split": "dev" },
-    { "id": "c04", "context": "Weather", "utterance": "It's going to rain so take the... the thing you hold over your head", "target": "umbrella", "acceptable": ["umbrella", "brolly"], "category": "object", "split": "dev" },
-    { "id": "c05", "context": "Health", "utterance": "I have to see the... the person who does your teeth", "target": "dentist", "acceptable": ["dentist"], "category": "person", "split": "dev" },
-    { "id": "c06", "context": "Travel", "utterance": "We flew from the big... where all the planes go, Heathrow", "target": "airport", "acceptable": ["airport"], "category": "place", "split": "dev" },
-    { "id": "c07", "context": "Food", "utterance": "For breakfast I had the... the yellow fruit, long, monkeys like it", "target": "banana", "acceptable": ["banana"], "category": "object", "split": "holdout" },
-    { "id": "c08", "context": "Home", "utterance": "The light's broken, I need to change the... the glass thing, the round one you screw in", "target": "bulb", "acceptable": ["bulb", "light bulb", "lightbulb"], "category": "object", "split": "holdout" },
-    { "id": "c09", "context": "Fluent control - should NOT trigger", "utterance": "I went to the pharmacy this morning and picked up my prescription", "target": null, "acceptable": [], "category": "not_stuck", "split": "dev" },
-    { "id": "c10", "context": "Self-recovery - should NOT offer", "utterance": "I left it in the... the... the car, yes the car", "target": null, "acceptable": [], "category": "self_recovered", "split": "dev" }
+    {
+      "id": "c01",
+      "context": "Talking about errands",
+      "utterance": "I need to go to the... the place... where you get medicine, with the man in the white coat",
+      "target": "pharmacy",
+      "acceptable": ["pharmacy", "chemist", "chemist's"],
+      "category": "place",
+      "split": "dev"
+    },
+    {
+      "id": "c02",
+      "context": "Getting ready to go out",
+      "utterance": "Where's my... the thing I wear on my wrist, it tells the time",
+      "target": "watch",
+      "acceptable": ["watch", "wristwatch"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c03",
+      "context": "In the kitchen",
+      "utterance": "Can you pass the... you know, the thing for cutting bread, sharp",
+      "target": "knife",
+      "acceptable": ["knife", "bread knife"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c04",
+      "context": "Weather",
+      "utterance": "It's going to rain so take the... the thing you hold over your head",
+      "target": "umbrella",
+      "acceptable": ["umbrella", "brolly"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c05",
+      "context": "Health",
+      "utterance": "I have to see the... the person who does your teeth",
+      "target": "dentist",
+      "acceptable": ["dentist"],
+      "category": "person",
+      "split": "dev"
+    },
+    {
+      "id": "c06",
+      "context": "Travel",
+      "utterance": "We flew from the big... where all the planes go, Heathrow",
+      "target": "airport",
+      "acceptable": ["airport"],
+      "category": "place",
+      "split": "dev"
+    },
+    {
+      "id": "c07",
+      "context": "Food",
+      "utterance": "For breakfast I had the... the yellow fruit, long, monkeys like it",
+      "target": "banana",
+      "acceptable": ["banana"],
+      "category": "object",
+      "split": "holdout"
+    },
+    {
+      "id": "c08",
+      "context": "Home",
+      "utterance": "The light's broken, I need to change the... the glass thing, the round one you screw in",
+      "target": "bulb",
+      "acceptable": ["bulb", "light bulb", "lightbulb"],
+      "category": "object",
+      "split": "holdout"
+    },
+    {
+      "id": "c09",
+      "context": "Fluent control - should NOT trigger",
+      "utterance": "I went to the pharmacy this morning and picked up my prescription",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev"
+    },
+    {
+      "id": "c10",
+      "context": "Self-recovery - should NOT offer",
+      "utterance": "I left it in the... the... the car, yes the car",
+      "target": null,
+      "acceptable": [],
+      "category": "self_recovered",
+      "split": "dev"
+    }
   ]
 }
