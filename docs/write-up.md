@@ -24,12 +24,16 @@ Listens, notices the struggle, guesses the word from context, and offers it quie
 
 - Scale: ~350,000 people with aphasia in the UK.
 - Prior study: LLM identified the intended word 91.67% of the time from text.
-- **Our results (mock guesser: plumbing only, not accuracy).** The mock knows only a few dev items, so these numbers show that the pipeline runs end to end. Real Claude numbers replace this table; see `docs/ARCHITECTURE.md` (Evaluation) for the method.
+- **Our results** (Claude Haiku 5.5 guessing, our detector and gate; 95% Wilson intervals in brackets):
 
-  | Split   | Stuck items | Detected     | Top-1      | Top-3      | Abstain     | False offers (of offers) | Fluent items where detector fired | Silent items offered |
-  | ------- | ----------- | ------------ | ---------- | ---------- | ----------- | ------------------------ | --------------------------------- | -------------------- |
-  | dev     | 32          | 100% (32/32) | 19% (6/32) | 19% (6/32) | 81% (26/32) | 0% (0/6)                 | 0% (0/9)                          | 0% (0/13)            |
-  | holdout | 9           | 100% (9/9)   | 0% (0/9)   | 0% (0/9)   | 100% (9/9)  | n/a                      | 0% (0/1)                          | 0% (0/2)             |
+  | Split   | Stuck items | Top-1                | Top-3       | False offers (of offers) | Fluent items where detector fired | Silent items offered | Guess latency p50 / p95 |
+  | ------- | ----------- | -------------------- | ----------- | ------------------------ | --------------------------------- | -------------------- | ----------------------- |
+  | dev     | 32          | 94% (30/32) [80-98%] | 94% (30/32) | 6% (2/32) [2-20%]        | 0/9                               | 0/13                 | 836 / 1179 ms           |
+  | holdout | 9           | 89% (8/9) [56-98%]   | 89% (8/9)   | 11% (1/9) [2-44%]        | 0/1                               | 0/2                  | 831 / 1068 ms           |
+
+  Read these with care. The items are scripted written examples that we wrote, read as text with synthetic timing (300 ms per word, 2 s pauses), not real speech. They have not been tested with people with aphasia, and speech-to-text may mishear real aphasic speech. There are only 41 stall items (9 held out), so the intervals are wide: the holdout result is compatible with anything from about 56% to 98%.
+
+- **Comparison with the 2023 study (91.67%, text only).** Similar setting, not the same task: they used real circumlocutions and a general chatbot, we use descriptions we wrote ourselves, plus a meeting brief and personal words. Our intervals overlap that figure, which is all we can say; it does not show we do better, and our own items are probably cleaner than real speech.
 
 ## Approach and why
 
