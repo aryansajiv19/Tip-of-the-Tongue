@@ -7,6 +7,11 @@ describe('parseServerEvent', () => {
     expect(parseServerEvent(JSON.stringify(e))).toEqual(e);
   });
 
+  it('parses guesser.status', () => {
+    const e = { type: 'guesser.status', ok: false };
+    expect(parseServerEvent(JSON.stringify(e))).toEqual(e);
+  });
+
   it.each([
     ['not json', 'nope'],
     ['json null', 'null'],

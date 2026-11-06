@@ -37,10 +37,11 @@ export function createGuesser(
 
   return async (input): Promise<GuessResult> => {
     const started = Date.now();
-    const abstain = (): GuessResult => ({
+    const abstain = (error?: true): GuessResult => ({
       candidates: [],
       abstain: true,
       latencyMs: Date.now() - started,
+      ...(error ? { error } : {}),
     });
     const controller = new AbortController();
     let timer: NodeJS.Timeout | undefined;
@@ -65,11 +66,12 @@ export function createGuesser(
         ),
         timedOut,
       ]);
-      if (!reply || reply.stop_reason === 'refusal') return abstain();
+      if (!reply) return abstain(true); // timed out
+      if (reply.stop_reason === 'refusal') return abstain();
       const text = reply.content.map((b) => (b.type === 'text' ? b.text : '')).join('');
       return { ...parseGuess(text), latencyMs: Date.now() - started };
     } catch {
-      return abstain();
+      return abstain(true);
     } finally {
       clearTimeout(timer);
     }

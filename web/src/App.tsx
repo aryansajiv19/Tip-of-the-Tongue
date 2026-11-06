@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import type { ClientEvent, Word } from '../../server/src/events';
+import type { ClientEvent, ServerEvent, Word } from '../../server/src/events';
 import { Offer } from './offer/Offer';
 import { offerReducer } from './offer/offerState';
 import { useSocket } from './socket/useSocket';
@@ -33,7 +33,20 @@ export function App() {
   const [pauseS, setPauseS] = useState<number | null>(savedPause);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  const { status, send } = useSocket(dispatch);
+  const [guesserDown, setGuesserDown] = useState(false);
+
+  const onServerEvent = useCallback((e: ServerEvent) => {
+    dispatch(e);
+    if (e.type === 'guesser.status') setGuesserDown(!e.ok);
+  }, []);
+  const { status, send } = useSocket(onServerEvent);
+
+  // A dropped connection ends the server session, so its guesser problem is forgotten too.
+  const [prevStatus, setPrevStatus] = useState(status);
+  if (status !== prevStatus) {
+    setPrevStatus(status);
+    if (status !== 'connected') setGuesserDown(false);
+  }
 
   const sendPartial = useCallback(
     (words: Word[]) => {
@@ -125,6 +138,10 @@ export function App() {
         )}
         {error && <p role="alert">{error}</p>}
       </section>
+
+      <p role="status">
+        {guesserDown ? 'Word suggestions are unavailable right now; listening continues.' : ''}
+      </p>
 
       <Offer offer={offer} onClear={clearOffer} />
 

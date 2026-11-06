@@ -12,7 +12,9 @@ export interface GuessResult {
   candidates: Candidate[];
   abstain: boolean;
   latencyMs: number;
+  // Set when the provider failed or timed out, as opposed to the model choosing to abstain.
+  error?: true;
 }
 
-// Never throws: errors and timeouts come back as an abstain.
+// Never throws: errors and timeouts come back as an abstain with `error: true`.
 export type Guesser = (input: GuessInput) => Promise<GuessResult>;
