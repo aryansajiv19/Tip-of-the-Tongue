@@ -62,7 +62,7 @@ export function renderMarkdown(meta: RunMeta, results: ItemResult[]): string {
     '',
     '## Items where the app should stay silent',
     '',
-    'The detector firing is expected on self_recovered (the user did stall first) and is a false trigger on not_stuck. An offer is wrong on both.',
+    'The detector firing is expected on self_recovered (the user did stall first) and on not_stuck_pause (a thinking pause), and is a false trigger on not_stuck. An offer is wrong on all three.',
     '',
     '| Category | n | Detector fired | Offered anyway |',
     '| --- | --- | --- | --- |',

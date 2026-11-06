@@ -1,5 +1,5 @@
 {
-  "note": "Written for this project in the documented style of circumlocution. Not copied from any corpus. Items with a \"brief\" run with that meeting brief. Do not tune on split \"holdout\".",
+  "note": "Written for this project in the documented style of circumlocution. Not copied from any corpus. Items with a \"brief\" run with that meeting brief. Do not tune on split \"holdout\". Items c57-c72 (bare-pause stalls, and fluent sentences with a thinking pause marked \"pause\": true) were added after the first evaluation, as dev items only, when hesitation pauses alone became a trigger.",
   "items": [
     {
       "id": "c01",
@@ -511,6 +511,160 @@
       "acceptable": [],
       "category": "self_recovered",
       "split": "dev"
+    },
+    {
+      "id": "c57",
+      "context": "Wedding anniversary",
+      "utterance": "Can you pass me the... gold circle you wear on your finger after a wedding",
+      "target": "ring",
+      "acceptable": ["ring", "wedding ring"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c58",
+      "context": "Talking about a sister's job",
+      "utterance": "She works as a... looks after sick people in a hospital, in a blue uniform",
+      "target": "nurse",
+      "acceptable": ["nurse"],
+      "category": "person",
+      "split": "dev"
+    },
+    {
+      "id": "c59",
+      "context": "Ordering dinner",
+      "utterance": "Let's order a... round Italian dish with cheese and tomato on top",
+      "target": "pizza",
+      "acceptable": ["pizza"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c60",
+      "context": "Tidying the kitchen",
+      "utterance": "I'll put the ice cream in the... even colder one, that keeps things frozen",
+      "target": "freezer",
+      "acceptable": ["freezer"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c61",
+      "context": "Before a road trip",
+      "utterance": "Remember to bring your... the papers that prove you may drive a car",
+      "target": "driving licence",
+      "acceptable": ["driving licence", "driver's licence", "driving license", "licence"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c62",
+      "context": "Music lesson",
+      "utterance": "He plays the... big wooden instrument with black and white keys",
+      "target": "piano",
+      "acceptable": ["piano"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c63",
+      "context": "Fluent speech with a thinking pause - should NOT offer",
+      "utterance": "So I think... we should probably move the meeting to Friday",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev",
+      "pause": true
+    },
+    {
+      "id": "c64",
+      "context": "Fluent speech with a thinking pause - should NOT offer",
+      "utterance": "And then... we went home and had dinner",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev",
+      "pause": true
+    },
+    {
+      "id": "c65",
+      "context": "Fluent speech with a thinking pause - should NOT offer",
+      "utterance": "Well... that depends on what the client says",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev",
+      "pause": true
+    },
+    {
+      "id": "c66",
+      "context": "Fluent speech with a thinking pause - should NOT offer",
+      "utterance": "I was going to say... actually, let's leave it for now",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev",
+      "pause": true
+    },
+    {
+      "id": "c67",
+      "context": "Fluent speech with a thinking pause - should NOT offer",
+      "utterance": "If we do that... the budget will not stretch to the end of the quarter",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev",
+      "pause": true
+    },
+    {
+      "id": "c68",
+      "context": "Fluent speech with a thinking pause - should NOT offer",
+      "utterance": "On the one hand... it saves time, and on the other it costs more",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev",
+      "pause": true
+    },
+    {
+      "id": "c69",
+      "context": "Fluent speech with a thinking pause - should NOT offer",
+      "utterance": "Let me think... I can do Tuesday afternoon",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev",
+      "pause": true
+    },
+    {
+      "id": "c70",
+      "context": "Fluent speech with a thinking pause - should NOT offer",
+      "utterance": "The report is... almost done, I just need to check the numbers",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev",
+      "pause": true
+    },
+    {
+      "id": "c71",
+      "context": "Fluent speech with a thinking pause - should NOT offer",
+      "utterance": "We could meet at... say half past two",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev",
+      "pause": true
+    },
+    {
+      "id": "c72",
+      "context": "Fluent speech with a thinking pause - should NOT offer",
+      "utterance": "She told me that... well, never mind, it wasn't important",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev",
+      "pause": true
     }
   ]
 }
