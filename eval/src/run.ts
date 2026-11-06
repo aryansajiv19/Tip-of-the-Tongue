@@ -22,11 +22,6 @@ export async function runItem(
 ): Promise<ItemResult> {
   const words = toTimedWords(item.utterance);
   const lastEndMs = words.at(-1)?.endMs ?? 0;
-  // A pop-up is withdrawn once the user says the word, so words said after the first "..." count
-  // as said since the stuck point even if they come after the moment we guessed.
-  const stallAt = words.findIndex((w) => w.text.includes('...'));
-  const saidSinceStuck = stallAt === -1 ? [] : words.slice(stallAt + 1);
-
   const kind = SILENT_CATEGORIES.includes(item.category) ? 'silent' : 'stall';
   const isRight = (word: string): boolean => item.acceptable.some((a) => same(a, word));
 
@@ -50,6 +45,8 @@ export async function runItem(
     };
   }
   const { nowMs } = trigger;
+  // Words heard after the stall marker may already be the answer, as in the live session.
+  const saidSinceStuck = trigger.heard.filter((w) => w.startMs >= trigger.result.sinceMs);
 
   const result = await guess({
     conversation: item.context,

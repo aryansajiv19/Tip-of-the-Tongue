@@ -23,7 +23,7 @@ describe('toTimedWords', () => {
   });
 });
 
-const stuck: StuckResult = { stuck: true, reason: 'pause', contextWindow: 'x' };
+const stuck: StuckResult = { stuck: true, reason: 'pause', contextWindow: 'x', sinceMs: 0 };
 
 describe('sweep', () => {
   it('asks every 200 ms from the first word end to 2 s after the last word', () => {
