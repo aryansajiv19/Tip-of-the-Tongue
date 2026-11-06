@@ -48,3 +48,7 @@ No audio is stored. Transcripts are kept in memory for the session only and sent
 ## Limitations
 
 Not yet tested with people with aphasia. See [docs/EDGE-CASES.md](docs/EDGE-CASES.md).
+
+## License
+
+MIT, see [LICENSE](LICENSE).
