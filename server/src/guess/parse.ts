@@ -29,6 +29,25 @@ function extractJson(text: string): unknown {
   }
 }
 
+// Index just past the first complete {...} object in a growing text, or undefined while it is
+// still open. Lets the caller stop reading a stream as soon as the JSON closes.
+export function firstObjectEnd(text: string): number | undefined {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = text.indexOf('{'); i !== -1 && i < text.length; i++) {
+    const ch = text.charAt(i);
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+    } else if (ch === '"') inString = true;
+    else if (ch === '{') depth++;
+    else if (ch === '}' && --depth === 0) return i + 1;
+  }
+  return undefined;
+}
+
 export function parseGuess(text: string): { candidates: Candidate[]; abstain: boolean } {
   const reply = ReplySchema.safeParse(extractJson(text));
   if (!reply.success || reply.data.abstain) return abstain();

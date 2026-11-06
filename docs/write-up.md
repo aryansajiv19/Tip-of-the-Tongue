@@ -55,6 +55,19 @@ Listens, notices the struggle, guesses the word from context, and offers it quie
 
   The noise is a simple stand-in for Chrome's Web Speech (um/uh/er dropped, lowercase, no punctuation, about 10% of non-target words swapped for a mishearing from a small fixed table, target words untouched, pauses kept). The detector still fired on every stall item, and top-1 dropped by one or two items. One effect: the multi-word fix is not fully robust, and "traffic lights" was again split in one noisy run. This is not a measure of real recognition errors, and atypical speech may be recognised worse. With 1 to 6 items per category, one item moves a rate a lot.
 
+- **Streaming the guess, and hesitation pauses (dev only, two runs, Claude Haiku 5.5).** The guesser now streams its reply and stops reading when the JSON closes. We also added 16 dev items after the first evaluation, because any hesitation pause (not only cue phrases) can now start a guess: 6 stalls with a bare pause and no cue word, and 10 fluent sentences with a thinking pause ("So I think… we should move the meeting to Friday"). The prompt now also tells the model to abstain when the speaker is not clearly searching for a word.
+
+  | Measure (dev)                                                    | Run 1           | Run 2           |
+  | ---------------------------------------------------------------- | --------------- | --------------- |
+  | Stall items, top-1 (38 items, 6 of them bare-pause)              | 38/38 [91-100%] | 38/38 [91-100%] |
+  | False offers                                                     | 0               | 0               |
+  | Fluent sentences with a thinking pause: detector fired / offered | 10/10 / 0       | 10/10 / 0       |
+  | Other fluent items: detector fired / offered                     | 0/9 / 0         | 0/9 / 0         |
+  | Self-recovered: offered                                          | 0/4             | 0/4             |
+  | Guess latency p50 / p95                                          | 781 / 1032 ms   | 785 / 927 ms    |
+
+  The detector fires on every thinking-pause sentence by design, so the guesser is the filter: it offered nothing on any of them. Latency was about 820 / 1050 ms before streaming, so streaming helps a little; most of the time is the model's time to first token. In run 2, one correct guess (airport, confidence 0.4) was held back by the confidence gate, which is a miss by silence rather than a wrong offer. The 16 new items were written by us after seeing results, are dev only, and the prompt change was made with them in view, so treat these numbers as tuned on dev; the holdout has not been rerun with this prompt. Prompt caching was not added: Haiku 5.5 needs a prefix of at least 512 tokens and our system prompt plus a typical brief is well below that.
+
 ## Approach and why
 
 No training; speech-to-text + rules + Claude + a confidence gate. Silence is a feature.
