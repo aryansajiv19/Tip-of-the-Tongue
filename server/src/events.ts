@@ -25,7 +25,7 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
     words: z.array(WordSchema).max(MAX_WORDS_PER_EVENT),
   }),
   // Optional meeting brief: agenda, names, terms. Plain text.
-  z.object({ type: z.literal('session.brief'), text: z.string().max(5000) }),
+  z.object({ type: z.literal('session.brief'), text: z.string().max(50_000) }),
   // The user clicked a suggested word. Counts like saying it.
   z.object({
     type: z.literal('guess.picked'),

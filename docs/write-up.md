@@ -80,6 +80,16 @@ Listens, notices the struggle, guesses the word from context, and offers it quie
 
   **Decision: keep Haiku as the default.** The larger models are not clearly better on this set and cost 0.7 to 1 second more. With a guess starting about 300 ms after a pause and a confirmation window of about 1.5 s, Sonnet would land near 1.8 s, too late to feel instant, and Opus later still. Sonnet stays available as `ANTHROPIC_MODEL=claude-sonnet-5-5` for people who prefer accuracy over speed. We did not build a router that picks a model per request; that is more machinery than these numbers justify. The holdout of this set (10 items) has not been run.
 
+- **Pasting a whole company document as the brief** (dev, the 8 technical items of the hard set, each with a fictional document of about 5,000 characters in which the term appears only after the first 1,500 characters; one run per mode). A pasted brief over 3,000 characters is shortened: one background call extracts a glossary of key terms, and the guesser gets the glossary plus the first 1,500 characters.
+
+  | What the guesser got as the brief     | Top-1 on the 8 technical items | False offers | Latency p50  |
+  | ------------------------------------- | ------------------------------ | ------------ | ------------ |
+  | The whole document                    | 8/8 [68-100%]                  | 0            | about 0.88 s |
+  | Glossary plus first 1,500 characters  | 8/8 [68-100%]                  | 0            | about 0.89 s |
+  | First 1,500 characters only (control) | 6/8 [41-93%]                   | 1            | about 0.81 s |
+
+  The glossary kept every term the guesser needed, and the control shows the terms really are missing from the start of the document: it missed "SOC 2" (no guess) and offered "deferred income" for "deferred revenue". With 8 items, though, the intervals overlap, so this shows the mechanism works rather than proving it beats the alternatives. The documents are short next to the 50,000 characters now allowed, so the saving in prompt size, and whether a glossary of 60 terms still captures a very long document, are not measured here. A long brief now reaches Anthropic twice: once to build the glossary and then, shortened, with each guess.
+
 ## Approach and why
 
 No training; speech-to-text + rules + Claude + a confidence gate. Silence is a feature.

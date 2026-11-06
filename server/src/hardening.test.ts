@@ -145,7 +145,7 @@ describe('bad input never crashes the server', () => {
     expect(events.filter((e) => e.type !== 'session.ready')).toEqual([]);
 
     const done = closed(ws);
-    ws.send('x'.repeat(200 * 1024));
+    ws.send('x'.repeat(300 * 1024));
     await done;
     expect(await health()).toEqual({ ok: true });
   });

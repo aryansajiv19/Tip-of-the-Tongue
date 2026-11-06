@@ -15,6 +15,7 @@ export interface RunMeta {
   noContext?: boolean;
   sttNoise?: boolean;
   set?: string;
+  briefMode?: string;
   model?: string;
 }
 
@@ -53,7 +54,7 @@ export function renderMarkdown(meta: RunMeta, results: ItemResult[]): string {
   const det = detectionTime(results);
 
   return [
-    `# Evaluation: ${meta.guesser} guesser${meta.model ? ` (${meta.model})` : ''}, ${meta.set === 'hard' ? 'hard set, ' : ''}split ${meta.split}${meta.noContext ? ', no brief or profile' : ''}${meta.sttNoise ? ', simulated speech-to-text noise' : ''}`,
+    `# Evaluation: ${meta.guesser} guesser${meta.model ? ` (${meta.model})` : ''}, ${meta.set === 'hard' ? 'hard set, ' : ''}${meta.briefMode ? `long documents as briefs (${meta.briefMode}), ` : ''}split ${meta.split}${meta.noContext ? ', no brief or profile' : ''}${meta.sttNoise ? ', simulated speech-to-text noise' : ''}`,
     '',
     '## Items where the user is stuck',
     '',

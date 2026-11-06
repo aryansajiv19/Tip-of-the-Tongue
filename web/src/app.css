@@ -102,7 +102,16 @@ h2 {
   border-radius: 999px;
   background: var(--card);
 }
-.pill::before {
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pill-plain {
+  text-transform: none;
+  color: var(--muted);
+}
+.pill:not(.pill-plain)::before {
   content: '';
   display: inline-block;
   width: 8px;

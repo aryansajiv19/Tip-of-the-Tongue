@@ -39,3 +39,17 @@ describe('session.settings minConfidence', () => {
     expect([0.29, 0.91, 0, 1, -1, '0.6', null].map(withConfidence)).toEqual(Array(7).fill(false));
   });
 });
+
+describe('session.brief', () => {
+  const brief = (text: unknown) =>
+    ClientEventSchema.safeParse({ type: 'session.brief', text }).success;
+
+  it('accepts a pasted document of up to 50,000 characters', () => {
+    expect(brief('x'.repeat(50_000))).toBe(true);
+  });
+
+  it('rejects one character more, and non-strings', () => {
+    expect(brief('x'.repeat(50_001))).toBe(false);
+    expect(brief(5)).toBe(false);
+  });
+});
