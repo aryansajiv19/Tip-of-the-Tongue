@@ -20,7 +20,7 @@ Defined once in `server/src/events.ts`. Times are epoch ms.
 | ----------------------------------------- | ------------ | ------------------------------------------------------ |
 | `transcript.partial` / `transcript.final` | web → server | words with start/end ms (browser STT)                  |
 | `session.brief`                           | web → server | optional meeting brief text                            |
-| `session.settings`                        | web → server | pause wait in ms (800–5000) for this connection        |
+| `session.settings`                        | web → server | pause wait in ms (800–5000), optional minConfidence    |
 | `guess.picked`                            | web → server | the user clicked an offered word (offer id, word)      |
 | `stuck.detected`                          | server → web | reason (pause, filler, describing), context            |
 | `guess.offered`                           | server → web | offer id, up to 3 candidates with confidence, latency  |

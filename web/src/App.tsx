@@ -7,21 +7,17 @@ import { useSocket } from './socket/useSocket';
 import { speechSupported, useSpeech } from './speech/useSpeech';
 import { stampWords } from './speech/stampWords';
 import { TYPED_FINAL_DELAY_MS, typedSteps } from './speech/typedWords';
+import {
+  SENSITIVITIES,
+  SENSITIVITY_KEYS,
+  saveSensitivity,
+  savedSensitivity,
+  type Sensitivity,
+} from './settings/sensitivity';
+import './app.css';
 
 const MAX_WORDS = 60;
 const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
-const PAUSE_KEY = 'tott.pauseSeconds';
-const DEFAULT_PAUSE_S = 1.5;
-
-// The saved setting, or null if the user never changed it (then the server's default applies).
-function savedPause(): number | null {
-  try {
-    const n = Number(localStorage.getItem(PAUSE_KEY));
-    return n >= 0.8 && n <= 5 ? n : null;
-  } catch {
-    return null;
-  }
-}
 
 const text = (words: Word[]) => words.map((w) => w.text).join(' ');
 
@@ -32,7 +28,8 @@ export function App() {
   const [brief, setBrief] = useState('');
   const [briefSent, setBriefSent] = useState<string | null>(null);
   const [typed, setTyped] = useState('');
-  const [pauseS, setPauseS] = useState<number | null>(savedPause);
+  // null until the user chooses, so the server's own defaults apply until then.
+  const [sensitivity, setSensitivity] = useState<Sensitivity | null>(savedSensitivity);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const [guesserDown, setGuesserDown] = useState(false);
@@ -134,20 +131,16 @@ export function App() {
     }
   }, [status, briefSent, send]);
 
-  // Only sent once the user has chosen a value, so the server's STUCK_PAUSE_MS applies until then.
   useEffect(() => {
-    if (status === 'connected' && pauseS !== null) {
-      send({ type: 'session.settings', pauseMs: Math.round(pauseS * 1000) } satisfies ClientEvent);
+    if (status === 'connected' && sensitivity !== null) {
+      const { pauseMs, minConfidence } = SENSITIVITIES[sensitivity];
+      send({ type: 'session.settings', pauseMs, minConfidence } satisfies ClientEvent);
     }
-  }, [status, pauseS, send]);
+  }, [status, sensitivity, send]);
 
-  const changePause = (seconds: number) => {
-    setPauseS(seconds);
-    try {
-      localStorage.setItem(PAUSE_KEY, String(seconds));
-    } catch {
-      // Private mode: the setting still works for this visit.
-    }
+  const changeSensitivity = (value: Sensitivity) => {
+    setSensitivity(value);
+    saveSensitivity(value);
   };
 
   const clearOffer = useCallback(() => dispatch({ type: 'offer.clear' }), []);
@@ -171,35 +164,61 @@ export function App() {
   };
 
   return (
-    <main>
-      <h1>Tip of the Tongue</h1>
-      <p role="status">Server: {status}</p>
+    <main className="page">
+      <header className="top">
+        <h1>Tip of the Tongue</h1>
+        <div className="pills">
+          <p role="status" className={`pill pill-${status}`}>
+            <span className="sr-only">Server: </span>
+            {status}
+          </p>
+          <p className="pill pill-plain">Speech: {stt === 'deepgram' ? 'Deepgram' : 'browser'}</p>
+        </div>
+      </header>
 
-      <section aria-labelledby="listen-h">
-        <h2 id="listen-h">Listening</h2>
+      <section aria-labelledby="listen-h" className="card listen">
+        <h2 id="listen-h" className="sr-only">
+          Listening
+        </h2>
         {canListen ? (
           <>
-            <button type="button" onClick={listening ? pauseListening : startListening}>
-              {listening ? 'Pause listening' : 'Start listening'}
-            </button>
-            <p role="status">
+            <div className="actions">
+              <button
+                type="button"
+                className={listening ? 'btn btn-primary btn-on' : 'btn btn-primary'}
+                onClick={listening ? pauseListening : startListening}
+              >
+                {listening ? 'Pause listening' : 'Start listening'}
+              </button>
+              <button type="button" className="btn" disabled title="Not available yet">
+                What&apos;s the word?
+              </button>
+            </div>
+            <p role="status" className="listen-state">
+              <span className={listening ? 'dot dot-on' : 'dot'} aria-hidden="true" />
               {!listening
                 ? 'Not listening'
                 : status === 'connected'
-                  ? '● Listening'
-                  : '● Listening paused: not connected to the server, so no word suggestions'}
+                  ? 'Listening'
+                  : 'Listening paused: not connected to the server, so no word suggestions'}
             </p>
           </>
         ) : (
-          <p role="alert">
+          <p role="alert" className="notice">
             This browser has no speech recognition. Use Chrome or Edge, or try the test input below.
           </p>
         )}
-        {error && <p role="alert">{error}</p>}
-        <p role="status">{notice}</p>
+        {error && (
+          <p role="alert" className="notice">
+            {error}
+          </p>
+        )}
+        <p role="status" className="notice notice-quiet">
+          {notice}
+        </p>
       </section>
 
-      <p role="status">
+      <p role="status" className="notice notice-quiet">
         {guesserDown ? 'Word suggestions are unavailable right now; listening continues.' : ''}
       </p>
 
@@ -209,58 +228,81 @@ export function App() {
         onPick={(id, word) => send({ type: 'guess.picked', id, word })}
       />
 
-      <section aria-labelledby="settings-h">
-        <h2 id="settings-h">Settings</h2>
-        <label htmlFor="pause">
-          Wait before suggesting: {(pauseS ?? DEFAULT_PAUSE_S).toFixed(1)} s
-        </label>
-        <input
-          id="pause"
-          type="range"
-          min={0.8}
-          max={5}
-          step={0.1}
-          value={pauseS ?? DEFAULT_PAUSE_S}
-          onChange={(e) => changePause(Number(e.target.value))}
-        />
-      </section>
-
-      <section aria-labelledby="brief-h">
-        <h2 id="brief-h">Meeting brief (optional)</h2>
-        <label htmlFor="brief">Agenda, names, product or client terms</label>
-        <textarea
-          id="brief"
-          rows={4}
-          maxLength={50_000}
-          value={brief}
-          onChange={(e) => setBrief(e.target.value)}
-        />
-        <button type="button" onClick={() => setBriefSent(brief)}>
-          Use this brief
-        </button>
-      </section>
-
-      <section aria-labelledby="tx-h">
+      <section aria-labelledby="tx-h" className="card transcript">
         <h2 id="tx-h">Transcript</h2>
-        <p>
+        <p className="reading">
+          {heard.length === 0 && !partial && (
+            <span className="muted">What you say will appear here.</span>
+          )}
           {heard.join(' ')}
-          {partial && <span style={{ color: '#595959' }}> {partial}</span>}
+          {partial && <span className="muted"> {partial}</span>}
         </p>
         {DEBUG && (
-          <button type="button" onClick={downloadTrace}>
+          <button type="button" className="btn btn-small" onClick={downloadTrace}>
             Download speech trace
           </button>
         )}
       </section>
 
-      <section aria-labelledby="test-h">
-        <h2 id="test-h">Test input (no mic)</h2>
-        <label htmlFor="typed">Type a phrase; it is sent as speech, one word every 300 ms</label>
-        <input id="typed" value={typed} onChange={(e) => setTyped(e.target.value)} />
-        <button type="button" onClick={playTyped} disabled={!typed.trim()}>
-          Send as speech
-        </button>
-      </section>
+      <details className="card fold">
+        <summary>Before the meeting</summary>
+        <fieldset className="sensitivity">
+          <legend>Sensitivity</legend>
+          <div className="segments">
+            {SENSITIVITY_KEYS.map((key) => (
+              <label key={key} className="segment">
+                <input
+                  type="radio"
+                  name="sensitivity"
+                  value={key}
+                  checked={(sensitivity ?? 'balanced') === key}
+                  onChange={() => changeSensitivity(key)}
+                />
+                <span>{SENSITIVITIES[key].label}</span>
+              </label>
+            ))}
+          </div>
+          <p className="hint">
+            Calm waits longer and suggests only when it is sure. Eager suggests sooner, and is wrong
+            more often.
+          </p>
+        </fieldset>
+
+        <div className="field">
+          <label htmlFor="brief">
+            Meeting brief (optional): agenda, names, product or client terms
+          </label>
+          <textarea
+            id="brief"
+            rows={4}
+            maxLength={50_000}
+            value={brief}
+            onChange={(e) => setBrief(e.target.value)}
+          />
+          <button type="button" className="btn btn-small" onClick={() => setBriefSent(brief)}>
+            Use this brief
+          </button>
+        </div>
+      </details>
+
+      {/* Without speech recognition this is the only way in, so it starts open. */}
+      <details className="card fold" open={!canListen}>
+        <summary>Test without a mic</summary>
+        <div className="field">
+          <label htmlFor="typed">Type a phrase; it is sent as speech, one word every 300 ms</label>
+          <div className="row">
+            <input id="typed" value={typed} onChange={(e) => setTyped(e.target.value)} />
+            <button
+              type="button"
+              className="btn btn-small"
+              onClick={playTyped}
+              disabled={!typed.trim()}
+            >
+              Send as speech
+            </button>
+          </div>
+        </div>
+      </details>
     </main>
   );
 }
