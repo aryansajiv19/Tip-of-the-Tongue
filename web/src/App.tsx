@@ -8,6 +8,18 @@ import { stampWords } from './speech/stampWords';
 import { TYPED_FINAL_DELAY_MS, typedSteps } from './speech/typedWords';
 
 const MAX_LINES = 50;
+const PAUSE_KEY = 'tott.pauseSeconds';
+const DEFAULT_PAUSE_S = 1.5;
+
+// The saved setting, or null if the user never changed it (then the server's default applies).
+function savedPause(): number | null {
+  try {
+    const n = Number(localStorage.getItem(PAUSE_KEY));
+    return n >= 0.8 && n <= 5 ? n : null;
+  } catch {
+    return null;
+  }
+}
 
 const text = (words: Word[]) => words.map((w) => w.text).join(' ');
 
@@ -18,6 +30,7 @@ export function App() {
   const [brief, setBrief] = useState('');
   const [briefSent, setBriefSent] = useState<string | null>(null);
   const [typed, setTyped] = useState('');
+  const [pauseS, setPauseS] = useState<number | null>(savedPause);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const { status, send } = useSocket(dispatch);
@@ -48,6 +61,22 @@ export function App() {
       send({ type: 'session.brief', text: briefSent } satisfies ClientEvent);
     }
   }, [status, briefSent, send]);
+
+  // Only sent once the user has chosen a value, so the server's STUCK_PAUSE_MS applies until then.
+  useEffect(() => {
+    if (status === 'connected' && pauseS !== null) {
+      send({ type: 'session.settings', pauseMs: Math.round(pauseS * 1000) } satisfies ClientEvent);
+    }
+  }, [status, pauseS, send]);
+
+  const changePause = (seconds: number) => {
+    setPauseS(seconds);
+    try {
+      localStorage.setItem(PAUSE_KEY, String(seconds));
+    } catch {
+      // Private mode: the setting still works for this visit.
+    }
+  };
 
   const clearOffer = useCallback(() => dispatch({ type: 'offer.clear' }), []);
 
@@ -98,6 +127,22 @@ export function App() {
       </section>
 
       <Offer offer={offer} onClear={clearOffer} />
+
+      <section aria-labelledby="settings-h">
+        <h2 id="settings-h">Settings</h2>
+        <label htmlFor="pause">
+          Wait before suggesting: {(pauseS ?? DEFAULT_PAUSE_S).toFixed(1)} s
+        </label>
+        <input
+          id="pause"
+          type="range"
+          min={0.8}
+          max={5}
+          step={0.1}
+          value={pauseS ?? DEFAULT_PAUSE_S}
+          onChange={(e) => changePause(Number(e.target.value))}
+        />
+      </section>
 
       <section aria-labelledby="brief-h">
         <h2 id="brief-h">Meeting brief (optional)</h2>
