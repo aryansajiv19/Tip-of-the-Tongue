@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Word } from '../../../server/src/events';
-import { stampWords } from './stampWords';
+import { isStale, stampResult } from './stampWords';
 
 // The Web Speech API is not in TypeScript's DOM types, so declare the little we use.
 interface Alternative {
@@ -18,6 +18,7 @@ interface Recognition {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
+  onstart: (() => void) | null;
   onresult: ((e: RecognitionEvent) => void) | null;
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
@@ -34,6 +35,7 @@ const Ctor =
 export const speechSupported = Ctor !== undefined;
 
 const RESTART_DELAY_MS = 250;
+const WATCHDOG_CHECK_MS = 5000;
 
 // Errors after which restarting would just fail again.
 const FATAL: Record<string, string> = {
@@ -61,23 +63,33 @@ export function useSpeech({ onPartial, onFinal }: Handlers) {
   });
 
   const beginRef = useRef<() => void>(() => undefined);
+  const lastEvent = useRef(0); // set by begin() before the watchdog can run
   const begin = useCallback(() => {
     if (!Ctor) return;
+    const touch = () => {
+      lastEvent.current = Date.now();
+    };
+    touch();
     const r = new Ctor();
     r.continuous = true;
     r.interimResults = true;
     r.lang = navigator.language || 'en-GB';
+    r.onstart = touch;
     r.onresult = (e) => {
+      touch();
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const result = e.results[i];
         if (!result) continue;
-        words.current = stampWords(words.current, result[0].transcript, Date.now());
-        if (result.isFinal) {
-          if (words.current.length) handlers.current.onFinal(words.current);
-          words.current = [];
-        } else if (words.current.length) {
-          handlers.current.onPartial(words.current);
-        }
+        const { words: heard, rest } = stampResult(
+          words.current,
+          result[0].transcript,
+          result.isFinal,
+          Date.now(),
+        );
+        words.current = rest;
+        if (!heard.length) continue;
+        if (result.isFinal) handlers.current.onFinal(heard);
+        else handlers.current.onPartial(heard);
       }
     };
     r.onerror = (e) => {
@@ -90,6 +102,8 @@ export function useSpeech({ onPartial, onFinal }: Handlers) {
     };
     // Chrome ends the session after a stretch of silence; start again while listening.
     r.onend = () => {
+      if (rec.current !== r) return; // an instance we already replaced
+      touch();
       words.current = [];
       if (wanted.current) setTimeout(() => wanted.current && beginRef.current(), RESTART_DELAY_MS);
     };
@@ -120,6 +134,28 @@ export function useSpeech({ onPartial, onFinal }: Handlers) {
     setListening(false);
     rec.current?.stop();
   }, []);
+
+  // Replace the recognizer with a fresh one. Its predecessor's late events are ignored.
+  const restart = useCallback(() => {
+    if (!wanted.current) return;
+    const old = rec.current;
+    rec.current = null;
+    old?.stop();
+    begin();
+  }, [begin]);
+
+  // Chrome can stop recognition without telling us, and stops it when the tab is hidden.
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (isStale(wanted.current, lastEvent.current, Date.now())) restart();
+    }, WATCHDOG_CHECK_MS);
+    const onVisible = () => document.visibilityState === 'visible' && restart();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [restart]);
 
   useEffect(
     () => () => {

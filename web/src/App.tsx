@@ -81,7 +81,13 @@ export function App() {
             <button type="button" onClick={listening ? stop : start}>
               {listening ? 'Pause listening' : 'Start listening'}
             </button>
-            <p role="status">{listening ? '● Listening' : 'Not listening'}</p>
+            <p role="status">
+              {!listening
+                ? 'Not listening'
+                : status === 'connected'
+                  ? '● Listening'
+                  : '● Listening paused: not connected to the server, so no word suggestions'}
+            </p>
           </>
         ) : (
           <p role="alert">
