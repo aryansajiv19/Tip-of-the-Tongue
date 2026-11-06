@@ -16,6 +16,8 @@ export interface SessionOptions {
   // Words the user may say after an offer without picking one before we take it down.
   moveOnWords: number;
   now?: () => number;
+  // Called when the guesser or a timer tick fails; the session carries on.
+  onError?: (err: unknown) => void;
 }
 
 interface Offer {
@@ -57,13 +59,23 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
 
   async function guessFor(sinceMs: number, stuckPhrase: string) {
     guessing = true;
+    try {
+      await offerFor(stuckAtMs, stuckPhrase);
+    } catch (err) {
+      // The guesser promises never to throw; if it does, stay silent rather than crash.
+      opts.onError?.(err);
+    } finally {
+      guessing = false;
+    }
+  }
+
+  async function offerFor(stuckAtMs: number, stuckPhrase: string) {
     const result = await opts.guess({
       conversation: buffer.recentText(),
       stuckPhrase,
       ...(brief ? { brief } : {}),
       ...(opts.profile ? { profile: opts.profile } : {}),
     });
-    guessing = false;
     if (closed) return;
 
     const decision = decideOffer(
@@ -109,7 +121,13 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   }
 
   // Pauses are silence, so no event arrives when one passes; poll for them.
-  const timer = setInterval(check, 200);
+  const timer = setInterval(() => {
+    try {
+      check();
+    } catch (err) {
+      opts.onError?.(err);
+    }
+  }, 200);
 
   return {
     handle(event: ClientEvent) {
