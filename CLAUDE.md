@@ -6,7 +6,7 @@ Read first: `docs/CHECKPOINT.md` (current status, owners). Product and honest fr
 
 ## Stack
 
-Node 22, TypeScript strict, npm workspaces `server/` (Fastify + ws), `web/` (Vite + React), `eval/`. STT: browser Web Speech API (default) or Deepgram if `DEEPGRAM_API_KEY`. Guesses: Anthropic (`ANTHROPIC_MODEL`, default `claude-haiku-5-5`), deterministic mock when no key.
+Node 22, TypeScript strict, npm workspaces `server/` (Fastify + ws), `web/` (Vite + React), `eval/`; Playwright tests in `e2e/`. STT: browser Web Speech API (Deepgram planned, not built). Guesses: Anthropic (`ANTHROPIC_MODEL`, default `claude-haiku-5-5`), deterministic mock when no key.
 
 ## Rules
 

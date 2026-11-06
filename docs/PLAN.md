@@ -1,7 +1,5 @@
 # Plan — one week
 
-Deadline: **confirm with Hiya in writing** (the brief says 2 Nov).
-
 | Day | Goal                       | Done when                                                                                         |
 | --- | -------------------------- | ------------------------------------------------------------------------------------------------- |
 | 1   | Skeleton + live transcript | Clean clone runs; mic → words on screen with timestamps; CI green                                 |
@@ -30,6 +28,9 @@ Deadline: **confirm with Hiya in writing** (the brief says 2 Nov).
 - 2026-11-06: Owner widened the user: anyone can be the main user (meetings, customer calls), aphasia is one group. Added: context builds over the conversation, an optional pre-meeting brief, and a small side pop-up offering a few words ("Is this the word you're looking for?").
 
 - 2026-11-06: MIT licence. Spoken cue via browser `speechSynthesis` (no ElevenLabs). Work split across a lead session and parallel worker sessions, one git worktree each; status in `docs/CHECKPOINT.md`.
+
+- 2026-11-06: Deepgram adapter and spoken cue deferred. The browser STT is enough for the prototype, and a spoken cue would be picked up by the mic as the user saying the word, so it needs echo handling first.
+- 2026-11-06: First real eval with Claude (Haiku): dev top-1 94%, holdout 89%, no false triggers on fluent items. Numbers and caveats in `docs/write-up.md`.
 
 ## Outreach (optional, high value)
 
