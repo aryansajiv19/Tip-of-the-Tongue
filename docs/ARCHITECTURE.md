@@ -27,6 +27,11 @@ Defined once in `server/src/events.ts`. Times are epoch ms.
 | `guess.accepted` / `guess.expired`        | server → web | offer id; accepted word and time to accept             |
 | `guesser.status`                          | server → web | `ok`; sent only when the guesser goes down or recovers |
 
+## Speech-to-text
+
+- **Deepgram** (`server/src/stt/deepgram.ts`, when `DEEPGRAM_API_KEY` is set): on connect the server sends `session.ready` with `stt: 'deepgram'`. The browser then streams raw 16 kHz mono PCM as binary frames, about 100 ms each. The server forwards them to Deepgram Nova-3 (interim results, filler words, punctuation) and turns each result into the same `transcript.*` events the browser path uses, with real word times. Deepgram reports times from the start of the audio, and the server maps them onto its own clock, so the browser clock never matters. After 3 s without audio the stream closes, and the next chunk opens a fresh one. If Deepgram refuses or drops the connection, the server sends `session.ready` with `stt: 'browser'` and stops trying.
+- **Browser** (no key): the page runs the Web Speech API and sends `transcript.*` events itself.
+
 ## Components
 
 - **StuckDetector** (pure): takes recent words and the current time and returns `{stuck, reason, contextWindow, sinceMs}`. `sinceMs` is the end of the stall marker; words said after it may already be the answer. Text is lowercased and stripped of punctuation, so it works on plain Web Speech output. Rules, in order: (1) `pause`: silence longer than the pause setting (`STUCK_PAUSE_MS`, 1500 by default; the user can change it per connection with `session.settings`) after a phrase ending in a determiner, preposition, conjunction, modal or filler ("the", "to", "and", "um"); a pause after a complete clause never triggers. The remaining rules need at least half that silence and look only at the last 15 words said in the last 10 seconds. (2) `describing`: patterns such as "the thing you…", "the man who…", "the one that…", "the tool we use for…", "it's like a…", within the last 10 words. (3) `filler`: "the thing", "what's it called", "um/uh/er" or "you know" at the end, or a repeated "the the" at the end. (4) `describing` after a stall: a repeated determiner ("the… the") or a gap longer than the pause threshold earlier in the window, then silence once the description is finished. Saying "yes" or "sorry" after the marker cancels it.
@@ -49,7 +54,7 @@ Defined once in `server/src/events.ts`. Times are epoch ms.
 - Tested only on our own written, scripted examples; not tested with people with aphasia. No claim of clinical benefit.
 - One mic hears both sides and the prototype cannot tell speakers apart; there is no speaker separation.
 - Speech-to-text may mishear real aphasic speech; accuracy on atypical speech is unknown.
-- Planned, not built: Deepgram streaming for real word timings, and a spoken cue (needs echo handling, because the mic would hear the cue and count it as the user saying the word).
+- Planned, not built: a spoken cue (needs echo handling, because the mic would hear the cue and count it as the user saying the word).
 
 ## Where this could go
 

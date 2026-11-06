@@ -22,7 +22,7 @@ Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, and `n
 
 - `ANTHROPIC_API_KEY` — real guessing with Claude. Without it, a mock guesser runs.
 
-Speech-to-text is the browser's Web Speech API, with approximate word timings. Planned: Deepgram streaming for real word timings. A spoken cue is also planned; it needs echo handling first, because the microphone would hear the cue and count it as the user saying the word.
+Speech-to-text: with `DEEPGRAM_API_KEY` set, the server streams your mic audio to Deepgram (Nova-3) and gets each word with real timings plus filler words ("um", "uh"). Without a key, the browser's Web Speech API is used, with approximate timings (Chrome and Edge only). If Deepgram fails mid-session, the app falls back to the browser automatically. A spoken cue is also planned; it needs echo handling first, because the microphone would hear the cue and count it as the user saying the word.
 
 ## Evaluate
 
@@ -47,7 +47,7 @@ server/  web/  eval/  data/  docs/
 
 ## Privacy
 
-No audio is stored. Transcripts are kept in memory for the session only and sent only to the configured speech-to-text and AI providers.
+No audio is stored. With `DEEPGRAM_API_KEY` set, mic audio is streamed to Deepgram for transcription while you are listening, and is not kept by this app. Transcripts are kept in memory for the session only and sent only to the configured speech-to-text and AI providers.
 
 Security notes for running it locally:
 
