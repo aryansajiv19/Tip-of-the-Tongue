@@ -64,6 +64,8 @@ export async function buildApp(deps: AppDeps = {}) {
       cooldownMs: config.cooldownMs,
       acceptWindowMs: config.acceptWindowMs,
       moveOnWords: config.moveOnWords,
+      speculateAfterMs: config.speculateAfterMs,
+      log: (info) => app.log.info(info, 'session: timing'),
       onError: (err) => app.log.error({ err }, 'session: error'),
       ...(deps.profile ? { profile: deps.profile } : {}),
       ...deps.session,
