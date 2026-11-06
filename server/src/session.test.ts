@@ -470,6 +470,87 @@ describe('session pipeline', () => {
     });
   });
 
+  describe('long briefs', () => {
+    const long = `Lumenfield overview. ${'x'.repeat(3500)} The churn rate is rising.`;
+    const stall = 'I need to go to the the place where you get medicine';
+
+    function longSetup(buildGlossary: (doc: string) => Promise<string | undefined>) {
+      const guess = vi.fn<Guesser>(mockGuesser);
+      const events: ServerEvent[] = [];
+      const session = createSession((e) => events.push(e), {
+        guess,
+        buildGlossary,
+        pauseMs: 1500,
+        minConfidence: 0.6,
+        cooldownMs: 8000,
+        acceptWindowMs: 10_000,
+        moveOnWords: 6,
+        now: () => Date.now(),
+      });
+      const say = (text: string) => {
+        const words: Word[] = text.split(' ').map((w, i) => {
+          const at = Date.now() + i * 300;
+          return { text: w, startMs: at, endMs: at + 250 };
+        });
+        vi.advanceTimersByTime(words.length * 300);
+        session.handle({ type: 'transcript.final', words });
+      };
+      return { session, guess, say };
+    }
+
+    it('builds the glossary once, in the background, for a long brief only', async () => {
+      const build = vi.fn(() => Promise.resolve('churn rate'));
+      const { session } = longSetup(build);
+      session.handle({ type: 'session.brief', text: 'short brief' });
+      expect(build).not.toHaveBeenCalled();
+      session.handle({ type: 'session.brief', text: long });
+      expect(build).toHaveBeenCalledTimes(1);
+      expect(build).toHaveBeenCalledWith(long);
+      session.close();
+    });
+
+    it('guesses from the start of the document until the glossary is ready, then adds it', async () => {
+      let resolve: (g: string) => void = () => undefined;
+      const pending = new Promise<string>((r) => (resolve = r));
+      const { session, guess, say } = longSetup(() => pending);
+      session.handle({ type: 'session.brief', text: long });
+      say(stall);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(guess.mock.calls[0]?.[0].brief).toBe(long.slice(0, 1500));
+
+      resolve('churn rate, SOC 2');
+      await vi.advanceTimersByTimeAsync(10_000);
+      say(`${stall} again`);
+      await vi.advanceTimersByTimeAsync(2000);
+      const last = guess.mock.calls.at(-1)?.[0].brief;
+      expect(last).toBe(`Key terms: churn rate, SOC 2\n\n${long.slice(0, 1500)}`);
+      session.close();
+    });
+
+    it('ignores a glossary that arrives after the brief was replaced', async () => {
+      let resolve: (g: string) => void = () => undefined;
+      const pending = new Promise<string>((r) => (resolve = r));
+      const { session, guess, say } = longSetup(() => pending);
+      session.handle({ type: 'session.brief', text: long });
+      session.handle({ type: 'session.brief', text: 'Q3 review with Northwind' });
+      resolve('stale terms');
+      await vi.advanceTimersByTimeAsync(10);
+      say(stall);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(guess.mock.calls[0]?.[0].brief).toBe('Q3 review with Northwind');
+      session.close();
+    });
+
+    it('carries on with the start of the document if the glossary fails', async () => {
+      const { session, guess, say } = longSetup(() => Promise.reject(new Error('boom')));
+      session.handle({ type: 'session.brief', text: long });
+      say(stall);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(guess.mock.calls[0]?.[0].brief).toBe(long.slice(0, 1500));
+      session.close();
+    });
+  });
+
   it('uses the meeting brief in the guess', async () => {
     const guess = vi.fn(mockGuesser);
     const { session, say } = setup(guess);

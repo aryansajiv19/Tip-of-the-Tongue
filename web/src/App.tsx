@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { ClientEvent, ServerEvent, Word } from '../../server/src/events';
 import { Offer } from './offer/Offer';
 import { offerReducer } from './offer/offerState';
+import { useMic } from './audio/useMic';
 import { useSocket } from './socket/useSocket';
 import { speechSupported, useSpeech } from './speech/useSpeech';
 import { stampWords } from './speech/stampWords';
@@ -36,11 +37,28 @@ export function App() {
 
   const [guesserDown, setGuesserDown] = useState(false);
 
+  // Who recognises speech: the server (Deepgram, audio streamed from here) or this browser.
+  const [stt, setStt] = useState<'deepgram' | 'browser'>('browser');
+  const [notice, setNotice] = useState('');
+  const sttRef = useRef(stt);
+
   const onServerEvent = useCallback((e: ServerEvent) => {
     dispatch(e);
     if (e.type === 'guesser.status') setGuesserDown(!e.ok);
+    else if (e.type === 'session.ready') {
+      if (sttRef.current === 'deepgram' && e.stt === 'browser') {
+        setNotice('Switched to this browser\u2019s speech recognition.');
+      }
+      sttRef.current = e.stt;
+      setStt(e.stt);
+    } else if (e.type === 'transcript.partial') setPartial(text(e.words));
+    else if (e.type === 'transcript.final') {
+      setPartial('');
+      setHeard((h) => [...h, ...e.words.map((w) => w.text)].slice(-MAX_WORDS));
+    }
   }, []);
-  const { status, send } = useSocket(onServerEvent);
+  const { status, send, sendBinary } = useSocket(onServerEvent);
+  const mic = useMic(sendBinary);
 
   // A dropped connection ends the server session, so its guesser problem is forgotten too.
   const [prevStatus, setPrevStatus] = useState(status);
@@ -64,11 +82,39 @@ export function App() {
     },
     [send],
   );
-  const { listening, error, start, stop, trace } = useSpeech({
-    onPartial: sendPartial,
-    onFinal: sendFinal,
-    debug: DEBUG,
-  });
+  const speech = useSpeech({ onPartial: sendPartial, onFinal: sendFinal, debug: DEBUG });
+  const { trace } = speech;
+
+  // One Start/Pause for both ways of listening. `wanted` is what the user asked for.
+  const wanted = useRef(false);
+  const { start: startSpeech, stop: stopSpeech } = speech;
+  const { start: startMic, stop: stopMic } = mic;
+  const listening = stt === 'deepgram' ? mic.capturing : speech.listening;
+  const error = stt === 'deepgram' ? mic.error : speech.error;
+  const canListen = stt === 'deepgram' || speechSupported;
+
+  const startListening = () => {
+    wanted.current = true;
+    setNotice('');
+    if (stt === 'deepgram') void startMic();
+    else startSpeech();
+  };
+  const pauseListening = () => {
+    wanted.current = false;
+    stopSpeech();
+    stopMic();
+  };
+  // The server can switch the speech recognition (e.g. Deepgram fails): carry on listening.
+  useEffect(() => {
+    if (!wanted.current) return;
+    if (stt === 'deepgram') {
+      stopSpeech();
+      void startMic();
+    } else {
+      stopMic();
+      startSpeech();
+    }
+  }, [stt, startSpeech, stopSpeech, startMic, stopMic]);
 
   const downloadTrace = () => {
     const url = URL.createObjectURL(
@@ -131,9 +177,9 @@ export function App() {
 
       <section aria-labelledby="listen-h">
         <h2 id="listen-h">Listening</h2>
-        {speechSupported ? (
+        {canListen ? (
           <>
-            <button type="button" onClick={listening ? stop : start}>
+            <button type="button" onClick={listening ? pauseListening : startListening}>
               {listening ? 'Pause listening' : 'Start listening'}
             </button>
             <p role="status">
@@ -150,6 +196,7 @@ export function App() {
           </p>
         )}
         {error && <p role="alert">{error}</p>}
+        <p role="status">{notice}</p>
       </section>
 
       <p role="status">
@@ -184,7 +231,7 @@ export function App() {
         <textarea
           id="brief"
           rows={4}
-          maxLength={5000}
+          maxLength={50_000}
           value={brief}
           onChange={(e) => setBrief(e.target.value)}
         />

@@ -5,9 +5,11 @@ import { config } from '../../server/src/config.js';
 import { detectStuck } from '../../server/src/stuck/detect.js';
 import { decideOffer } from '../../server/src/gate/gate.js';
 import { normalizePhrase } from '../../server/src/gate/normalize.js';
+import { createGlossaryBuilder } from '../../server/src/guess/glossary.js';
 import { createGuesser } from '../../server/src/guess/guesser.js';
 import { loadProfile } from '../../server/src/guess/profile.js';
-import { dataPath, loadItems, SILENT_CATEGORIES, type Item } from './dataset.js';
+import { applyBriefMode, type BriefMode } from './briefmode.js';
+import { dataPath, loadItems, loadLongDocs, SILENT_CATEGORIES, type Item } from './dataset.js';
 import type { ItemResult } from './metrics.js';
 import { degradeWords, hashSeed } from './noise.js';
 import { sweep, toTimedWords } from './timeline.js';
@@ -114,6 +116,7 @@ async function main(): Promise<void> {
       split: { type: 'string', default: 'all' },
       guesser: { type: 'string', default: 'mock' },
       set: { type: 'string', default: 'main' },
+      'brief-mode': { type: 'string' },
       model: { type: 'string' },
       'no-context': { type: 'boolean', default: false },
       'stt-noise': { type: 'boolean', default: false },
@@ -126,6 +129,13 @@ async function main(): Promise<void> {
   const set = values.set;
   if (set !== 'main' && set !== 'hard') throw new Error(`--set must be main or hard`);
   const model = values.model ?? config.anthropicModel;
+  const briefMode = values['brief-mode'];
+  if (briefMode !== undefined && !['full', 'glossary', 'head'].includes(briefMode))
+    throw new Error('--brief-mode must be full, glossary or head');
+  if (briefMode === 'glossary' && kind !== 'claude')
+    throw new Error(
+      '--brief-mode glossary needs --guesser claude (it builds the glossary with Claude)',
+    );
   if (kind !== 'mock' && kind !== 'claude') throw new Error(`--guesser must be mock or claude`);
   if (kind === 'claude' && !config.anthropicApiKey)
     throw new Error('--guesser claude needs ANTHROPIC_API_KEY');
@@ -136,12 +146,28 @@ async function main(): Promise<void> {
     timeoutMs: config.guessTimeoutMs,
   });
   const profile = await loadProfile(dataPath('profiles/example.json'));
-  const items = await loadItems(split, set);
+  let items = await loadItems(split, set);
+  if (briefMode) {
+    const docs = await loadLongDocs();
+    const glossaries: Record<string, string | undefined> = {};
+    if (briefMode === 'glossary') {
+      const build = createGlossaryBuilder({
+        ...(config.anthropicApiKey ? { apiKey: config.anthropicApiKey } : {}),
+        model,
+        timeoutMs: 20_000,
+      });
+      for (const key of new Set(items.flatMap((i) => (i.doc ? [i.doc] : [])))) {
+        glossaries[key] = await build(docs[key] ?? '');
+        console.log(`glossary for ${key}: ${glossaries[key] ?? 'none (call failed)'}`);
+      }
+    }
+    items = applyBriefMode(items, briefMode as BriefMode, docs, glossaries);
+  }
 
   const results: ItemResult[] = [];
   const opts: RunOptions = { context: !values['no-context'], sttNoise: values['stt-noise'] };
   for (const item of items) results.push(await runItem(item, guess, profile, opts));
-  const tag = `${set === 'hard' ? '-hard' : ''}${values.model ? `-${values.model}` : ''}${opts.context ? '' : '-nocontext'}${opts.sttNoise ? '-noise' : ''}`;
+  const tag = `${set === 'hard' ? '-hard' : ''}${briefMode ? `-brief-${briefMode}` : ''}${values.model ? `-${values.model}` : ''}${opts.context ? '' : '-nocontext'}${opts.sttNoise ? '-noise' : ''}`;
 
   const meta: RunMeta = {
     guesser: kind,
@@ -149,6 +175,7 @@ async function main(): Promise<void> {
     noContext: !opts.context,
     sttNoise: opts.sttNoise,
     set,
+    ...(briefMode ? { briefMode } : {}),
     ...(kind === 'claude' ? { model } : {}),
   };
   const md = renderMarkdown(meta, results);

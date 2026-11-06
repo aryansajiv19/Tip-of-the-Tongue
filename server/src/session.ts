@@ -4,6 +4,7 @@ import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck, type VoiceInfo } from './stuck/detect.js';
 import { endsWithAskForWord } from './stuck/manual.js';
 import type { Profile } from './guess/profile.js';
+import { briefForGuesser, LONG_BRIEF_CHARS, type GlossaryBuilder } from './guess/glossary.js';
 import type { GuessResult, Guesser } from './guess/types.js';
 import { decideOffer } from './gate/gate.js';
 import { checkAcceptance } from './accept/accept.js';
@@ -12,6 +13,8 @@ import { normalizePhrase } from './gate/normalize.js';
 export interface SessionOptions {
   guess: Guesser;
   profile?: Profile;
+  // Summarises a long pasted brief into key terms; one background call per brief.
+  buildGlossary?: GlossaryBuilder;
   pauseMs: number;
   minConfidence: number;
   cooldownMs: number;
@@ -56,6 +59,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   const buffer = new TranscriptBuffer();
   const recentlyOffered = new Map<string, number>();
   let brief: string | undefined;
+  let glossary: string | undefined;
   // Starts from the server default; the user can change it for this connection.
   let pauseMs = opts.pauseMs;
   let offer: Offer | undefined;
@@ -149,7 +153,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         {
           conversation: buffer.recentText(),
           stuckPhrase,
-          ...(brief ? { brief } : {}),
+          ...(brief ? { brief: briefForGuesser(brief, glossary) } : {}),
           ...(opts.profile ? { profile: opts.profile } : {}),
         },
         mine.abort.signal,
@@ -260,6 +264,19 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   }
 
   // Pauses are silence, so no event arrives when one passes; poll for them.
+  // A long brief is used from its start straight away; the glossary joins in when it is ready.
+  function setBrief(next: string | undefined) {
+    brief = next;
+    glossary = undefined;
+    if (!next || next.length <= LONG_BRIEF_CHARS || !opts.buildGlossary) return;
+    opts
+      .buildGlossary(next)
+      .then((terms) => {
+        if (!closed && brief === next) glossary = terms;
+      })
+      .catch((err: unknown) => opts.onError?.(err));
+  }
+
   const timer = setInterval(() => {
     try {
       check();
@@ -270,7 +287,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
 
   return {
     handle(event: ClientEvent) {
-      if (event.type === 'session.brief') brief = event.text.trim() || undefined;
+      if (event.type === 'session.brief') setBrief(event.text.trim() || undefined);
       else if (event.type === 'session.settings') pauseMs = event.pauseMs;
       else if (event.type === 'guess.picked') pick(event.id, event.word);
       else if (event.type === 'voice.activity') onVoice(event.voiced, event.atMs);
