@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseGuess } from './parse.js';
+import { firstObjectEnd, parseGuess } from './parse.js';
 
 const json = (o: unknown): string => JSON.stringify(o);
 
@@ -124,5 +124,31 @@ describe('parseGuess', () => {
       candidates: [],
       abstain: true,
     });
+  });
+});
+
+describe('firstObjectEnd', () => {
+  it('is undefined while the object is still open', () => {
+    expect(firstObjectEnd('')).toBeUndefined();
+    expect(firstObjectEnd('no braces yet')).toBeUndefined();
+    expect(firstObjectEnd('{"candidates":[{"word":"a"')).toBeUndefined();
+    expect(firstObjectEnd('{"a":{"b":1}')).toBeUndefined();
+  });
+  it('returns the index just past the closing brace', () => {
+    const text = '{"a":{"b":1}}';
+    expect(firstObjectEnd(text)).toBe(text.length);
+    expect(firstObjectEnd(`${text} trailing`)).toBe(text.length);
+  });
+  it('skips prose and fences before the object', () => {
+    const text = 'Sure:\n```json\n{"a":1}\n```';
+    expect(firstObjectEnd(text)).toBe(text.indexOf('}') + 1);
+  });
+  it('ignores braces and escaped quotes inside strings', () => {
+    const text = '{"word":"a } b \\" } c","n":1}';
+    expect(firstObjectEnd(text)).toBe(text.length);
+    expect(firstObjectEnd('{"word":"open } still')).toBeUndefined();
+  });
+  it('stops at the first of two objects', () => {
+    expect(firstObjectEnd('{"a":1}{"b":2}')).toBe(7);
   });
 });
