@@ -26,10 +26,10 @@ Browser mic
 
 ## Components
 
-- **StuckDetector** — …
-- **Guesser** — prompt design, output schema, timeout, mock …
-- **Gate** — thresholds and why …
-- **AcceptanceTracker** — …
+- **StuckDetector** (pure): takes recent words with timestamps and returns `{stuck, reason, contextWindow}`. It triggers on a pause over `STUCK_PAUSE_MS` (1500) after an incomplete phrase, on filler cues ("the thing", "what's it called"), or on describing patterns ("the thing you…", "the man who…"). A pause alone never triggers it.
+- **Guesser**: sends Claude the context window, the meeting brief and the profile. It returns `{candidates: [{word, confidence}], abstain}`, validated with zod. If no answer arrives within `GUESS_TIMEOUT_MS` (2500), it abstains. A deterministic mock runs when there is no key.
+- **Gate** (pure): offers only if the top confidence is ≥ `GATE_MIN_CONFIDENCE` (0.6), the word hasn't been said since, and the cooldown has passed.
+- **AcceptanceTracker** (pure): an offered word spoken within N seconds counts as accepted; otherwise the offer expires.
 
 ## Key decisions
 

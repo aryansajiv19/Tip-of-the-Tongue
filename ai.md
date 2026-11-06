@@ -16,3 +16,4 @@
 | Date | Tool | What for | My role |
 |---|---|---|---|
 | 2026-11-05/06 | Claude | Ideation, research, kit | Directed, chose, critiqued |
+| 2026-11-06 | Claude Code (Opus lead + Sonnet workers) | Repo housekeeping, scaffold, core modules in parallel worktrees | Set direction, scope and working rules; reviews PRs |
