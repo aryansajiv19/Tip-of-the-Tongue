@@ -143,7 +143,11 @@ export function App() {
         {guesserDown ? 'Word suggestions are unavailable right now; listening continues.' : ''}
       </p>
 
-      <Offer offer={offer} onClear={clearOffer} />
+      <Offer
+        offer={offer}
+        onClear={clearOffer}
+        onPick={(id, word) => send({ type: 'guess.picked', id, word })}
+      />
 
       <section aria-labelledby="settings-h">
         <h2 id="settings-h">Settings</h2>

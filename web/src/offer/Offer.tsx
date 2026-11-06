@@ -7,20 +7,28 @@ const ACCEPTED_SHOWN_MS = 1500;
 interface Props {
   offer: OfferState | null;
   onClear: () => void;
+  // The user clicked one of the words.
+  onPick: (id: string, word: string) => void;
 }
 
 // The live region stays mounted so screen readers announce the offer when it appears.
-// Picking a word here only changes what the user sees; the server still learns about
-// acceptance from the user saying the word.
-export function Offer({ offer, onClear }: Props) {
+export function Offer({ offer, onClear, onPick }: Props) {
   return (
     <aside aria-live="polite" aria-label="Word suggestions">
-      {offer && <Card key={offer.id} offer={offer} onClear={onClear} />}
+      {offer && <Card key={offer.id} offer={offer} onClear={onClear} onPick={onPick} />}
     </aside>
   );
 }
 
-function Card({ offer, onClear }: { offer: OfferState; onClear: () => void }) {
+function Card({
+  offer,
+  onClear,
+  onPick,
+}: {
+  offer: OfferState;
+  onClear: () => void;
+  onPick: Props['onPick'];
+}) {
   const [picked, setPicked] = useState<string>();
   const accepted = offer.acceptedWord ?? picked;
 
@@ -64,7 +72,14 @@ function Card({ offer, onClear }: { offer: OfferState; onClear: () => void }) {
       <ul className="offer-words">
         {offer.candidates.map((c) => (
           <li key={c.word}>
-            <button type="button" className="offer-word" onClick={() => setPicked(c.word)}>
+            <button
+              type="button"
+              className="offer-word"
+              onClick={() => {
+                setPicked(c.word);
+                onPick(offer.id, c.word);
+              }}
+            >
               {c.word}
             </button>
           </li>

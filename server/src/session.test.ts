@@ -94,6 +94,89 @@ describe('session pipeline', () => {
     session.close();
   });
 
+  describe('guess.picked', () => {
+    // Speaks the demo stall and waits for the offer.
+    async function offered() {
+      const ctx = setup();
+      ctx.say('I need to go to the the place where you get medicine');
+      await vi.advanceTimersByTimeAsync(2000);
+      const o = ctx.events.find((e) => e.type === 'guess.offered');
+      if (o?.type !== 'guess.offered') throw new Error('no offer');
+      return { ...ctx, id: o.id };
+    }
+    const accepted = (events: ServerEvent[]) => events.filter((e) => e.type === 'guess.accepted');
+
+    it('counts a click like a spoken acceptance', async () => {
+      const { session, events, id } = await offered();
+      await vi.advanceTimersByTimeAsync(400);
+      session.handle({ type: 'guess.picked', id, word: 'chemist' });
+      const [a] = accepted(events);
+      expect(a).toMatchObject({ type: 'guess.accepted', id, word: 'chemist' });
+      expect(a?.type === 'guess.accepted' && a.afterMs).toBeGreaterThanOrEqual(400);
+      // The offer is closed: nothing else follows for it.
+      await vi.advanceTimersByTimeAsync(20_000);
+      expect(events.map((e) => e.type)).not.toContain('guess.expired');
+      session.close();
+    });
+
+    it('matches the word the way speech does (case, plural) and reports the offered spelling', async () => {
+      const { session, events, id } = await offered();
+      session.handle({ type: 'guess.picked', id, word: ' Pharmacies ' });
+      expect(accepted(events)).toMatchObject([{ word: 'pharmacy' }]);
+      session.close();
+    });
+
+    it('ignores a stale id', async () => {
+      const { session, events } = await offered();
+      session.handle({ type: 'guess.picked', id: 'not-the-offer', word: 'pharmacy' });
+      expect(accepted(events)).toEqual([]);
+      session.close();
+    });
+
+    it('ignores a word that was not offered, and the offer stays open', async () => {
+      const { session, say, events, id } = await offered();
+      session.handle({ type: 'guess.picked', id, word: 'hospital' });
+      session.handle({ type: 'guess.picked', id, word: 'pharmacy chemist' });
+      expect(accepted(events)).toEqual([]);
+      say('pharmacy');
+      await vi.advanceTimersByTimeAsync(300);
+      expect(accepted(events)).toHaveLength(1);
+      session.close();
+    });
+
+    it('ignores a click after the offer expired', async () => {
+      const { session, events, id } = await offered();
+      await vi.advanceTimersByTimeAsync(11_000);
+      expect(events.map((e) => e.type)).toContain('guess.expired');
+      session.handle({ type: 'guess.picked', id, word: 'pharmacy' });
+      expect(accepted(events)).toEqual([]);
+      session.close();
+    });
+
+    it('ignores a click in the moment between the window ending and the next poll', async () => {
+      const { session, events, id } = await offered();
+      vi.setSystemTime(Date.now() + 10_050);
+      session.handle({ type: 'guess.picked', id, word: 'pharmacy' });
+      expect(accepted(events)).toEqual([]);
+      session.close();
+    });
+
+    it('accepts once: a second click does nothing', async () => {
+      const { session, events, id } = await offered();
+      session.handle({ type: 'guess.picked', id, word: 'pharmacy' });
+      session.handle({ type: 'guess.picked', id, word: 'chemist' });
+      expect(accepted(events)).toHaveLength(1);
+      session.close();
+    });
+
+    it('ignores a click when no offer is open', () => {
+      const { session, events } = setup();
+      session.handle({ type: 'guess.picked', id: 'x', word: 'pharmacy' });
+      expect(events).toEqual([]);
+      session.close();
+    });
+  });
+
   it('stays silent on fluent speech', async () => {
     const { session, say, events } = setup();
     say('we shipped the new release on Tuesday and the customers liked it.');
