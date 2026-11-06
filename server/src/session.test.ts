@@ -134,6 +134,73 @@ describe('session pipeline', () => {
     expect(types()).toEqual(['stuck.detected']);
   });
 
+  describe('guesser status', () => {
+    const failing: Guesser = async () => ({
+      candidates: [],
+      abstain: true,
+      latencyMs: 1,
+      error: true,
+    });
+    const statuses = (events: ServerEvent[]) =>
+      events.flatMap((e) => (e.type === 'guesser.status' ? [e.ok] : []));
+
+    // Each call is a new stall: words, then a pause long enough for a guess.
+    async function stall(say: (t: string) => void, n: number) {
+      say(`can you pass me the thing number${n}`);
+      await vi.advanceTimersByTimeAsync(2000);
+    }
+
+    it('says nothing after one failure, reports ok:false after two in a row, only once', async () => {
+      const { session, events, say } = setup(failing);
+      await stall(say, 1);
+      expect(statuses(events)).toEqual([]);
+      await stall(say, 2);
+      expect(statuses(events)).toEqual([false]);
+      await stall(say, 3);
+      expect(statuses(events)).toEqual([false]);
+      session.close();
+    });
+
+    it('reports ok:true on the next success', async () => {
+      let fail = true;
+      const { session, events, say } = setup((i) => (fail ? failing(i) : mockGuesser(i)));
+      await stall(say, 1);
+      await stall(say, 2);
+      fail = false;
+      await stall(say, 3);
+      expect(statuses(events)).toEqual([false, true]);
+      session.close();
+    });
+
+    it('a success between failures resets the count', async () => {
+      const results = [failing, mockGuesser, failing];
+      let i = 0;
+      const { session, events, say } = setup((input) => (results[i++ % 3] ?? failing)(input));
+      await stall(say, 1);
+      await stall(say, 2);
+      await stall(say, 3);
+      expect(statuses(events)).toEqual([]);
+      session.close();
+    });
+
+    it('sends nothing for normal abstains', async () => {
+      const abstain: Guesser = async () => ({ candidates: [], abstain: true, latencyMs: 1 });
+      const { session, events, say } = setup(abstain);
+      for (let n = 1; n <= 4; n++) await stall(say, n);
+      expect(statuses(events)).toEqual([]);
+      session.close();
+    });
+
+    it('counts a guesser that throws as a failure', async () => {
+      const throwing: Guesser = () => Promise.reject(new Error('boom'));
+      const { session, events, say } = setup(throwing);
+      await stall(say, 1);
+      await stall(say, 2);
+      expect(statuses(events)).toEqual([false]);
+      session.close();
+    });
+  });
+
   it('uses the meeting brief in the guess', async () => {
     const guess = vi.fn(mockGuesser);
     const { session, say } = setup(guess);

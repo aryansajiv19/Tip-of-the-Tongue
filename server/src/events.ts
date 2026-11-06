@@ -42,4 +42,6 @@ export type ServerEvent =
   | { type: 'guess.offered'; id: string; candidates: Candidate[]; latencyMs: number }
   | { type: 'guess.withdrawn'; id: string; reason: 'self-recovered' | 'timeout' }
   | { type: 'guess.accepted'; id: string; word: string; afterMs: number }
-  | { type: 'guess.expired'; id: string };
+  | { type: 'guess.expired'; id: string }
+  // The guesser is failing (ok: false) or working again (ok: true). Sent only on a change.
+  | { type: 'guesser.status'; ok: boolean };

@@ -41,6 +41,9 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   // End time of the last word we already reacted to, so one stall triggers one guess.
   let handledUpToMs = -Infinity;
   let closed = false;
+  // The guesser counts as down after two failures in a row, and up again on the next success.
+  let guessFailures = 0;
+  let guesserDown = false;
 
   function trackOffer(current: Offer) {
     const spoken = buffer.wordsSince(current.offeredAtMs);
@@ -58,12 +61,22 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     handledUpToMs = buffer.words().at(-1)?.endMs ?? handledUpToMs;
   }
 
+  function noteGuess(failed: boolean) {
+    guessFailures = failed ? guessFailures + 1 : 0;
+    const down = guessFailures >= 2;
+    if (down !== guesserDown) {
+      guesserDown = down;
+      send({ type: 'guesser.status', ok: !down });
+    }
+  }
+
   async function guessFor(sinceMs: number, stuckPhrase: string) {
     guessing = true;
     try {
       await offerFor(sinceMs, stuckPhrase);
     } catch (err) {
       // The guesser promises never to throw; if it does, stay silent rather than crash.
+      noteGuess(true);
       opts.onError?.(err);
     } finally {
       guessing = false;
@@ -78,6 +91,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
       ...(opts.profile ? { profile: opts.profile } : {}),
     });
     if (closed) return;
+    noteGuess(result.error === true);
 
     const decision = decideOffer(
       result,

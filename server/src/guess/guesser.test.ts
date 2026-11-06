@@ -60,6 +60,7 @@ describe('Claude guesser', () => {
     );
     const r = await guess(input);
     expect(r.abstain).toBe(true);
+    expect(r.error).toBe(true);
     expect(r.candidates).toEqual([]);
     expect(r.latencyMs).toBeLessThan(500);
   });
@@ -82,7 +83,9 @@ describe('Claude guesser', () => {
       cfg,
       fakeClient(() => Promise.reject(new Error('529 overloaded'))),
     );
-    expect((await guess(input)).abstain).toBe(true);
+    const r = await guess(input);
+    expect(r.abstain).toBe(true);
+    expect(r.error).toBe(true);
   });
 
   it('abstains when the client throws synchronously', async () => {
@@ -92,7 +95,9 @@ describe('Claude guesser', () => {
         throw new Error('boom');
       }),
     );
-    expect((await guess(input)).abstain).toBe(true);
+    const r = await guess(input);
+    expect(r.abstain).toBe(true);
+    expect(r.error).toBe(true);
   });
 
   it('abstains on a refusal, garbage, or an empty reply', async () => {
@@ -106,7 +111,9 @@ describe('Claude guesser', () => {
         cfg,
         fakeClient(() => Promise.resolve(reply)),
       );
-      expect((await guess(input)).abstain).toBe(true);
+      const r = await guess(input);
+      expect(r.abstain).toBe(true);
+      expect(r.error).toBeUndefined(); // the model chose to abstain; nothing failed
     }
   });
 });
