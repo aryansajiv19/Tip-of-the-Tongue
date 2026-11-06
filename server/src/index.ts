@@ -1,6 +1,6 @@
 import { config } from './config.js';
 import { buildApp } from './app.js';
-import { loadProfile } from './guess/index.js';
+import { loadProfile } from './guess/profile.js';
 
 const profile = config.profilePath ? await loadProfile(config.profilePath) : undefined;
 const app = await buildApp(profile ? { profile } : {});

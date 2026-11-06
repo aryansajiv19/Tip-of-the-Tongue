@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createGuesser, ProfileSchema } from '../../server/src/guess/index.js';
+import { createGuesser } from '../../server/src/guess/guesser.js';
+import { ProfileSchema } from '../../server/src/guess/profile.js';
 import type { Item } from './dataset.js';
 import { runItem } from './run.js';
 

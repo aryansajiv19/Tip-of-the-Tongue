@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServerEvent, Word } from './events.js';
-import type { Guesser } from './guess/index.js';
+import type { Guesser } from './guess/types.js';
 import { mockGuesser } from './guess/mock.js';
 import { createSession } from './session.js';
 

@@ -2,9 +2,10 @@ import { randomUUID } from 'node:crypto';
 import type { Candidate, ClientEvent, ServerEvent } from './events.js';
 import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck } from './stuck/detect.js';
-import type { Guesser, Profile } from './guess/index.js';
-import { decideOffer } from './gate/index.js';
-import { checkAcceptance } from './accept/index.js';
+import type { Profile } from './guess/profile.js';
+import type { Guesser } from './guess/types.js';
+import { decideOffer } from './gate/gate.js';
+import { checkAcceptance } from './accept/accept.js';
 
 export interface SessionOptions {
   guess: Guesser;
