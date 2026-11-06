@@ -34,7 +34,7 @@ export async function buildApp(deps: AppDeps = {}) {
   app.addHook('onRequest', async (req, reply) => {
     const origin = req.headers.origin;
     if (
-      req.url.split('?')[0] === '/ws' &&
+      req.routeOptions.url === '/ws' &&
       origin !== undefined &&
       !allowedOrigins.includes(origin)
     ) {

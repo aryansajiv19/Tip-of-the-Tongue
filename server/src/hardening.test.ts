@@ -60,6 +60,19 @@ describe('origin check', () => {
     }
   });
 
+  it('rejects a disallowed origin however the path is spelled', async () => {
+    for (const path of ['/%77s', '/ws?x=1', '/ws?']) {
+      const ws = new WebSocket(`ws://${base}${path}`, {
+        headers: { Origin: 'http://evil.example' },
+      });
+      const outcome = await new Promise<string>((resolve) => {
+        ws.on('open', () => resolve('open'));
+        ws.on('error', (e) => resolve(e.message));
+      });
+      expect(outcome, path).not.toBe('open');
+    }
+  });
+
   it('rejects other origins', async () => {
     await expect(connect('http://evil.example')).rejects.toThrow(/403/);
     await expect(connect('null')).rejects.toThrow(/403/);
