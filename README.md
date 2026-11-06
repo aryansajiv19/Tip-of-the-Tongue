@@ -16,17 +16,19 @@ npm install
 npm run dev      # server on :3000, web on http://localhost:5173
 ```
 
-Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
+Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, and `npm run e2e` (Playwright, through the no-mic test input). `npm run format` rewrites files with Prettier.
 
 ### Optional keys (`.env`, see `.env.example`)
 
-- `DEEPGRAM_API_KEY` — better streaming speech-to-text with word timings.
 - `ANTHROPIC_API_KEY` — real guessing with Claude. Without it, a mock guesser runs.
+
+Speech-to-text is the browser's Web Speech API, with approximate word timings. Planned: Deepgram streaming for real word timings. A spoken cue is also planned; it needs echo handling first, because the microphone would hear the cue and count it as the user saying the word.
 
 ## Evaluate
 
 ```bash
-npm run eval
+npm run eval                                   # dev + holdout, mock guesser
+npm run eval -- --split dev|holdout|all --guesser mock|claude
 ```
 
 ## Why voice
@@ -55,7 +57,12 @@ Security notes for running it locally:
 
 ## Limitations
 
-Not yet tested with people with aphasia. See [docs/EDGE-CASES.md](docs/EDGE-CASES.md).
+- Tested only on our own written examples in the documented style of circumlocution, read as scripted text. **Not tested with people with aphasia**, and no claim of clinical benefit.
+- Speech-to-text may mishear real aphasic speech.
+- One microphone hears both sides of a conversation, and the prototype cannot tell speakers apart. There is no speaker separation, so the other person's pauses and words can affect it.
+- The 2023 study that found a model identified the intended word 91.67% of the time used text, not live speech. Measuring the live version is what the eval is for.
+
+See [docs/EDGE-CASES.md](docs/EDGE-CASES.md) for the full list.
 
 ## License
 

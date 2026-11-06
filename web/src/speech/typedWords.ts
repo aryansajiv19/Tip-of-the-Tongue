@@ -1,4 +1,4 @@
-export const TYPED_WORD_MS = 300;
+const TYPED_WORD_MS = 300;
 export const TYPED_FINAL_DELAY_MS = 1000;
 
 // For the no-mic test box: the phrase as growing prefixes, each with the delay

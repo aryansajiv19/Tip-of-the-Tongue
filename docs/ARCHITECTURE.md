@@ -4,7 +4,7 @@
 
 ```
 Browser mic
-  -> STT (Deepgram stream, or Web Speech API fallback)
+  -> STT (browser Web Speech API, approximate word timings)
   -> server: TranscriptBuffer (recent words + timestamps)
   -> StuckDetector (pure rules)
   -> Guesser (Claude, JSON candidates + confidence; mock without key)
@@ -44,9 +44,10 @@ Defined once in `server/src/events.ts`. Times are epoch ms.
 
 ## Limits
 
-- Not tested with people with aphasia.
-- Single speaker only.
-- STT accuracy on atypical speech unknown.
+- Tested only on our own written, scripted examples; not tested with people with aphasia. No claim of clinical benefit.
+- One mic hears both sides and the prototype cannot tell speakers apart; there is no speaker separation.
+- Speech-to-text may mishear real aphasic speech; accuracy on atypical speech is unknown.
+- Planned, not built: Deepgram streaming for real word timings, and a spoken cue (needs echo handling, because the mic would hear the cue and count it as the user saying the word).
 
 ## Where this could go
 

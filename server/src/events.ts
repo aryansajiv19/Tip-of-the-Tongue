@@ -4,7 +4,7 @@ import { z } from 'zod';
 // Caps keep one message small; the socket also has a byte limit (see app.ts).
 export const MAX_WORDS_PER_EVENT = 300;
 
-export const WordSchema = z.object({
+const WordSchema = z.object({
   text: z.string().min(1).max(100),
   startMs: z.number().finite(),
   endMs: z.number().finite(),

@@ -2,7 +2,9 @@ import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
 import { config } from './config.js';
 import { ClientEventSchema, type ServerEvent } from './events.js';
-import { createGuesser, type Guesser, type Profile } from './guess/index.js';
+import { createGuesser } from './guess/guesser.js';
+import type { Profile } from './guess/profile.js';
+import type { Guesser } from './guess/types.js';
 import { createSession, type SessionOptions } from './session.js';
 
 const MAX_MESSAGE_BYTES = 64 * 1024;

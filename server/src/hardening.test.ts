@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 import { buildApp } from './app.js';
 import type { ServerEvent } from './events.js';
-import type { Guesser } from './guess/index.js';
+import type { Guesser } from './guess/types.js';
 import { mockGuesser } from './guess/mock.js';
 
 process.env.LOG_LEVEL = 'silent';
