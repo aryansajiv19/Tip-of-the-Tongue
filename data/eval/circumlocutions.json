@@ -1,5 +1,5 @@
 {
-  "note": "Seed set written for this project in the documented style of circumlocution. Not copied from any corpus. Expand to 40-60 items; keep ~20% as holdout and don't tune on them.",
+  "note": "Written for this project in the documented style of circumlocution. Not copied from any corpus. Items with a \"brief\" run with that meeting brief. Do not tune on split \"holdout\".",
   "items": [
     {
       "id": "c01",
@@ -86,6 +86,427 @@
       "id": "c10",
       "context": "Self-recovery - should NOT offer",
       "utterance": "I left it in the... the... the car, yes the car",
+      "target": null,
+      "acceptable": [],
+      "category": "self_recovered",
+      "split": "dev"
+    },
+    {
+      "id": "c11",
+      "context": "In the kitchen",
+      "utterance": "Put the milk in the... the cold box in the kitchen, the one with the light inside",
+      "target": "fridge",
+      "acceptable": ["fridge", "refrigerator"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c12",
+      "context": "After a shower",
+      "utterance": "I need the... the thing for drying yourself, soft, rectangular",
+      "target": "towel",
+      "acceptable": ["towel"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c13",
+      "context": "Evening in front of the TV",
+      "utterance": "Where's the... the thing you point at the television to change the channel",
+      "target": "remote",
+      "acceptable": ["remote", "remote control", "clicker"],
+      "category": "object",
+      "split": "holdout"
+    },
+    {
+      "id": "c14",
+      "context": "Making tea",
+      "utterance": "I'll boil some water in the... the electric jug, it clicks off when it's ready",
+      "target": "kettle",
+      "acceptable": ["kettle"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c15",
+      "context": "Bedtime",
+      "utterance": "I can't sleep without my... the soft thing under my head",
+      "target": "pillow",
+      "acceptable": ["pillow"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c16",
+      "context": "Packing for a trip",
+      "utterance": "Don't forget your... the little book with your photo that you need abroad",
+      "target": "passport",
+      "acceptable": ["passport"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c17",
+      "context": "A power cut",
+      "utterance": "It's dark, fetch the... the light you hold in your hand, it runs on batteries",
+      "target": "torch",
+      "acceptable": ["torch", "flashlight"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c18",
+      "context": "A cold morning",
+      "utterance": "It's freezing, put on your... the warm thing with sleeves that goes over your jumper",
+      "target": "coat",
+      "acceptable": ["coat", "jacket"],
+      "category": "object",
+      "split": "holdout"
+    },
+    {
+      "id": "c19",
+      "context": "Phone is nearly flat",
+      "utterance": "I need to find my... the wire that goes from the phone to the wall",
+      "target": "charger",
+      "acceptable": ["charger", "cable"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c20",
+      "context": "Car trouble",
+      "utterance": "The car won't start, it's the... the box that stores the electricity",
+      "target": "battery",
+      "acceptable": ["battery"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c21",
+      "context": "Weekly shop",
+      "utterance": "I'm going to the... the big shop where you push a trolley and buy the week's food",
+      "target": "supermarket",
+      "acceptable": ["supermarket"],
+      "category": "place",
+      "split": "dev"
+    },
+    {
+      "id": "c22",
+      "context": "Study plans",
+      "utterance": "She's at the... the building where you borrow books for free",
+      "target": "library",
+      "acceptable": ["library"],
+      "category": "place",
+      "split": "dev"
+    },
+    {
+      "id": "c23",
+      "context": "An emergency",
+      "utterance": "He was taken to the... where the doctors and nurses are, with beds, emergency",
+      "target": "hospital",
+      "acceptable": ["hospital"],
+      "category": "place",
+      "split": "holdout"
+    },
+    {
+      "id": "c24",
+      "context": "Getting the train",
+      "utterance": "The train leaves from the... the place with the platforms, in the middle of town",
+      "target": "station",
+      "acceptable": ["station", "train station"],
+      "category": "place",
+      "split": "dev"
+    },
+    {
+      "id": "c25",
+      "context": "Running low on cash",
+      "utterance": "I need some money from the... the machine in the wall outside the bank",
+      "target": "cash machine",
+      "acceptable": ["cash machine", "atm", "cashpoint"],
+      "category": "place",
+      "split": "dev"
+    },
+    {
+      "id": "c26",
+      "context": "A leaking sink",
+      "utterance": "The sink is leaking, we need to call the... the man who fixes pipes",
+      "target": "plumber",
+      "acceptable": ["plumber"],
+      "category": "person",
+      "split": "dev"
+    },
+    {
+      "id": "c27",
+      "context": "Parents evening",
+      "utterance": "I'm meeting my son's... the person at the front of the class who marks the homework",
+      "target": "teacher",
+      "acceptable": ["teacher"],
+      "category": "person",
+      "split": "dev"
+    },
+    {
+      "id": "c28",
+      "context": "Home safety",
+      "utterance": "The... the thing on the ceiling that beeps when there's smoke",
+      "target": "smoke alarm",
+      "acceptable": ["smoke alarm", "smoke detector", "fire alarm"],
+      "category": "object",
+      "split": "holdout"
+    },
+    {
+      "id": "c29",
+      "context": "Laundry day",
+      "utterance": "Put the clothes in the... the machine that cleans them, with the round door",
+      "target": "washing machine",
+      "acceptable": ["washing machine"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c30",
+      "context": "Giving directions",
+      "utterance": "Turn left at the... the red, amber and green lights",
+      "target": "traffic lights",
+      "acceptable": ["traffic lights", "traffic light"],
+      "category": "object",
+      "split": "dev"
+    },
+    {
+      "id": "c31",
+      "context": "Client call about next year",
+      "brief": "Q3 review with Northwind (fictional). Agenda: renewal of the analytics licence, support tickets, pricing.",
+      "utterance": "We'd need to sort out the... the thing, the yearly one, when the contract starts again",
+      "target": "renewal",
+      "acceptable": ["renewal"],
+      "category": "work",
+      "split": "dev"
+    },
+    {
+      "id": "c32",
+      "context": "Chasing a late payment",
+      "brief": "Finance catch-up. We use Ledgerly (fictional) for invoices and payment reminders.",
+      "utterance": "I'll chase it in the... the tool we use for sending bills to clients",
+      "target": "Ledgerly",
+      "acceptable": ["ledgerly"],
+      "category": "work",
+      "split": "dev"
+    },
+    {
+      "id": "c33",
+      "context": "Planning next quarter",
+      "brief": "Agenda: budget review, headcount, quarterly forecast.",
+      "utterance": "And then the... the numbers for the next three months, what we expect to earn",
+      "target": "forecast",
+      "acceptable": ["forecast", "projection"],
+      "category": "work",
+      "split": "holdout"
+    },
+    {
+      "id": "c34",
+      "context": "Onboarding",
+      "brief": "Agenda: onboarding new hires, buddy scheme, first-week checklist.",
+      "utterance": "Each new starter gets a... the person who shows them around in the first week",
+      "target": "buddy",
+      "acceptable": ["buddy", "mentor"],
+      "category": "work",
+      "split": "dev"
+    },
+    {
+      "id": "c35",
+      "context": "Product launch",
+      "brief": "Project Heron (fictional) launches on the 14th. Open items: legal sign-off, press release, support training.",
+      "utterance": "We can't go live until legal gives us the... the final yes, the signature",
+      "target": "sign-off",
+      "acceptable": ["sign-off", "signoff", "approval"],
+      "category": "work",
+      "split": "dev"
+    },
+    {
+      "id": "c36",
+      "context": "End of a meeting",
+      "brief": "Weekly team sync: blockers, owners, next steps.",
+      "utterance": "Let's put it in the... the list of things to do next, with a name against each",
+      "target": "action items",
+      "acceptable": ["action items", "action list", "to-do list"],
+      "category": "work",
+      "split": "dev"
+    },
+    {
+      "id": "c37",
+      "context": "Hiring",
+      "brief": "Agenda: hiring plan, interview panel, offer timeline.",
+      "utterance": "Send the candidate the... the paper that describes what the job involves",
+      "target": "job description",
+      "acceptable": ["job description", "job spec"],
+      "category": "work",
+      "split": "dev"
+    },
+    {
+      "id": "c38",
+      "context": "Feeding time",
+      "utterance": "Have you fed the... our dog, the little brown one, you know his name",
+      "target": "Biscuit",
+      "acceptable": ["biscuit"],
+      "category": "profile",
+      "split": "holdout"
+    },
+    {
+      "id": "c39",
+      "context": "Running out of milk",
+      "utterance": "Let's pop to the... the shop on the corner, the one we always use for milk",
+      "target": "Corner Mart",
+      "acceptable": ["corner mart"],
+      "category": "profile",
+      "split": "dev"
+    },
+    {
+      "id": "c40",
+      "context": "Sunday plans",
+      "utterance": "We could walk in the... the big green park near the lake, where we go on Sundays",
+      "target": "Victoria Park",
+      "acceptable": ["victoria park"],
+      "category": "profile",
+      "split": "dev"
+    },
+    {
+      "id": "c41",
+      "context": "Family news",
+      "utterance": "I'm seeing my... the girl, my daughter, the one who rings every Sunday",
+      "target": "Priya",
+      "acceptable": ["priya"],
+      "category": "profile",
+      "split": "dev"
+    },
+    {
+      "id": "c42",
+      "context": "Booking a check-up",
+      "utterance": "I have an appointment with my... the doctor at the surgery, the one I always see",
+      "target": "Dr Okafor",
+      "acceptable": ["dr okafor", "doctor okafor", "okafor"],
+      "category": "profile",
+      "split": "dev"
+    },
+    {
+      "id": "c43",
+      "context": "Weekend hobbies",
+      "utterance": "On Saturday I'll be playing... the game with the green table, the long sticks and the coloured balls",
+      "target": "snooker",
+      "acceptable": ["snooker"],
+      "category": "profile",
+      "split": "holdout"
+    },
+    {
+      "id": "c44",
+      "context": "Fluent control - should NOT trigger",
+      "utterance": "The thing is, I don't think we have time to finish it today",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev"
+    },
+    {
+      "id": "c45",
+      "context": "Fluent control - should NOT trigger",
+      "utterance": "You know what, let's just order pizza and be done with it",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev"
+    },
+    {
+      "id": "c46",
+      "context": "Fluent control - should NOT trigger",
+      "utterance": "I mean, it's what you'd expect from a team that size",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev"
+    },
+    {
+      "id": "c47",
+      "context": "Fluent control - should NOT trigger",
+      "utterance": "The thing I like about this place is how quiet it is",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev"
+    },
+    {
+      "id": "c48",
+      "context": "Fluent control - should NOT trigger",
+      "utterance": "So the invoice goes out on Friday and the client has thirty days to pay",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "holdout"
+    },
+    {
+      "id": "c49",
+      "context": "Fluent control - should NOT trigger",
+      "utterance": "She said the meeting is at three, in the main room, with the whole team",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev"
+    },
+    {
+      "id": "c50",
+      "context": "Fluent control - should NOT trigger",
+      "utterance": "Um, so, yes, the quarterly numbers look good, better than I expected",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev"
+    },
+    {
+      "id": "c51",
+      "context": "Fluent control - should NOT trigger",
+      "utterance": "Where was I? Right, the renewal. We should send the paperwork next week",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev"
+    },
+    {
+      "id": "c52",
+      "context": "Fluent control - should NOT trigger",
+      "utterance": "I'll take the dog out, then pick up some milk from Corner Mart on the way back",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck",
+      "split": "dev"
+    },
+    {
+      "id": "c53",
+      "context": "Self-recovery - should NOT offer",
+      "utterance": "Pass me the... the... screwdriver, that's it, the screwdriver",
+      "target": null,
+      "acceptable": [],
+      "category": "self_recovered",
+      "split": "holdout"
+    },
+    {
+      "id": "c54",
+      "context": "Self-recovery - should NOT offer",
+      "utterance": "We're meeting at the... station, sorry, the station, at six",
+      "target": null,
+      "acceptable": [],
+      "category": "self_recovered",
+      "split": "dev"
+    },
+    {
+      "id": "c55",
+      "context": "Self-recovery - should NOT offer",
+      "utterance": "I'll ring the... dentist, yes the dentist, tomorrow morning",
+      "target": null,
+      "acceptable": [],
+      "category": "self_recovered",
+      "split": "dev"
+    },
+    {
+      "id": "c56",
+      "context": "Self-recovery - should NOT offer",
+      "utterance": "Can you grab the... umbrella, there it is, the umbrella by the door",
       "target": null,
       "acceptable": [],
       "category": "self_recovered",
