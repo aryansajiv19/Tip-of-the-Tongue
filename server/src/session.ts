@@ -60,7 +60,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   async function guessFor(sinceMs: number, stuckPhrase: string) {
     guessing = true;
     try {
-      await offerFor(stuckAtMs, stuckPhrase);
+      await offerFor(sinceMs, stuckPhrase);
     } catch (err) {
       // The guesser promises never to throw; if it does, stay silent rather than crash.
       opts.onError?.(err);
@@ -69,7 +69,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     }
   }
 
-  async function offerFor(stuckAtMs: number, stuckPhrase: string) {
+  async function offerFor(sinceMs: number, stuckPhrase: string) {
     const result = await opts.guess({
       conversation: buffer.recentText(),
       stuckPhrase,
