@@ -2,17 +2,22 @@ import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
 import { config } from './config.js';
 import { ClientEventSchema, type ServerEvent } from './events.js';
+import { createGlossaryBuilder, type GlossaryBuilder } from './guess/glossary.js';
 import { createGuesser } from './guess/guesser.js';
 import type { Profile } from './guess/profile.js';
 import type { Guesser } from './guess/types.js';
 import { createSession, type SessionOptions } from './session.js';
 import { createDeepgramStream, type DeepgramOptions } from './stt/deepgram.js';
 
-const MAX_MESSAGE_BYTES = 64 * 1024;
+// Room for a pasted brief of 50,000 characters, even if every one takes several bytes.
+// The glossary is built in the background, so it can take longer than a guess.
+const GLOSSARY_TIMEOUT_MS = 20_000;
+const MAX_MESSAGE_BYTES = 256 * 1024;
 
 export interface AppDeps {
   guess?: Guesser;
   profile?: Profile;
+  buildGlossary?: GlossaryBuilder;
   // Defaults to config.allowedOrigins.
   allowedOrigins?: string[];
   // Server-side speech-to-text; defaults to Deepgram when DEEPGRAM_API_KEY is set.
@@ -30,6 +35,14 @@ export async function buildApp(deps: AppDeps = {}) {
     createGuesser({
       model: config.anthropicModel,
       timeoutMs: config.guessTimeoutMs,
+      ...(config.anthropicApiKey ? { apiKey: config.anthropicApiKey } : {}),
+    });
+
+  const buildGlossary =
+    deps.buildGlossary ??
+    createGlossaryBuilder({
+      model: config.anthropicModel,
+      timeoutMs: GLOSSARY_TIMEOUT_MS,
       ...(config.anthropicApiKey ? { apiKey: config.anthropicApiKey } : {}),
     });
 
@@ -59,6 +72,7 @@ export async function buildApp(deps: AppDeps = {}) {
     };
     const session = createSession(send, {
       guess,
+      buildGlossary,
       pauseMs: config.stuckPauseMs,
       minConfidence: config.gateMinConfidence,
       cooldownMs: config.cooldownMs,

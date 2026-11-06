@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizePhrase } from '../../server/src/gate/normalize.js';
-import { loadItems, SILENT_CATEGORIES, type ItemSet } from './dataset.js';
+import { loadItems, loadLongDocs, SILENT_CATEGORIES, type ItemSet } from './dataset.js';
 
 const key = (s: string): string => normalizePhrase(s).join(' ');
 
@@ -54,5 +54,19 @@ describe('hard set', () => {
     expect(
       items.filter((i) => i.category === 'not_stuck_unknowable').length,
     ).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe('long documents', () => {
+  it("hold every technical item's term, but only after the first 1500 characters", async () => {
+    const docs = await loadLongDocs();
+    const tech = (await loadItems('all', 'hard')).filter((i) => i.category === 'technical');
+    for (const i of tech) {
+      const doc = (i.doc ? docs[i.doc] : undefined)?.toLowerCase() ?? '';
+      expect(doc.length, i.id).toBeGreaterThan(3000);
+      const at = i.acceptable.map((a) => doc.indexOf(a.toLowerCase())).filter((n) => n >= 0);
+      expect(at.length, i.id).toBeGreaterThan(0);
+      expect(Math.min(...at), i.id).toBeGreaterThan(1500);
+    }
   });
 });

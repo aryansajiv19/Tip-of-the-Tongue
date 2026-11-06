@@ -184,7 +184,7 @@ export function App() {
         <textarea
           id="brief"
           rows={4}
-          maxLength={5000}
+          maxLength={50_000}
           value={brief}
           onChange={(e) => setBrief(e.target.value)}
         />

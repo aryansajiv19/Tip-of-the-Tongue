@@ -14,6 +14,8 @@ export const ItemSchema = z.object({
   // Fluent speech with a thinking pause in it. The detector fires on these by design, so what
   // is measured is whether anything gets offered.
   pause: z.boolean().optional(),
+  // Key into data/eval/long-docs.json: a long document that contains this item's brief terms.
+  doc: z.string().optional(),
 });
 export type Item = z.infer<typeof ItemSchema>;
 
@@ -41,4 +43,10 @@ export async function loadItems(
 ): Promise<Item[]> {
   const { items } = FileSchema.parse(JSON.parse(await readFile(dataPath(SET_FILES[set]), 'utf8')));
   return split === 'all' ? items : items.filter((i) => i.split === split);
+}
+
+const DocsSchema = z.object({ docs: z.record(z.string(), z.string()) });
+
+export async function loadLongDocs(): Promise<Record<string, string>> {
+  return DocsSchema.parse(JSON.parse(await readFile(dataPath('eval/long-docs.json'), 'utf8'))).docs;
 }
