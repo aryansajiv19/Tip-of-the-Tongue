@@ -5,3 +5,4 @@ dist/
 *.log
 recordings/
 eval-results/
+.playwright-mcp/

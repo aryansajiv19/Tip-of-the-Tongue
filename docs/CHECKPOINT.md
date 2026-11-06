@@ -6,23 +6,26 @@ _Last updated: 2026-11-06_
 
 ## Now
 
-Phase: working base (core loop, keyless). Visual design comes after the loop works end to end.
+The core loop works end to end without keys: browser speech or the test input, then the server detects a stall, guesses, gates and offers, then the word is accepted. Visual design comes after the eval and the e2e tests are in.
 
-| Area                                           | Branch                | Owner  | State                 |
-| ---------------------------------------------- | --------------------- | ------ | --------------------- |
-| Housekeeping (license, docs)                   | `chore/housekeeping`  | lead   | in review             |
-| Scaffold (workspaces, checks, events contract) | `feat/scaffold`       | lead   | next                  |
-| Web transcript + plain offer list              | `feat/web-transcript` | worker | after scaffold        |
-| TranscriptBuffer + StuckDetector               | `feat/stuck-detector` | worker | after scaffold        |
-| Guesser + Gate + AcceptanceTracker             | `feat/guesser-gate`   | worker | after scaffold        |
-| Pipeline wiring                                | `feat/pipeline`       | lead   | after the three above |
+| Area                                   | Branch          | Owner     | State               |
+| -------------------------------------- | --------------- | --------- | ------------------- |
+| Housekeeping, scaffold, CI matrix      | —               | lead      | merged (#1–#3)      |
+| Guesser, Gate, AcceptanceTracker       | —               | worker c1 | merged (#4)         |
+| Web transcript, offer list, test input | —               | worker 93 | merged (#5)         |
+| TranscriptBuffer, StuckDetector        | —               | worker 4c | merged (#6)         |
+| Pipeline wiring (session)              | `feat/pipeline` | lead      | in review           |
+| Browser e2e (Playwright)               | `test/e2e`      | worker 93 | waiting on pipeline |
+| Eval runner + 50–60 item set           | `feat/eval`     | worker c1 | in progress         |
 
 ## Decisions
 
 - MIT licence, © Aryan Sajiv.
 - Spoken cue uses browser `speechSynthesis`; no ElevenLabs.
 - Lead on Opus, workers on Sonnet; one worktree per worker (`~/tott-<area>`).
+- Filler and describing cues need half the pause threshold of silence, so fluent speech never triggers.
+- The personal profile is opt-in (`PROFILE_PATH`), so the fictional example doesn't leak into prompts.
 
 ## Next
 
-Pop-up design, Deepgram adapter, eval runner and the 40–60 item set.
+Server hardening and fuzz tests, real Claude run of the eval (needs `ANTHROPIC_API_KEY`), pop-up design, Deepgram adapter.
