@@ -45,5 +45,7 @@ export function decideOffer(
   if (!best) return { offer: false, reason: 'already-offered' };
   if (best.confidence < opts.minConfidence) return { offer: false, reason: 'low-confidence' };
 
-  return { offer: true, candidates: fresh.slice(0, MAX_OFFERED) };
+  // Weak extras are noise: after the top word, keep only those at half the threshold or better.
+  const extras = fresh.slice(1).filter((c) => c.confidence >= opts.minConfidence / 2);
+  return { offer: true, candidates: [best, ...extras].slice(0, MAX_OFFERED) };
 }

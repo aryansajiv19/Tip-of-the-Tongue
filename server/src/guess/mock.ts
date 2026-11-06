@@ -50,7 +50,7 @@ const RULES: { all: string[]; candidates: Candidate[] }[] = [
 ];
 
 export const mockGuesser: Guesser = (input) => {
-  const text = `${input.contextWindow} ${input.recentText}`.toLowerCase();
+  const text = `${input.conversation} ${input.stuckPhrase}`.toLowerCase();
   const rule = RULES.find((r) => r.all.every((phrase) => text.includes(phrase)));
   return Promise.resolve({
     candidates: rule ? rule.candidates.map((c) => ({ ...c })) : [],

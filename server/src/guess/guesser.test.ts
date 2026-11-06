@@ -4,7 +4,7 @@ import { buildPrompt, createGuesser } from './guesser.js';
 import { ProfileSchema } from './profile.js';
 
 const cfg = { model: 'test-model', timeoutMs: 50 };
-const input = { contextWindow: 'errands', recentText: 'the place where you get medicine' };
+const input = { conversation: 'errands', stuckPhrase: 'the place where you get medicine' };
 
 // A fake client: `create` is whatever the test needs. The cast is safe because the guesser only
 // calls messages.create.
@@ -30,12 +30,12 @@ describe('mock guesser (no api key)', () => {
   });
 
   it('abstains on text it does not know', async () => {
-    const r = await guess({ contextWindow: '', recentText: 'I left it in the car' });
+    const r = await guess({ conversation: '', stuckPhrase: 'I left it in the car' });
     expect(r).toEqual({ candidates: [], abstain: true, latencyMs: 0 });
   });
 
   it('abstains on fluent speech that names the word', async () => {
-    const r = await guess({ contextWindow: '', recentText: 'I went to the pharmacy this morning' });
+    const r = await guess({ conversation: '', stuckPhrase: 'I went to the pharmacy this morning' });
     expect(r.abstain).toBe(true);
   });
 });

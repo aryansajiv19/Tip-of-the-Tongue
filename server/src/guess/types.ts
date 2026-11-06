@@ -2,8 +2,8 @@ import type { Candidate } from '../events.js';
 import type { Profile } from './profile.js';
 
 export interface GuessInput {
-  contextWindow: string;
-  recentText: string;
+  conversation: string;
+  stuckPhrase: string;
   brief?: string;
   profile?: Profile;
 }

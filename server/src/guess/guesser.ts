@@ -22,8 +22,8 @@ export function buildPrompt(input: GuessInput): string {
   const parts: string[] = [];
   if (input.brief) parts.push(`Meeting brief:\n${input.brief}`);
   if (input.profile) parts.push(`Their personal words: ${profileTerms(input.profile)}`);
-  parts.push(`Conversation so far:\n${input.contextWindow}`);
-  parts.push(`Just said (they are stuck here):\n${input.recentText}`);
+  parts.push(`Conversation so far:\n${input.conversation}`);
+  parts.push(`Just said (they are stuck here):\n${input.stuckPhrase}`);
   return parts.join('\n\n');
 }
 

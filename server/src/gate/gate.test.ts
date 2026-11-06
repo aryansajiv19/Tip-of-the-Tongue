@@ -51,6 +51,18 @@ describe('decideOffer', () => {
     expect(r.offer && r.candidates.map((c) => c.word)).toEqual(['b', 'c', 'd']);
   });
 
+  describe('weak extras', () => {
+    it('keeps an extra at exactly half the threshold, drops one just below', () => {
+      const r = decideOffer(guess(['a', 0.9], ['b', 0.3], ['c', 0.2999]), ctx(), opts);
+      expect(r.offer && r.candidates.map((c) => c.word)).toEqual(['a', 'b']);
+    });
+
+    it('drops every weak extra and offers the top word alone', () => {
+      const r = decideOffer(guess(['a', 0.6], ['b', 0.1], ['c', 0.05]), ctx(), opts);
+      expect(r.offer && r.candidates.map((c) => c.word)).toEqual(['a']);
+    });
+  });
+
   describe('self-recovery', () => {
     it('no offer when the top word was said since the stuck point', () => {
       const r = decideOffer(
