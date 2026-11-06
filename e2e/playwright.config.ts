@@ -1,7 +1,10 @@
 import { defineConfig } from '@playwright/test';
 
-// Fixed ports and no .env: the server listens on 3100 and Vite proxies /ws to it.
-// No API keys are passed, so the mock guesser runs.
+// e2e has its own ports (web 5299, server 3199) and never reuses a running server, so a dev
+// server left over from another checkout can't make the tests run against stale code.
+// No .env and no API keys are passed, so the mock guesser runs.
+const WEB = 'http://localhost:5299';
+
 export default defineConfig({
   testDir: '.',
   testMatch: '**/*.e2e.ts',
@@ -9,13 +12,14 @@ export default defineConfig({
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
-  use: { baseURL: 'http://localhost:5173', browserName: 'chromium' },
+  use: { baseURL: WEB, browserName: 'chromium' },
   webServer: {
-    command: 'npm run dev',
+    command:
+      'npx concurrently -k -n server,web "npm run dev -w server" "npm run dev -w web -- --port 5299 --strictPort"',
     cwd: '..',
-    env: { PORT: '3100', DEEPGRAM_API_KEY: '', ANTHROPIC_API_KEY: '' },
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
+    env: { PORT: '3199', ALLOWED_ORIGINS: WEB, DEEPGRAM_API_KEY: '', ANTHROPIC_API_KEY: '' },
+    url: WEB,
+    reuseExistingServer: false,
     timeout: 60_000,
   },
 });
