@@ -1,0 +1,160 @@
+/* A small floating card at the right edge, mid-height, so it never covers the transcript.
+   Frosted glass: translucent dark surface, backdrop blur, light border. */
+.offer {
+  --ink: #f5f7fb;
+  --ink-muted: #cdd3e0;
+  position: fixed;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+  z-index: 10;
+  box-sizing: border-box;
+  width: min(420px, calc(100vw - 32px));
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'label close'
+    'words words';
+  gap: 16px 12px;
+  align-items: start;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: rgb(18 22 32 / 0.84);
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 28px;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.35);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+}
+
+/* No blur available, or the user asked for less transparency: solid and high contrast. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .offer {
+    background: #10141f;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .offer {
+    background: #10141f;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@media (forced-colors: active) {
+  .offer {
+    border-color: CanvasText;
+  }
+}
+
+.offer p {
+  margin: 0;
+}
+
+.offer-label {
+  grid-area: label;
+  align-self: center;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+
+.offer-words {
+  grid-area: words;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.offer-word {
+  min-height: 56px;
+  padding: 8px 28px;
+  font: inherit;
+  font-size: 1.875rem; /* 30px */
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink);
+  background: rgb(255 255 255 / 0.16);
+  border: 1px solid rgb(255 255 255 / 0.35);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.offer-word:hover {
+  background: rgb(255 255 255 / 0.26);
+}
+
+.offer-close {
+  grid-area: close;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.offer-close:hover {
+  background: rgb(255 255 255 / 0.16);
+}
+.offer-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.offer button:focus-visible {
+  outline: 3px solid #9cc2ff;
+  outline-offset: 2px;
+}
+
+.offer-accepted {
+  grid-template-columns: auto 1fr;
+  grid-template-areas: 'check text';
+  align-items: center;
+  font-size: 1.875rem;
+}
+.offer-check {
+  width: 36px;
+  height: 36px;
+  color: #8fe3b0;
+}
+
+/* Motion only for people who have not asked for less of it. */
+@media (prefers-reduced-motion: no-preference) {
+  .offer {
+    animation: offer-in 220ms ease-out;
+  }
+  .offer-accepted {
+    animation: offer-out 1500ms ease-in forwards;
+  }
+}
+@keyframes offer-in {
+  from {
+    opacity: 0;
+    transform: translate(16px, -50%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+@keyframes offer-out {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

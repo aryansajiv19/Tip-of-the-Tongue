@@ -100,6 +100,9 @@ describe('bad input never crashes the server', () => {
       '{"type":"transcript.final","words":[{"text":"a","startMs":1e999,"endMs":1}]}',
       '{"type":"transcript.final","words":[{"text":"","startMs":0,"endMs":1}]}',
       '{"type":"session.brief","text":5}',
+      '{"type":"guess.picked"}',
+      '{"type":"guess.picked","id":1,"word":[]}',
+      '{"type":"guess.picked","id":"nope","word":"pharmacy"}',
       '{"__proto__":{"polluted":true},"type":"session.brief","text":"x"}',
       Buffer.from([0xff, 0xfe, 0x00]),
     ];
