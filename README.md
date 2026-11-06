@@ -47,6 +47,12 @@ server/  web/  eval/  data/  docs/
 
 No audio is stored. Transcripts are kept in memory for the session only and sent only to the configured speech-to-text and AI providers.
 
+Security notes for running it locally:
+
+- The server accepts WebSocket connections only from browser origins in `ALLOWED_ORIGINS` (default: the Vite dev server on `localhost:5173` and `127.0.0.1:5173`). Without this check, any web page you visit could connect to the local server, read the guesses (which contain what you said) and spend your Claude key. Clients that send no `Origin` header, such as tests and the eval runner, are allowed.
+- Incoming messages are limited to 64 KB, 300 words per event and 100 characters per word. Anything invalid is dropped and logged without the transcript text.
+- If the guesser fails, the session stays silent instead of crashing.
+
 ## Limitations
 
 Not yet tested with people with aphasia. See [docs/EDGE-CASES.md](docs/EDGE-CASES.md).
