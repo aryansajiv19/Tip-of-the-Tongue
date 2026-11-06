@@ -50,6 +50,22 @@ describe('session pipeline', () => {
     session.close();
   });
 
+  it('does not offer a word the user said just after the stall marker', async () => {
+    const { session, say, types } = setup();
+    say('can you pass the the thing for cutting bread knife');
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(types()).toEqual(['stuck.detected']);
+    session.close();
+  });
+
+  it('offers it when the word was not said', async () => {
+    const { session, say, types } = setup();
+    say('can you pass the the thing for cutting bread');
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(types()).toContain('guess.offered');
+    session.close();
+  });
+
   it('stays silent on fluent speech', async () => {
     const { session, say, events } = setup();
     say('we shipped the new release on Tuesday and the customers liked it');

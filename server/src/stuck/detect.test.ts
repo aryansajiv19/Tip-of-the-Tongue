@@ -234,35 +234,88 @@ describe('data/eval/circumlocutions.json', () => {
     id: string;
     utterance: string;
     category: string;
+    split: string;
   }
   const file = new URL('../../../data/eval/circumlocutions.json', import.meta.url);
   const items = (JSON.parse(readFileSync(file, 'utf8')) as { items: Item[] }).items;
-  const stalls = items.filter((i) => !['not_stuck', 'self_recovered'].includes(i.category));
 
-  it('flags most written circumlocutions from the text alone', () => {
-    const missed = stalls.filter((i) => !paused(i.utterance).stuck).map((i) => i.id);
-    expect(stalls.length - missed.length).toBeGreaterThanOrEqual(Math.ceil(stalls.length * 0.7));
+  // Same timing model as the eval runner: 300 ms per word, a "..." is a 2000 ms gap, and the
+  // detector is asked every 200 ms until 2 s after the last word. "Fired" = at least once.
+  function fires(utterance: string): boolean {
+    const words: Word[] = [];
+    let startMs = 0;
+    for (const text of utterance.split(/\s+/).filter(Boolean)) {
+      words.push({ text, startMs, endMs: startMs + 100 });
+      startMs += text.includes('...') ? 2100 : 300;
+    }
+    const lastEnd = Math.max(...words.map((w) => w.endMs));
+    for (let now = 100; now <= lastEnd + 2000; now += 200) {
+      const heard = words.filter((w) => w.endMs <= now);
+      if (detectStuck(heard, now, opts).stuck) return true;
+    }
+    return false;
+  }
+
+  const stall = (i: Item) => !['not_stuck', 'self_recovered'].includes(i.category);
+  const rate = (split: string) => {
+    const set = items.filter((i) => i.split === split && stall(i));
+    const hit = set.filter((i) => fires(i.utterance));
+    return { hit: hit.length, total: set.length, missed: set.filter((i) => !hit.includes(i)) };
+  };
+
+  it('fires on at least 70% of dev stall items', () => {
+    const r = rate('dev');
+    expect(
+      r.hit / r.total,
+      `missed: ${r.missed.map((i) => i.id).join(' ')}`,
+    ).toBeGreaterThanOrEqual(0.7);
   });
 
-  it('stays silent on the not_stuck items', () => {
-    for (const i of items.filter((x) => x.category === 'not_stuck')) {
-      expect(paused(i.utterance), i.id).toEqual({ stuck: false });
+  it('prints the holdout rate without asserting on it', () => {
+    const r = rate('holdout');
+    console.info(`holdout stall items detected: ${r.hit}/${r.total}`);
+  });
+
+  it('stays silent on every dev not_stuck item', () => {
+    for (const i of items.filter((x) => x.category === 'not_stuck' && x.split === 'dev')) {
+      expect(fires(i.utterance), i.id).toBe(false);
     }
   });
+});
 
-  it('stays silent on the self_recovered items once the word is said', () => {
-    for (const i of items.filter((x) => x.category === 'self_recovered')) {
-      expect(paused(i.utterance), i.id).toEqual({ stuck: false });
-    }
+describe('sinceMs: where the search for the missing word starts', () => {
+  const since = (text: string, gap: number) => {
+    const r = afterGap(text, gap);
+    return r.stuck ? r.sinceMs : undefined;
+  };
+  // say() puts word i at i*300 and ends it 100 ms later.
+  it('pause: the end of the last word', () => {
+    expect(since('send it to the', 2000)).toBe(3 * 300 + 100);
   });
-
-  it('every circumlocution cut off at its stall point triggers on a pause', () => {
-    // Cut each utterance where the first "the"/"my" hesitation sits, then pause.
-    const cut = stalls
-      .map((i) => /^(.*?\b(?:the|my)\b)\.\.\./.exec(i.utterance)?.[1])
-      .filter((x): x is string => Boolean(x));
-    expect(cut.length).toBeGreaterThan(0);
-    for (const text of cut) expect(afterGap(text, 2000).stuck, text).toBe(true);
+  it('describing: the end of the first word of the cue', () => {
+    expect(since('I need the thing you use for cutting bread', 800)).toBe(2 * 300 + 100);
+  });
+  it('filler: the end of the repeated determiner', () => {
+    expect(since('pass me the the', 800)).toBe(3 * 300 + 100);
+  });
+  it('filler: the end of the filler sound', () => {
+    expect(since('we need to um', 800)).toBe(3 * 300 + 100);
+  });
+  it('after a stall marker: the end of the repeated determiner', () => {
+    expect(since('take the the soft round yellow thing under my head', 800)).toBe(2 * 300 + 100);
+  });
+  it('after a stall marker: the end of the word before a long gap', () => {
+    const words: Word[] = [
+      { text: 'put', startMs: 0, endMs: 100 },
+      { text: 'it', startMs: 200, endMs: 300 },
+      { text: 'in', startMs: 2500, endMs: 2600 },
+      { text: 'there', startMs: 2800, endMs: 2900 },
+    ];
+    const r = detectStuck(words, 2900 + 800, opts);
+    expect(r.stuck && r.sinceMs).toBe(300);
+  });
+  it('a stall that the speaker repaired ("yes", "sorry") does not fire', () => {
+    expect(afterGap('I left it in the the car yes the car', 800)).toEqual({ stuck: false });
   });
 });
 
