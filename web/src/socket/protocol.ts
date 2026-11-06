@@ -1,6 +1,9 @@
 import type { ServerEvent } from '../../../server/src/events';
 
 const TYPES = new Set([
+  'session.ready',
+  'transcript.partial',
+  'transcript.final',
   'stuck.detected',
   'guess.offered',
   'guess.withdrawn',

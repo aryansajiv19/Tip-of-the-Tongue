@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ClientEvent, ServerEvent } from '../../../server/src/events';
 import { backoffMs, parseServerEvent } from './protocol';
 
+const MAX_BUFFERED_BYTES = 256 * 1024;
+
 export type SocketStatus = 'connecting' | 'connected' | 'reconnecting';
 
 // One WebSocket to /ws that reconnects with backoff. Sends while disconnected are dropped.
@@ -50,5 +52,14 @@ export function useSocket(onEvent: (e: ServerEvent) => void) {
     if (ws.current?.readyState === WebSocket.OPEN) ws.current.send(JSON.stringify(event));
   }, []);
 
-  return { status, send };
+  // Raw audio. Dropped when disconnected, or when the connection is so far behind that
+  // sending more would only add delay.
+  const sendBinary = useCallback((data: Int16Array<ArrayBuffer>) => {
+    const socket = ws.current;
+    if (socket?.readyState === WebSocket.OPEN && socket.bufferedAmount < MAX_BUFFERED_BYTES) {
+      socket.send(data);
+    }
+  }, []);
+
+  return { status, send, sendBinary };
 }
