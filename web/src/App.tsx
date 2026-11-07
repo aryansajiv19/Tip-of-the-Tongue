@@ -3,7 +3,9 @@ import type { ClientEvent, ServerEvent, Word } from '../../server/src/events';
 import { DebugPanel } from './debug/DebugPanel';
 import { Offer } from './offer/Offer';
 import { offerReducer } from './offer/offerState';
+import { useManualKey } from './audio/useManualKey';
 import { useMic } from './audio/useMic';
+import { useVoice } from './audio/useVoice';
 import { useSocket } from './socket/useSocket';
 import { speechSupported, useSpeech } from './speech/useSpeech';
 import { stampWords } from './speech/stampWords';
@@ -89,6 +91,8 @@ export function App() {
   const { start: startMic, stop: stopMic } = mic;
   const listening = stt === 'deepgram' ? mic.capturing : speech.listening;
   const error = stt === 'deepgram' ? mic.error : speech.error;
+  useVoice(listening, (voiced, atMs) => send({ type: 'voice.activity', voiced, atMs }));
+  useManualKey(listening, () => send({ type: 'stuck.manual' }));
   const canListen = stt === 'deepgram' || speechSupported;
 
   const startListening = () => {

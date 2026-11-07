@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import type { Candidate, ClientEvent, ServerEvent } from './events.js';
 import { TranscriptBuffer } from './transcript/buffer.js';
-import { detectStuck } from './stuck/detect.js';
+import { detectStuck, type VoiceInfo } from './stuck/detect.js';
+import { endsWithAskForWord } from './stuck/manual.js';
 import type { Profile } from './guess/profile.js';
 import { briefForGuesser, LONG_BRIEF_CHARS, type GlossaryBuilder } from './guess/glossary.js';
 import type { GuessResult, Guesser } from './guess/types.js';
@@ -43,6 +44,8 @@ interface Speculation {
   sinceMs: number;
   abort: AbortController;
   confirmed: boolean;
+  // Asked for by the user (Space or "what's the word"): the offer cooldown does not apply.
+  manual?: boolean;
   result?: GuessResult;
 }
 
@@ -55,6 +58,8 @@ interface Offer {
 // One per WebSocket connection: transcript in, stuck -> guess -> gate -> offer out.
 // Word times come from the browser clock and `now` from the server clock; fine while both run
 // on the same machine. ponytail: re-stamp words on arrival if the server is ever remote.
+const VOICED_MAX_MS = 10_000;
+
 export function createSession(send: (event: ServerEvent) => void, opts: SessionOptions) {
   const now = opts.now ?? Date.now;
   const buffer = new TranscriptBuffer();
@@ -76,6 +81,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   // End time of the last word we already reacted to, so one stall triggers one guess.
   let handledUpToMs = -Infinity;
   let closed = false;
+  // From voice.activity events; stays undefined for clients that don't send them.
+  let voice: VoiceInfo | undefined;
   // The guesser counts as down after two failures in a row, and up again on the next success.
   let guessFailures = 0;
   let guesserDown = false;
@@ -157,8 +164,20 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   }
 
   // Starts a guess and keeps it in `spec`. Whoever confirms the stall later offers it.
-  function startGuess(lastEndMs: number, sinceMs: number, stuckPhrase: string, confirmed: boolean) {
-    const mine: Speculation = { lastEndMs, sinceMs, abort: new AbortController(), confirmed };
+  function startGuess(
+    lastEndMs: number,
+    sinceMs: number,
+    stuckPhrase: string,
+    confirmed: boolean,
+    manual = false,
+  ) {
+    const mine: Speculation = {
+      lastEndMs,
+      sinceMs,
+      abort: new AbortController(),
+      confirmed,
+      manual,
+    };
     spec = mine;
     if (!confirmed) speculated++;
     const failed: GuessResult = { candidates: [], abstain: true, latencyMs: 0, error: true };
@@ -206,7 +225,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         saidSinceStuck: buffer.wordsSince(current.sinceMs + 1),
         nowMs: now(),
         recentlyOffered,
-        ...(lastOfferAtMs !== undefined ? { lastOfferAtMs } : {}),
+        ...(lastOfferAtMs !== undefined && !current.manual ? { lastOfferAtMs } : {}),
       },
       { minConfidence, cooldownMs: opts.cooldownMs },
     );
@@ -247,8 +266,9 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     // New words since the early guess started: the speaker went on, so its result is stale.
     if (spec && spec.lastEndMs !== last.endMs) discardSpeculation();
     if (last.endMs <= handledUpToMs) return;
+    if (endsWithAskForWord(words)) return askNow();
 
-    const stuck = detectStuck(words, now(), { pauseMs });
+    const stuck = detectStuck(words, now(), { pauseMs, ...voiceOpt() });
     const decision = stuck.stuck ? `${stuck.reason}@${stuck.sinceMs}` : 'no';
     if (decision !== lastDetector) {
       lastDetector = decision;
@@ -271,9 +291,36 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
 
     const earlyMs = opts.speculateAfterMs ?? 0;
     if (earlyMs > 0 && !spec) {
-      const early = detectStuck(words, now(), { pauseMs, earlyMs });
+      const early = detectStuck(words, now(), { pauseMs, earlyMs, ...voiceOpt() });
       if (early.stuck) startGuess(last.endMs, early.sinceMs, early.contextWindow, false);
     }
+  }
+
+  // A voiced state that never ended (the page closed, a stuck microphone) is not trusted for long.
+  function voiceOpt(): { voice?: VoiceInfo } {
+    const stale = voice?.voiced && now() - voice.sinceMs > VOICED_MAX_MS;
+    return voice && !stale ? { voice } : {};
+  }
+
+  function onVoice(voiced: boolean, atMs: number) {
+    if (voice && (voiced === voice.voiced || atMs < voice.sinceMs)) return;
+    const lastVoiced = voice?.voiced ? { startMs: voice.sinceMs, endMs: atMs } : voice?.lastVoiced;
+    voice = { voiced, sinceMs: atMs, ...(lastVoiced ? { lastVoiced } : {}) };
+  }
+
+  // The user asked for a word now (Space, or "what's the word"): no pause wait, no cooldown.
+  // Needs something said to work from, and does nothing while an offer is already showing.
+  function askNow() {
+    if (closed || offer) return;
+    const last = buffer.words().at(-1);
+    if (!last) return;
+    handledUpToMs = last.endMs;
+    const phrase = buffer.recentText();
+    send({ type: 'stuck.detected', reason: 'manual', contextWindow: phrase });
+    if (!spec) return startGuess(last.endMs, last.startMs - 1, phrase, true, true);
+    spec.confirmed = true;
+    spec.manual = true;
+    if (spec.result) offerFrom(spec, spec.result);
   }
 
   // Pauses are silence, so no event arrives when one passes; poll for them.
@@ -311,6 +358,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         debugOn = event.on;
         debug(sttInfo);
       } else if (event.type === 'guess.picked') pick(event.id, event.word);
+      else if (event.type === 'voice.activity') onVoice(event.voiced, event.atMs);
+      else if (event.type === 'stuck.manual') askNow();
       else {
         debug(() => ({
           kind: 'transcript',
