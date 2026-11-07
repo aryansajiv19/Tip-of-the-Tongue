@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { ClientEvent, ServerEvent, Word } from '../../server/src/events';
+import { DebugPanel } from './debug/DebugPanel';
 import { Offer } from './offer/Offer';
 import { offerReducer } from './offer/offerState';
 import { useManualKey } from './audio/useManualKey';
@@ -307,6 +308,7 @@ export function App() {
           </div>
         </div>
       </details>
+      {DEBUG && <DebugPanel />}
     </main>
   );
 }

@@ -16,23 +16,30 @@ Browser mic
 
 Defined once in `server/src/events.ts`. Times are epoch ms.
 
-| Event                                     | Direction    | Payload                                                   |
-| ----------------------------------------- | ------------ | --------------------------------------------------------- |
-| `transcript.partial` / `transcript.final` | web → server | words with start/end ms (browser STT)                     |
-| `session.brief`                           | web → server | optional meeting brief text                               |
-| `session.settings`                        | web → server | pause wait in ms (800–5000), optional minConfidence       |
-| `guess.picked`                            | web → server | the user clicked an offered word (offer id, word)         |
-| `voice.activity`                          | web → server | `voiced`, `atMs`; sound started or stopped (changes only) |
-| `stuck.manual`                            | web → server | the user pressed Space: suggest a word now                |
-| `stuck.detected`                          | server → web | reason (pause, filler, describing), context               |
-| `guess.offered`                           | server → web | offer id, up to 3 candidates with confidence, latency     |
-| `guess.withdrawn`                         | server → web | offer id, reason (self-recovered, timeout)                |
-| `guess.accepted` / `guess.expired`        | server → web | offer id; accepted word and time to accept                |
-| `guesser.status`                          | server → web | `ok`; sent only when the guesser goes down or recovers    |
+| Event                                     | Direction    | Payload                                                            |
+| ----------------------------------------- | ------------ | ------------------------------------------------------------------ |
+| `transcript.partial` / `transcript.final` | web → server | words with start/end ms (browser STT)                              |
+| `session.brief`                           | web → server | optional meeting brief text                                        |
+| `session.settings`                        | web → server | pause wait in ms (800–5000), optional minConfidence                |
+| `session.debug`                           | web → server | turns the debug stream on or off for this connection               |
+| `guess.picked`                            | web → server | the user clicked an offered word (offer id, word)                  |
+| `voice.activity`                          | web → server | `voiced`, `atMs`; sound started or stopped (changes only)          |
+| `stuck.manual`                            | web → server | the user pressed Space: suggest a word now                         |
+| `stuck.detected`                          | server → web | reason (pause, filler, describing), context                        |
+| `guess.offered`                           | server → web | offer id, up to 3 candidates with confidence, latency              |
+| `guess.withdrawn`                         | server → web | offer id, reason (self-recovered, timeout)                         |
+| `guess.accepted` / `guess.expired`        | server → web | offer id; accepted word and time to accept                         |
+| `guesser.status`                          | server → web | `ok`; sent only when the guesser goes down or recovers             |
+| `debug`                                   | server → web | only after `session.debug`: transcript, detector, guess, gate, stt |
 
 ## Speech-to-text
 
 - **Deepgram** (`server/src/stt/deepgram.ts`, when `DEEPGRAM_API_KEY` is set): on connect the server sends `session.ready` with `stt: 'deepgram'`. The browser then streams raw 16 kHz mono PCM as binary frames, about 100 ms each. The server forwards them to Deepgram Nova-3 (interim results and filler words; punctuation is off, because Deepgram puts a full stop at long pauses, which would hide real stalls) and turns each result into the same `transcript.*` events the browser path uses, with real word times. Deepgram reports times from the start of the audio, and the server maps them onto its own clock, so the browser clock never matters. After 3 s without audio the stream closes, and the next chunk opens a fresh one. If Deepgram refuses or drops the connection, the server sends `session.ready` with `stt: 'browser'` and stops trying.
+
+  **Keyterms.** Nova-3 can be told words to listen for (`keyterm`, repeated once per term, at most 100 terms and 500 tokens per connection; over the limit Deepgram refuses the connection, so the server stays well under, estimating tokens high). The terms are the profile's personal words, then the glossary of a long brief, or for a short brief its names and jargon (capitalised words, acronyms, anything with a digit). They can only be set when a stream opens, so when the brief or the glossary changes the server closes the current stream and the next chunk of audio opens a new one with the new terms. Audio sent while the old stream is closing may be lost.
+
+  **Debug stream.** Opening the page with `?debug=1` sends `session.debug` on every connection, and the server then also sends `debug` events: the raw transcript (fillers included), each change of the detector's decision, each guesser call (early or confirmed, candidates, latency, error, stale), each gate decision with its reason, and the speech-to-text mode with the current keyterms. They contain what was said, so nothing is built or sent unless asked, and the info-level server log still records only event types, never words.
+
 - **Browser** (no key): the page runs the Web Speech API and sends `transcript.*` events itself.
 
 ## Components

@@ -10,6 +10,7 @@ const TYPES = new Set([
   'guess.accepted',
   'guess.expired',
   'guesser.status',
+  'debug',
 ]);
 
 // Parse one WebSocket message. Anything that is not a known event returns null.

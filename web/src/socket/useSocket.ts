@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ClientEvent, ServerEvent } from '../../../server/src/events';
+import { debugBus } from '../debug/debugBus';
 import { backoffMs, parseServerEvent } from './protocol';
 
 const MAX_BUFFERED_BYTES = 256 * 1024;
+
+// ?debug=1 asks the server for its debug stream on every connection.
+const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
 
 export type SocketStatus = 'connecting' | 'connected' | 'reconnecting';
 
@@ -28,10 +32,13 @@ export function useSocket(onEvent: (e: ServerEvent) => void) {
       socket.onopen = () => {
         attempt = 0;
         setStatus('connected');
+        if (DEBUG)
+          socket.send(JSON.stringify({ type: 'session.debug', on: true } satisfies ClientEvent));
       };
       socket.onmessage = (m: MessageEvent<unknown>) => {
         const event = parseServerEvent(m.data);
-        if (event) handler.current(event);
+        if (event?.type === 'debug') debugBus.push(event);
+        else if (event) handler.current(event);
       };
       socket.onclose = () => {
         if (closed) return;

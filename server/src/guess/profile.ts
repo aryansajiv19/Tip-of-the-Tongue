@@ -16,3 +16,14 @@ export type Profile = z.infer<typeof ProfileSchema>;
 export async function loadProfile(path: string): Promise<Profile> {
   return ProfileSchema.parse(JSON.parse(await readFile(path, 'utf8')));
 }
+
+// Every personal word in the profile, as a flat list.
+export function profileTermList(profile: Profile): string[] {
+  return [
+    ...Object.values(profile.people),
+    ...Object.values(profile.pets),
+    ...Object.values(profile.places),
+    ...profile.hobbies,
+    ...profile.frequentlyLostWords,
+  ];
+}
