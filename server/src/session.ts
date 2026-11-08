@@ -62,6 +62,8 @@ const VOICED_MAX_MS = 10_000;
 // How much of the call the guesser reads: about eight minutes of speech, so a name from early in
 // the call is still in view.
 const CONVERSATION_WORDS = 1200;
+// How long an offered word stays off the list.
+const REPEAT_BLOCK_MS = 180_000;
 // The stretch the guesser is told the user is stuck in.
 const STUCK_WORDS = 60;
 
@@ -228,7 +230,13 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         recentlyOffered,
         ...(lastOfferAtMs !== undefined && !current.manual ? { lastOfferAtMs } : {}),
       },
-      { minConfidence, cooldownMs: opts.cooldownMs },
+      {
+        minConfidence,
+        cooldownMs: opts.cooldownMs,
+        // A word already offered is not offered again for a while: it comes back when the model
+        // reaches for an old word after a finished sentence. Asking by hand is allowed to repeat.
+        repeatMs: current.manual ? opts.cooldownMs : REPEAT_BLOCK_MS,
+      },
     );
     debug(() => ({
       kind: 'gate',

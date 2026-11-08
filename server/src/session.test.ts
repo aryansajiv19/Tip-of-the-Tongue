@@ -649,6 +649,26 @@ describe('session pipeline', () => {
     session.close();
   });
 
+  it('does not offer the same word again for a while, but the manual ask may', async () => {
+    const guess: Guesser = () =>
+      Promise.resolve({
+        candidates: [{ word: 'hotfix', confidence: 0.9 }],
+        abstain: false,
+        latencyMs: 0,
+      });
+    const { session, events, say } = setup(guess);
+    const offers = () => events.filter((e) => e.type === 'guess.offered').length;
+    say('I would push a quick repair, an urgent fix, a');
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(offers()).toBe(1);
+    // Well past the 8 s cooldown, another pause; the old word must not come back.
+    vi.advanceTimersByTime(30_000);
+    say('so thanks everyone I will post my notes in the channel');
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(offers()).toBe(1);
+    session.close();
+  });
+
   it('uses the meeting brief in the guess', async () => {
     const guess = vi.fn(mockGuesser);
     const { session, say } = setup(guess);
