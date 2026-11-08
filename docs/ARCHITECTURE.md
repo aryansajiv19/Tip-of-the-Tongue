@@ -19,7 +19,7 @@ Defined once in `server/src/events.ts`. Times are epoch ms.
 | Event                                     | Direction    | Payload                                                            |
 | ----------------------------------------- | ------------ | ------------------------------------------------------------------ |
 | `transcript.partial` / `transcript.final` | web → server | words with start/end ms (browser STT)                              |
-| `session.brief`                           | web → server | optional meeting brief text                                        |
+| `session.brief`                           | web → server | optional meeting brief text, and the file name it came from        |
 | `session.settings`                        | web → server | pause wait in ms (800–5000), optional minConfidence                |
 | `session.debug`                           | web → server | turns the debug stream on or off for this connection               |
 | `guess.picked`                            | web → server | the user clicked an offered word (offer id, word)                  |
@@ -30,6 +30,7 @@ Defined once in `server/src/events.ts`. Times are epoch ms.
 | `guess.withdrawn`                         | server → web | offer id, reason (self-recovered, timeout)                         |
 | `guess.accepted` / `guess.expired`        | server → web | offer id; accepted word and time to accept                         |
 | `guesser.status`                          | server → web | `ok`; sent only when the guesser goes down or recovers             |
+| `brief.terms`                             | server → web | key terms of the loaded brief (at most 60), shown as chips         |
 | `debug`                                   | server → web | only after `session.debug`: transcript, detector, guess, gate, stt |
 
 ## Speech-to-text
@@ -61,6 +62,10 @@ Defined once in `server/src/events.ts`. Times are epoch ms.
 ## Overlay and desktop app
 
 The page is a control pill (pause/resume, a five-bar mic waveform, a listening timer, the mode "Everyday" or "Meeting" when a brief is loaded, keycap hints, New conversation) with the suggestion card under it. `app/` is an Electron shell around that same page: a frameless, transparent, always-on-top window at the top right of the active screen (16 px margin, re-placed when displays change), no taskbar or Dock icon, never focused when shown, and deliberately not content-protected so it appears in screenshots and screen sharing. The main process starts the server and the Vite dev server as child processes and stops them on quit, registers the global shortcuts (Cmd/Ctrl+\\ show/hide, Cmd/Ctrl+Enter manual trigger), owns the tray menu, and sizes the window to the page. The page and the main process talk over a small preload bridge (`window.tott`): commands in, window height and listening state out. Window placement is pure code in `app/src/placement.ts`. In a browser the page runs the same shortcuts itself.
+
+## Meeting prep
+
+A compact drawer under the pill (opened from the Everyday/Meeting label, closed by default) takes a dropped or chosen PDF, `.md` or `.txt` file. PDFs are read in the browser with pdf.js; the text (at most 50,000 characters) is sent as `session.brief` with the file name as `source`, and becomes the brief for the guesser and the key terms for speech recognition. The server answers with `brief.terms`: the names and jargon of a short brief right away, the glossary of a long one when it is ready. A suggested word that appears in the document (case-insensitive, whole word or phrase) carries the document's name as `Candidate.source`. Nothing is stored: removing the document clears the brief.
 
 ## Key decisions
 

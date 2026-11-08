@@ -128,13 +128,18 @@ test('the mode is Meeting once a brief is loaded', async ({ page }) => {
   await expect(pill(page)).toContainText('Meeting');
 });
 
-test('keyboard focus goes to the listening button, then New conversation', async ({ page }) => {
+test('keyboard focus goes to the listening button, Meeting prep, then New conversation', async ({
+  page,
+}) => {
   await open(page);
   await page.keyboard.press('Tab');
   await expect(toggle(page)).toBeFocused();
   await page.keyboard.press('Tab');
+  await expect(pill(page).getByRole('button', { name: /^Meeting prep/ })).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(pill(page).getByRole('button', { name: 'New conversation' })).toBeFocused();
   // Space on the focused button works like a click.
+  await page.keyboard.press('Shift+Tab');
   await page.keyboard.press('Shift+Tab');
   await page.keyboard.press('Space');
   await expect(toggle(page)).toHaveAccessibleName('Pause listening');

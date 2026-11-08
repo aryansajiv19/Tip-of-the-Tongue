@@ -53,3 +53,17 @@ describe('session.brief', () => {
     expect(brief(5)).toBe(false);
   });
 });
+
+describe('session.brief source', () => {
+  const brief = (value: Record<string, unknown>) =>
+    ClientEventSchema.safeParse({ type: 'session.brief', text: 'x', ...value }).success;
+
+  it('is optional, a string, and at most 200 characters', () => {
+    expect(brief({})).toBe(true);
+    expect(brief({ source: 'agenda.pdf' })).toBe(true);
+    expect(brief({ source: 'x'.repeat(200) })).toBe(true);
+    expect(brief({ source: 'x'.repeat(201) })).toBe(false);
+    expect(brief({ source: 5 })).toBe(false);
+    expect(brief({ source: null })).toBe(false);
+  });
+});

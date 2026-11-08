@@ -10,6 +10,7 @@ import { speechSupported, useSpeech } from './speech/useSpeech';
 import { SENSITIVITIES, savedSensitivity, type Sensitivity } from './settings/sensitivity';
 import { ControlPill } from './ui/ControlPill';
 import { DevTools } from './ui/DevTools';
+import { PrepDrawer } from './ui/PrepDrawer';
 import { desktop, useCommands } from './ui/desktop';
 import { levelStore } from './ui/levelStore';
 import { sessionMode } from './ui/sessionState';
@@ -26,7 +27,10 @@ export function App() {
   const [heard, setHeard] = useState<string[]>([]);
   const [visible, setVisible] = useState(true);
   const [partial, setPartial] = useState('');
-  const [briefSent, setBriefSent] = useState<string | null>(null);
+  // The meeting brief: pasted (developer tools) or read from a dropped file (`source`).
+  const [brief, setBrief] = useState<{ text: string; source?: string } | null>(null);
+  const [briefTerms, setBriefTerms] = useState<string[]>([]);
+  const [prepOpen, setPrepOpen] = useState(false);
   // The saved choice, or null so the server's own defaults apply. The settings popover changes it.
   const [sensitivity] = useState<Sensitivity | null>(savedSensitivity);
   const [guesserDown, setGuesserDown] = useState(false);
@@ -39,6 +43,7 @@ export function App() {
   const onServerEvent = useCallback((e: ServerEvent) => {
     dispatch(e);
     if (e.type === 'guesser.status') setGuesserDown(!e.ok);
+    else if (e.type === 'brief.terms') setBriefTerms(e.terms);
     else if (e.type === 'session.ready') {
       if (sttRef.current === 'deepgram' && e.stt === 'browser') {
         setNotice('Switched to this browser\u2019s speech recognition.');
@@ -129,10 +134,14 @@ export function App() {
 
   // The brief is session state on the server: send it again after a reconnect.
   useEffect(() => {
-    if (status === 'connected' && briefSent !== null) {
-      send({ type: 'session.brief', text: briefSent } satisfies ClientEvent);
+    if (status === 'connected' && brief !== null) {
+      send({
+        type: 'session.brief',
+        text: brief.text,
+        ...(brief.source ? { source: brief.source } : {}),
+      } satisfies ClientEvent);
     }
-  }, [status, briefSent, send]);
+  }, [status, brief, send]);
 
   useEffect(() => {
     if (status === 'connected' && sensitivity !== null) {
@@ -190,11 +199,23 @@ export function App() {
             listening={listening}
             canListen={canListen}
             elapsedMs={clock.elapsedMs}
-            mode={sessionMode(briefSent)}
+            mode={sessionMode(brief?.text ?? null)}
+            prepOpen={prepOpen}
+            onTogglePrep={() => setPrepOpen((o) => !o)}
             modifier={modifierLabel(navigator.platform)}
             onToggleListening={listening ? pauseListening : startListening}
             onNewConversation={newConversation}
           />
+
+          {prepOpen && (
+            <PrepDrawer
+              docName={brief?.source ?? null}
+              terms={briefTerms}
+              onLoad={(text, name) => setBrief({ text, source: name })}
+              onClear={() => setBrief({ text: '' })}
+              onClose={() => setPrepOpen(false)}
+            />
+          )}
 
           {noteState.map((m) => (
             <p key={m} role="alert" className="overlay-note overlay-note-error glass">
@@ -224,7 +245,7 @@ export function App() {
         <DevTools
           heard={heard.join(' ')}
           partial={partial}
-          onBrief={setBriefSent}
+          onBrief={(text) => setBrief({ text })}
           sendPartial={sendPartial}
           sendFinal={sendFinal}
           onDownloadTrace={downloadTrace}

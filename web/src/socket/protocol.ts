@@ -10,6 +10,7 @@ const TYPES = new Set([
   'guess.accepted',
   'guess.expired',
   'guesser.status',
+  'brief.terms',
   'debug',
 ]);
 

@@ -64,8 +64,32 @@
 .pill-mode {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: calc(var(--pill-height) - var(--space-4));
+  padding: 0 var(--space-2);
+  font: inherit;
   color: var(--text-muted);
   white-space: nowrap;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.pill-mode:hover {
+  background: var(--hover);
+}
+.pill-mode:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.pill-chevron {
+  flex: none;
+  transition: transform var(--dur-fast) var(--ease);
+}
+.pill-chevron-open {
+  transform: rotate(180deg);
 }
 .pill-keys {
   flex: none;
