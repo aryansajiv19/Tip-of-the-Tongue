@@ -4,6 +4,7 @@ import {
   applyResults,
   emptySpeech,
   flushSpeech,
+  resetSpeech,
   type RawResult,
   type SpeechState,
 } from './results';
@@ -145,5 +146,30 @@ describe('flushSpeech', () => {
   it('sends nothing when everything was already final or nothing was heard', () => {
     expect(flushSpeech(run([[f('a b')]]).state).final).toBeNull();
     expect(flushSpeech(emptySpeech).final).toBeNull();
+  });
+});
+
+describe('resetSpeech', () => {
+  it('stops old words from being sent again, but sends the new ones once', () => {
+    const { state } = run([[f('we need the'), i(' thing')]]);
+    const fresh = resetSpeech(state);
+    // Chrome still reports the whole session's text.
+    const same = applyResults(fresh, [f('we need the'), i(' thing')], 5000);
+    expect(same.final).toBeNull();
+    expect(same.partial).toBeNull();
+    const more = applyResults(fresh, [f('we need the'), f(' thing'), i(' renewal')], 5000);
+    expect(texts(more.final)).toBeNull();
+    expect(texts(more.partial)).toEqual(['renewal']);
+    const done = applyResults(more.state, [f('we need the'), f(' thing'), f(' renewal')], 5300);
+    expect(texts(done.final)).toEqual(['renewal']);
+  });
+
+  it('does not flush old interim words as a final afterwards', () => {
+    const { state } = run([[i('hello there')]]);
+    expect(flushSpeech(resetSpeech(state)).final).toBeNull();
+  });
+
+  it('is harmless with nothing heard', () => {
+    expect(resetSpeech(emptySpeech)).toEqual(emptySpeech);
   });
 });

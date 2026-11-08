@@ -23,6 +23,17 @@ describe('commandForKey', () => {
     expect(key('Enter', { ctrlKey: true })).toBe('manual');
   });
 
+  it('Cmd or Ctrl + Shift + N starts a new conversation, and N alone or without Shift does not', () => {
+    expect(key('KeyN', { metaKey: true, shiftKey: true })).toBe('new-conversation');
+    expect(key('KeyN', { ctrlKey: true, shiftKey: true })).toBe('new-conversation');
+    expect(key('KeyN', { metaKey: true })).toBeNull();
+    expect(key('KeyN', { shiftKey: true })).toBeNull();
+    expect(key('KeyN', { metaKey: true, ctrlKey: true, shiftKey: true })).toBeNull();
+    expect(key('KeyN', { metaKey: true, shiftKey: true, altKey: true })).toBeNull();
+    expect(key('KeyN', { metaKey: true, shiftKey: true, repeat: true })).toBeNull();
+    expect(key('KeyM', { metaKey: true, shiftKey: true })).toBeNull();
+  });
+
   it('needs exactly one of Cmd and Ctrl', () => {
     expect(key('Enter')).toBeNull();
     expect(key('Enter', { metaKey: true, ctrlKey: true })).toBeNull();

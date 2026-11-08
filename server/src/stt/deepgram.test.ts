@@ -255,6 +255,29 @@ describe('server with Deepgram', () => {
     await app.close();
   });
 
+  it('words still in flight from Deepgram after a reset are not shown or used', async () => {
+    let socket: WebSocket | undefined;
+    const dg = await fakeDeepgram((ws) => (socket = ws));
+    servers.push(dg.wss);
+    const { app, ws, events } = await connectClient({
+      deepgram: { apiKey: 'k', language: 'en', connect: dg.connect },
+    });
+    ws.send(Buffer.alloc(3200));
+    await expect.poll(() => socket).toBeDefined();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    ws.send(JSON.stringify({ type: 'session.reset' }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    // A late result for words spoken before the reset, then one for words spoken after it.
+    socket?.send(JSON.stringify(results(true, [['old', 0, 0.02]])));
+    socket?.send(JSON.stringify(results(true, [['fresh', 30, 30.2]])));
+    await expect.poll(() => events.filter((e) => e.type === 'transcript.final').length).toBe(1);
+    const final = events.find((e) => e.type === 'transcript.final');
+    expect(final?.type === 'transcript.final' && final.words.map((w) => w.text)).toEqual(['fresh']);
+    ws.close();
+    await app.close();
+  });
+
   it('teaches Deepgram the profile words, and the brief names once a brief is sent', async () => {
     const dg = await fakeDeepgram(() => undefined);
     servers.push(dg.wss);

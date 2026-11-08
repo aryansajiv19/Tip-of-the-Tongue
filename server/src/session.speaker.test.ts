@@ -60,6 +60,34 @@ describe('who is speaking', () => {
     session.close();
   });
 
+  it('forgets whose voice is the user on a new conversation, and learns it again', () => {
+    const { session, say } = setup();
+    say(1, 'Hello everyone thanks for joining');
+    expect(session.speaker()).toBe(1);
+    session.handle({ type: 'session.reset' });
+    expect(session.speaker()).toBeUndefined();
+    // A different person sits down: the first words after the reset decide.
+    say(0, 'Good morning let us get started with the review');
+    expect(session.speaker()).toBe(0);
+    session.close();
+  });
+
+  it('does not let words from before the reset decide whose voice is the user', () => {
+    const { session, say } = setup();
+    const before = Date.now();
+    say(0, 'Hello everyone thanks for joining'); // advances the clock
+    session.handle({ type: 'session.reset' });
+    session.handle({
+      type: 'transcript.final',
+      words: [
+        { text: 'stale', startMs: before, endMs: before + 200, speaker: 1 },
+        { text: 'words', startMs: before + 200, endMs: before + 400, speaker: 1 },
+      ],
+    });
+    expect(session.speaker()).toBeUndefined();
+    session.close();
+  });
+
   it('skips a single first word, then decides on the next result', () => {
     const { session, say } = setup();
     say(1, 'Hello');

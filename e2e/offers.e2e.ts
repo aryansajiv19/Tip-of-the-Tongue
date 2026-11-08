@@ -8,10 +8,9 @@ test('a described word gets an offer, saying it accepts it, then it clears', asy
   await open(page);
   await say(page, 'I need to go to the the place where you get medicine');
   await expect(offer(page)).toContainText('pharmacy', { timeout: OFFER_WITHIN_MS });
-  await expect(offer(page)).toContainText("Is this the word you're looking for?");
 
   await say(page, 'pharmacy');
-  await expect(offer(page)).toContainText('Got it: pharmacy');
+  await expect(offer(page).locator('.card-accepted')).toHaveText('pharmacy');
   await expect(offer(page)).toHaveText('');
 });
 

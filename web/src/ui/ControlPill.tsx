@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, type ReactNode } from 'react';
 import { Pause, Play, RotateCcw } from 'lucide-react';
 import { formatClock, type Mode } from './sessionState';
 import { BAR_COUNT, barHeights } from './levelBars';
@@ -15,6 +15,8 @@ interface Props {
   modifier: string;
   onToggleListening: () => void;
   onNewConversation: () => void;
+  // The settings gear, placed just before New conversation.
+  gear?: ReactNode;
 }
 
 const ICON = { size: 16, strokeWidth: 1.5, 'aria-hidden': true } as const;
@@ -49,6 +51,8 @@ export function ControlPill(p: Props) {
         <kbd className="keycap">{p.modifier}\</kbd>
         <kbd className="keycap">{p.modifier}↵</kbd>
       </span>
+
+      {p.gear}
 
       <button
         type="button"

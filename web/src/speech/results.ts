@@ -52,3 +52,9 @@ export function flushSpeech(state: SpeechState): { state: SpeechState; final: Wo
   const pending = state.words.slice(state.sentFinal);
   return { state: emptySpeech, final: pending.length ? pending : null };
 }
+
+// A new conversation: what was heard so far is not sent again, and only words that come after
+// this are. (Chrome keeps sending the whole session's text, so the old words stay in `words`.)
+export function resetSpeech(state: SpeechState): SpeechState {
+  return { words: state.words, sentFinal: state.words.length, partialText: '' };
+}

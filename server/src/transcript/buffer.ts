@@ -20,6 +20,11 @@ export class TranscriptBuffer {
     this.partial = [];
   }
 
+  clear(): void {
+    this.finals = [];
+    this.partial = [];
+  }
+
   words(): Word[] {
     // Array.prototype.sort is stable, so equal start times keep arrival order.
     return [...this.finals, ...this.partial].sort((a, b) => a.startMs - b.startMs);

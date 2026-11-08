@@ -158,7 +158,7 @@ describe('speculative guessing', () => {
     const { session, say, events } = setup(fakeGuesser(500, ['knife']).guess);
     say('can you pass the the thing for cutting bread knife');
     await vi.advanceTimersByTimeAsync(4000);
-    expect(events.map((e) => e.type)).toEqual(['stuck.detected']);
+    expect(events.map((e) => e.type)).toEqual(['stuck.detected', 'guess.idle']);
     session.close();
   });
 
@@ -167,7 +167,7 @@ describe('speculative guessing', () => {
     const { session, say, events, errors } = setup(guess);
     say(STALL);
     await vi.advanceTimersByTimeAsync(4000);
-    expect(events.map((e) => e.type)).toEqual(['stuck.detected']);
+    expect(events.map((e) => e.type)).toEqual(['stuck.detected', 'guess.idle']);
     expect(errors).toHaveLength(1);
     session.close();
   });
@@ -182,7 +182,7 @@ describe('speculative guessing', () => {
     const { session, say, events } = setup(guess);
     say(STALL);
     await vi.advanceTimersByTimeAsync(4000);
-    expect(events.map((e) => e.type)).toEqual(['stuck.detected']);
+    expect(events.map((e) => e.type)).toEqual(['stuck.detected', 'guess.idle']);
     session.close();
   });
 

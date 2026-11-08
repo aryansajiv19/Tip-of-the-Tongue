@@ -115,6 +115,7 @@ function wire() {
 
   globalShortcut.register('CommandOrControl+\\', toggle);
   globalShortcut.register('CommandOrControl+Enter', () => send('manual'));
+  globalShortcut.register('CommandOrControl+Shift+N', () => send('new-conversation'));
 
   screen.on('display-added', place);
   screen.on('display-removed', place);

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Candidate, ClientEvent, ServerEvent } from './events.js';
+import type { Candidate, ClientEvent, ServerEvent, Word } from './events.js';
 import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck, type VoiceInfo } from './stuck/detect.js';
 import { endsWithAskForWord } from './stuck/manual.js';
@@ -93,6 +93,9 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   // End time of the last word we already reacted to, so one stall triggers one guess.
   let handledUpToMs = -Infinity;
   let closed = false;
+  // Words that ended before the last reset belong to the old conversation (they may still be in
+  // flight from speech recognition) and are dropped.
+  let resetAtMs = -Infinity;
   // From voice.activity events; stays undefined for clients that don't send them.
   let voice: VoiceInfo | undefined;
   // The guesser counts as down after two failures in a row, and up again on the next success.
@@ -182,6 +185,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   function discardSpeculation() {
     if (!spec) return;
     spec.abort.abort();
+    // A confirmed stall was waiting on this guess: tell the page to stop showing "looking".
+    if (spec.confirmed) send({ type: 'guess.idle' });
     spec = undefined;
     discarded++;
     opts.log?.({ speculated, discarded });
@@ -260,7 +265,10 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         ? { words: decision.candidates.map((c) => c.word) }
         : { reason: decision.reason }),
     }));
-    if (!decision.offer) return;
+    if (!decision.offer) {
+      send({ type: 'guess.idle' });
+      return;
+    }
 
     const offeredAtMs = now();
     const stallSpeaker = buffer.words().find((w) => w.endMs === current.lastEndMs)?.speaker;
@@ -332,6 +340,27 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     }
   }
 
+  // Starts a new conversation: forget the transcript, the open offer, the guess in progress and
+  // the offer history. A late guess result is dropped because `spec` no longer matches. The
+  // brief and settings stay.
+  function reset() {
+    spec?.abort.abort();
+    spec = undefined;
+    offer = undefined;
+    lastOfferAtMs = undefined;
+    recentlyOffered.clear();
+    // Whose voice is "me" is learned again in the new conversation.
+    me = undefined;
+    buffer.clear();
+    handledUpToMs = -Infinity;
+    voice = undefined;
+    lastDetector = '';
+    resetAtMs = now();
+    send({ type: 'session.cleared' });
+  }
+
+  const afterReset = (words: Word[]) => words.filter((w) => w.endMs > resetAtMs);
+
   // A voiced state that never ended (the page closed, a stuck microphone) is not trusted for long.
   function voiceOpt(): { voice?: VoiceInfo } {
     const stale = voice?.voiced && now() - voice.sinceMs > VOICED_MAX_MS;
@@ -398,21 +427,27 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
       } else if (event.type === 'guess.picked') pick(event.id, event.word);
       else if (event.type === 'voice.activity') onVoice(event.voiced, event.atMs);
       else if (event.type === 'stuck.manual') askNow();
+      else if (event.type === 'session.reset') reset();
       else {
+        const words = afterReset(event.words);
+        // Everything was from before the reset: nothing to add (a partial still clears).
+        if (words.length === 0 && event.type === 'transcript.final') return;
         debug(() => ({
           kind: 'transcript',
           final: event.type === 'transcript.final',
-          text: event.words.map((w) => w.text).join(' '),
+          text: words.map((w) => w.text).join(' '),
         }));
-        if (event.type === 'transcript.partial') buffer.applyPartial(event.words);
+        if (event.type === 'transcript.partial') buffer.applyPartial(words);
         else {
-          buffer.applyFinal(event.words);
-          const first = me === undefined ? speakerOfFirstUtterance(event.words) : undefined;
+          buffer.applyFinal(words);
+          const first = me === undefined ? speakerOfFirstUtterance(words) : undefined;
           if (first !== undefined) setMe(first, 'first words');
         }
       }
       check();
     },
+    // Drops words from before the last reset. Speech recognition can still deliver them.
+    afterReset,
     // The words worth teaching the speech recogniser right now.
     keyterms: () => keyterms,
     // Which voice the session takes to be the user's, if it knows.
