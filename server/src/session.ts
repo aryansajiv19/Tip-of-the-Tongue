@@ -3,6 +3,7 @@ import type { Candidate, ClientEvent, ServerEvent } from './events.js';
 import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck, type VoiceInfo } from './stuck/detect.js';
 import { endsWithAskForWord } from './stuck/manual.js';
+import { loudestSpeaker } from './stuck/speaker.js';
 import type { Profile } from './guess/profile.js';
 import { briefForGuesser, LONG_BRIEF_CHARS, type GlossaryBuilder } from './guess/glossary.js';
 import type { GuessResult, Guesser } from './guess/types.js';
@@ -75,6 +76,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   let glossary: string | undefined;
   let keyterms: string[] = opts.profile ? selectKeyterms({ profile: opts.profile }) : [];
   let debugOn = false;
+  // Which voice is the user's, once speech-to-text labels voices. Undefined: treat every voice as theirs.
+  let me: number | undefined;
   let lastDetector = '';
   // Starts from the server default; the user can change it for this connection.
   let pauseMs = opts.pauseMs;
@@ -277,6 +280,14 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     if (last.endMs <= handledUpToMs) return;
     if (endsWithAskForWord(words)) return askNow();
 
+    // The user's voice: the one that talked most in the first 20 s, until they ask by hand.
+    me ??= loudestSpeaker(words, now());
+    // The other person is the one who paused: not the user's stall, whatever they say next.
+    if (me !== undefined && last.speaker !== undefined && last.speaker !== me) {
+      discardSpeculation();
+      return;
+    }
+
     const stuck = detectStuck(words, now(), { pauseMs, ...voiceOpt() });
     const decision = stuck.stuck ? `${stuck.reason}@${stuck.sinceMs}` : 'no';
     if (decision !== lastDetector) {
@@ -324,6 +335,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     const last = buffer.words().at(-1);
     if (!last) return;
     handledUpToMs = last.endMs;
+    // They pressed it because they are stuck, so the last voice is theirs.
+    if (last.speaker !== undefined) me = last.speaker;
     const phrase = buffer.recentText();
     send({ type: 'stuck.detected', reason: 'manual', contextWindow: phrase });
     if (!spec) return startGuess(last.endMs, last.startMs - 1, true, true);
@@ -382,6 +395,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     },
     // The words worth teaching the speech recogniser right now.
     keyterms: () => keyterms,
+    // Which voice the session takes to be the user's, if it knows.
+    speaker: () => me,
     close() {
       closed = true;
       spec?.abort.abort();

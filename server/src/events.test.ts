@@ -53,3 +53,16 @@ describe('session.brief', () => {
     expect(brief(5)).toBe(false);
   });
 });
+
+describe('word speaker', () => {
+  const event = (speaker: unknown) =>
+    ClientEventSchema.safeParse({
+      type: 'transcript.final',
+      words: [{ text: 'hi', startMs: 0, endMs: 1, speaker }],
+    }).success;
+
+  it('is optional and must be a small whole number', () => {
+    expect([undefined, 0, 1, 31].map(event)).toEqual([true, true, true, true]);
+    expect([-1, 32, 1.5, '1', null].map(event)).toEqual([false, false, false, false, false]);
+  });
+});

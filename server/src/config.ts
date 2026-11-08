@@ -20,6 +20,8 @@ export const config = {
   // speech recognition is used.
   deepgramApiKey: process.env.DEEPGRAM_API_KEY || undefined,
   deepgramLanguage: process.env.DEEPGRAM_LANGUAGE || 'en',
+  // Ask Deepgram to tell the voices apart, so only the user's own stalls trigger a guess.
+  deepgramDiarize: process.env.DEEPGRAM_DIARIZE === '1',
   // Browser origins allowed to open the WebSocket (stops other web pages from reading it).
   allowedOrigins: (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
     .split(',')

@@ -56,6 +56,20 @@ describe('what the session hears', () => {
   });
 });
 
+describe('speaker labels', () => {
+  it('are left off by default and give the user voice 0 when asked for', () => {
+    const lines: Scenario['lines'] = [
+      { s: 'me', t: 'one two' },
+      { s: 'other', t: 'three' },
+    ];
+    const plain = layoutScenario(sc(lines));
+    expect(plain[0]?.words[0]).not.toHaveProperty('speaker');
+    const labelled = layoutScenario(sc(lines), true);
+    expect(labelled[0]?.words.map((w) => w.speaker)).toEqual([0, 0]);
+    expect(labelled[1]?.words.map((w) => w.speaker)).toEqual([1]);
+  });
+});
+
 describe('isStall', () => {
   it('is a line of the user with a target, unless they find it themselves', () => {
     expect(isStall({ s: 'me', t: 'x', w: 'a' })).toBe(true);

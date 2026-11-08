@@ -88,6 +88,7 @@ export async function buildApp(deps: AppDeps = {}) {
       ? createDeepgramStream({
           ...deepgramOpts,
           keyterms: () => session.keyterms(),
+          diarize: config.deepgramDiarize,
           onEvent: (event) => {
             send(event);
             session.handle(event);

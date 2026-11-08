@@ -20,7 +20,8 @@ export const isStall = (l: Line): boolean => l.s === 'me' && Boolean(l.w) && !l.
 
 // Puts the lines of a conversation on one timeline. One microphone hears both speakers, so the
 // session gets the words in this order with no speaker labels.
-export function layoutScenario(sc: Scenario): PlacedLine[] {
+// `speakers` labels each word with its voice (the user is 0), as speaker separation would.
+export function layoutScenario(sc: Scenario, speakers = false): PlacedLine[] {
   const placed: PlacedLine[] = [];
   let at = 500;
   for (const line of sc.lines) {
@@ -32,7 +33,9 @@ export function layoutScenario(sc: Scenario): PlacedLine[] {
     const endMs = words.at(-1)?.endMs ?? at;
     const heard = words.flatMap((w) => {
       const text = spoken(w.text);
-      return text === '' ? [] : [{ ...w, text }];
+      return text === ''
+        ? []
+        : [{ ...w, text, ...(speakers ? { speaker: line.s === 'me' ? 0 : 1 } : {}) }];
     });
     placed.push({ line, words: heard, startMs: at, endMs });
     at = endMs + (line.gap ?? (isStall(line) ? STALL_GAP_MS : TURN_GAP_MS));
