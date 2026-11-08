@@ -58,11 +58,11 @@ describe('TranscriptBuffer', () => {
     expect(b.recentText(3)).toBe('w97 w98 w99');
   });
 
-  it('caps stored final words at 500', () => {
+  it('caps stored final words at 3000', () => {
     const b = new TranscriptBuffer();
-    b.applyFinal(Array.from({ length: 700 }, (_, i) => w(`w${i}`, i * 100)));
+    b.applyFinal(Array.from({ length: 3200 }, (_, i) => w(`w${i}`, i * 100)));
     const all = b.words();
-    expect(all).toHaveLength(500);
+    expect(all).toHaveLength(3000);
     expect(all[0]?.text).toBe('w200');
   });
 

@@ -59,6 +59,9 @@ interface Offer {
 // Word times come from the browser clock and `now` from the server clock; fine while both run
 // on the same machine. ponytail: re-stamp words on arrival if the server is ever remote.
 const VOICED_MAX_MS = 10_000;
+// How much of the call the guesser reads: about eight minutes of speech, so a name from early in
+// the call is still in view.
+const CONVERSATION_WORDS = 1200;
 
 export function createSession(send: (event: ServerEvent) => void, opts: SessionOptions) {
   const now = opts.now ?? Date.now;
@@ -184,7 +187,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     opts
       .guess(
         {
-          conversation: buffer.recentText(),
+          conversation: buffer.recentText(CONVERSATION_WORDS),
           stuckPhrase,
           ...(brief ? { brief: briefForGuesser(brief, glossary) } : {}),
           ...(opts.profile ? { profile: opts.profile } : {}),

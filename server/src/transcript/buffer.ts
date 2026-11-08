@@ -1,6 +1,7 @@
 import { MAX_WORDS_PER_EVENT, type Word } from '../events.js';
 
-const MAX_FINAL_WORDS = 500;
+// About 20 minutes of speech: a word needed from early in a long call is still there.
+const MAX_FINAL_WORDS = 3000;
 
 // In-memory only: the last finalised words plus the utterance still being spoken.
 export class TranscriptBuffer {

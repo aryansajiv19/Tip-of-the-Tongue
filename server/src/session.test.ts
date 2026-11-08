@@ -592,6 +592,20 @@ describe('session pipeline', () => {
     });
   });
 
+  it('gives the guesser the whole recent call, not just the last few sentences', async () => {
+    const guess = vi.fn<Guesser>(mockGuesser);
+    const { session, say } = setup(guess);
+    say('Brightstone is our supplier');
+    const filler = Array.from({ length: 300 }, (_, i) => `word${i}`).join(' ');
+    say(filler);
+    say('I need to go to the the place where you get medicine');
+    await vi.advanceTimersByTimeAsync(2000);
+    const conversation = guess.mock.calls.at(-1)?.[0].conversation ?? '';
+    expect(conversation).toContain('Brightstone');
+    expect(conversation).toContain('medicine');
+    session.close();
+  });
+
   it('uses the meeting brief in the guess', async () => {
     const guess = vi.fn(mockGuesser);
     const { session, say } = setup(guess);
