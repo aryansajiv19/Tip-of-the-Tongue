@@ -185,8 +185,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     opts
       .guess(
         {
-          conversation: buffer.markedText(CONVERSATION_WORDS, now()),
-          stuckPhrase: buffer.markedText(STUCK_WORDS, now()),
+          conversation: buffer.markedText(CONVERSATION_WORDS),
+          stuckPhrase: buffer.markedText(STUCK_WORDS),
           ...(brief ? { brief: briefForGuesser(brief, glossary) } : {}),
           ...(opts.profile ? { profile: opts.profile } : {}),
         },

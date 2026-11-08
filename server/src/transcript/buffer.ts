@@ -29,10 +29,11 @@ export class TranscriptBuffer {
     return this.words().filter((w) => w.startMs >= ms);
   }
 
-  // The last words with a "…" wherever the speaker went quiet for a while (and at the end, if they
-  // are quiet now). A recogniser sends no punctuation, so this is how the guesser can tell a
-  // search for a word from a finished sentence.
-  markedText(maxWords: number, nowMs: number): string {
+  // The last words with a "…" wherever the speaker went quiet for a while between two words. A
+  // recogniser sends no punctuation, so this is how the guesser can tell a description that
+  // follows a stall from a finished sentence. There is no mark at the end: a trailing pause made
+  // the guesser read every finished sentence as a search for a word.
+  markedText(maxWords: number): string {
     const words = this.words().slice(-maxWords);
     const parts: string[] = [];
     words.forEach((w, i) => {
@@ -40,8 +41,6 @@ export class TranscriptBuffer {
       if (before && w.startMs - before.endMs >= PAUSE_MARK_MS) parts.push('…');
       parts.push(w.text);
     });
-    const last = words.at(-1);
-    if (last && nowMs - last.endMs >= PAUSE_MARK_MS) parts.push('…');
     return parts.join(' ');
   }
 

@@ -606,14 +606,18 @@ describe('session pipeline', () => {
     session.close();
   });
 
-  it('marks pauses in what the guesser reads', async () => {
+  it('marks pauses between words in what the guesser reads, but not at the end', async () => {
     const guess = vi.fn<Guesser>(mockGuesser);
     const { session, say } = setup(guess);
     say('I need to go to the');
+    vi.advanceTimersByTime(1500);
+    say('the place where you get medicine');
     await vi.advanceTimersByTimeAsync(2500);
     const input = guess.mock.calls.at(-1)?.[0];
-    expect(input?.stuckPhrase.endsWith(' …')).toBe(true);
-    expect(input?.conversation.endsWith(' …')).toBe(true);
+    expect(input?.stuckPhrase).toContain('to the … the place');
+    expect(input?.conversation).toContain('to the … the place');
+    expect(input?.stuckPhrase.endsWith('…')).toBe(false);
+    expect(input?.conversation.endsWith('…')).toBe(false);
     session.close();
   });
 
