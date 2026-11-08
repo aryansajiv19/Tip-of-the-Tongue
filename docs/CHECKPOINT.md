@@ -8,25 +8,25 @@ _Last updated: 2026-11-08_
 
 Goal: a working MVP with a nice UI. The full loop runs live: Deepgram Nova-3 (keyterms from the profile and brief) or browser speech → stall detector (any pause, cue phrases, sound signals) → Haiku guess started 300 ms into a pause → gate → pop-up. A guess takes about 0.8 s; in the scenario tests the pop-up appears about 1.4 s after the last word.
 
-| Area                                                | PR            | Owner    | State       |
-| --------------------------------------------------- | ------------- | -------- | ----------- |
-| Core loop, eval, hardening, e2e                     | #1–#21        | all      | merged      |
-| Chrome chunked-speech fix                           | #22           | 93       | merged      |
-| Guesser streaming, thinking-pause items             | #23           | c1       | merged      |
-| Deepgram server + web, punctuation off              | #24, #26, #27 | lead, 93 | merged      |
-| Speculative guessing, any-pause rule                | #25           | 4c       | merged      |
-| Hard set, model comparison (Haiku kept)             | #28           | c1       | merged      |
-| Frosted pop-up, click to accept                     | #29           | 4c       | merged      |
-| Long-brief glossary (≤ 50k chars)                   | #30           | c1       | merged      |
-| Page design, sensitivity setting                    | #31           | 4c       | merged      |
-| Sound signals, hum cue, manual trigger              | #32           | 93       | merged      |
-| Deepgram keyterms, debug panel                      | #33           | c1       | merged      |
-| Checkpoint refresh, design tokens, `ai.md`          | #34–#36       | lead, 4c | merged      |
-| Scenario suite of whole conversations, fixes        | #37           | c1       | merged      |
-| Context hygiene: docs, dead code                    | this PR       | c1       | in review   |
-| Desktop overlay shell (`app/`)                      | next          | 4c       | in progress |
-| Overlay suggestion card                             | next          | 93       | in progress |
-| Speaker separation (Deepgram diarisation), measured | next          | c1       | after this  |
+| Area                                         | PR            | Owner    | State       |
+| -------------------------------------------- | ------------- | -------- | ----------- |
+| Core loop, eval, hardening, e2e              | #1–#21        | all      | merged      |
+| Chrome chunked-speech fix                    | #22           | 93       | merged      |
+| Guesser streaming, thinking-pause items      | #23           | c1       | merged      |
+| Deepgram server + web, punctuation off       | #24, #26, #27 | lead, 93 | merged      |
+| Speculative guessing, any-pause rule         | #25           | 4c       | merged      |
+| Hard set, model comparison (Haiku kept)      | #28           | c1       | merged      |
+| Frosted pop-up, click to accept              | #29           | 4c       | merged      |
+| Long-brief glossary (≤ 50k chars)            | #30           | c1       | merged      |
+| Page design, sensitivity setting             | #31           | 4c       | merged      |
+| Sound signals, hum cue, manual trigger       | #32           | 93       | merged      |
+| Deepgram keyterms, debug panel               | #33           | c1       | merged      |
+| Checkpoint refresh, design tokens, `ai.md`   | #34–#36       | lead, 4c | merged      |
+| Scenario suite of whole conversations, fixes | #37           | c1       | merged      |
+| Context hygiene: docs, dead code             | #38           | c1       | merged      |
+| Desktop overlay shell (`app/`)               | next          | 4c       | in progress |
+| Overlay suggestion card                      | next          | 93       | in progress |
+| Speaker separation (Deepgram diarisation)    | this PR       | c1       | in review   |
 
 ## Decisions
 
@@ -41,4 +41,4 @@ Goal: a working MVP with a nice UI. The full loop runs live: Deepgram Nova-3 (ke
 
 ## Next
 
-Measure speaker separation (the main remaining limit), PDF "Prepare for a meeting" upload (builds on the glossary), then the owner's live checks to tune the voice-activity thresholds and sensitivity.
+Measure speaker separation on the holdout and on real two-person audio, PDF "Prepare for a meeting" upload (builds on the glossary), then the owner's live checks to tune the voice-activity thresholds and sensitivity.

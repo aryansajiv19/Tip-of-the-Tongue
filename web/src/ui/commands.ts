@@ -2,7 +2,7 @@
 // global shortcuts. The desktop main process sends these names over IPC.
 export type Command = 'toggle-visible' | 'toggle-listening' | 'manual' | 'new-conversation';
 
-// Cmd (Mac) or Ctrl (elsewhere) plus \ or Enter.
+// Cmd (Mac) or Ctrl (elsewhere) plus \ or Enter, or plus Shift and N for a new conversation.
 export function commandForKey(e: {
   code: string;
   metaKey: boolean;
@@ -11,7 +11,8 @@ export function commandForKey(e: {
   shiftKey: boolean;
   repeat: boolean;
 }): Command | null {
-  if (e.repeat || e.altKey || e.shiftKey || e.metaKey === e.ctrlKey) return null;
+  if (e.repeat || e.altKey || e.metaKey === e.ctrlKey) return null;
+  if (e.shiftKey) return e.code === 'KeyN' ? 'new-conversation' : null;
   if (e.code === 'Backslash') return 'toggle-visible';
   if (e.code === 'Enter') return 'manual';
   return null;

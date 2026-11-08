@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import type { Word } from '../../../server/src/events';
-import { DebugPanel } from '../debug/DebugPanel';
 import { stampWords } from '../speech/stampWords';
 import { TYPED_FINAL_DELAY_MS, typedSteps } from '../speech/typedWords';
 import './devTools.css';
@@ -73,8 +72,6 @@ export function DevTools(p: Props) {
           Send as speech
         </button>
       </section>
-
-      <DebugPanel />
     </div>
   );
 }

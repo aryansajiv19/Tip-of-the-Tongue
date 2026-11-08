@@ -10,6 +10,8 @@ const WordSchema = z.object({
   endMs: z.number().finite(),
   // STT confidence 0..1, when the provider gives one.
   confidence: z.number().min(0).max(1).optional(),
+  // Which voice said it (0, 1, ...), when speech-to-text separates speakers. Labels can change.
+  speaker: z.number().int().min(0).max(31).optional(),
 });
 export type Word = z.infer<typeof WordSchema>;
 
@@ -52,6 +54,9 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('voice.activity'), voiced: z.boolean(), atMs: z.number().finite() }),
   // The user asks for a suggestion now (Space key), without waiting for a pause.
   z.object({ type: z.literal('stuck.manual') }),
+  // A new conversation: forget what was heard and any suggestion in progress. The brief and
+  // settings stay.
+  z.object({ type: z.literal('session.reset') }),
 ]);
 export type ClientEvent = z.infer<typeof ClientEventSchema>;
 
@@ -60,7 +65,7 @@ export type StuckReason = 'pause' | 'filler' | 'describing' | 'hum' | 'manual';
 export interface Candidate {
   word: string;
   confidence: number;
-  // Name of the loaded document the word appears in, when it does.
+  // The name of the loaded document the word appears in, when it does.
   source?: string;
 }
 
@@ -81,7 +86,9 @@ export type DebugInfo =
       latencyMs: number;
     }
   | { kind: 'gate'; offered: boolean; reason?: string; words?: string[] }
-  | { kind: 'stt'; mode: 'deepgram' | 'browser'; keyterms: string[] };
+  | { kind: 'stt'; mode: 'deepgram' | 'browser'; keyterms: string[] }
+  // Which voice is taken to be the user's, and why it changed.
+  | { kind: 'speaker'; me: number; why: 'first words' | 'accepted' | 'manual' };
 
 // Sent by the server. `id` ties an offer to its later withdrawn/accepted/expired event.
 export type ServerEvent =
@@ -96,6 +103,12 @@ export type ServerEvent =
   | { type: 'guess.withdrawn'; id: string; reason: 'self-recovered' | 'timeout' }
   | { type: 'guess.accepted'; id: string; word: string; afterMs: number }
   | { type: 'guess.expired'; id: string }
+  // A stall was confirmed but no suggestion followed (not confident enough, or the speaker went
+  // on): whatever the page shows for "looking for the word" can stop.
+  | { type: 'guess.idle' }
+  // Answers session.reset. Everything the server sent before this belongs to the old
+  // conversation; the page ignores it.
+  | { type: 'session.cleared' }
   // The guesser is failing (ok: false) or working again (ok: true). Sent only on a change.
   | { type: 'guesser.status'; ok: boolean }
   // The key terms of the loaded brief (at most 60), sent when they are ready and again if the

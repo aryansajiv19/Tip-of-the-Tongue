@@ -54,7 +54,7 @@ describe('session pipeline', () => {
     const { session, say, types } = setup();
     say('can you pass the the thing for cutting bread knife');
     await vi.advanceTimersByTimeAsync(2000);
-    expect(types()).toEqual(['stuck.detected']);
+    expect(types()).toEqual(['stuck.detected', 'guess.idle']);
     session.close();
   });
 
@@ -440,6 +440,205 @@ describe('session pipeline', () => {
       say("I forgot what's the word you used yesterday in the meeting");
       await vi.advanceTimersByTimeAsync(100);
       expect(reasons(events)).toEqual([]);
+      session.close();
+    });
+  });
+
+  describe('guess.idle', () => {
+    const abstain: Guesser = async () => ({ candidates: [], abstain: true, latencyMs: 1 });
+    const idleCount = (events: ServerEvent[]) =>
+      events.filter((e) => e.type === 'guess.idle').length;
+
+    it('follows a confirmed stall whose guess abstains', async () => {
+      const { session, events, say, types } = setup(abstain);
+      say('we need to talk about the');
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(types()).toEqual(['stuck.detected', 'guess.idle']);
+      expect(idleCount(events)).toBe(1);
+      session.close();
+    });
+
+    it('follows a guess that is not confident enough', async () => {
+      const unsure: Guesser = async () => ({
+        candidates: [{ word: 'renewal', confidence: 0.2 }],
+        abstain: false,
+        latencyMs: 1,
+      });
+      const { session, types, say } = setup(unsure);
+      say('we need to talk about the');
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(types()).toEqual(['stuck.detected', 'guess.idle']);
+      session.close();
+    });
+
+    it('follows a provider error', async () => {
+      const broken: Guesser = async () => ({
+        candidates: [],
+        abstain: true,
+        latencyMs: 1,
+        error: true,
+      });
+      const { session, types, say } = setup(broken);
+      say('we need to talk about the');
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(types()).toEqual(['stuck.detected', 'guess.idle']);
+      session.close();
+    });
+
+    it('is not sent when there is an offer', async () => {
+      const { session, types, say } = setup();
+      say('I need to go to the the place where you get medicine');
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(types()).toContain('guess.offered');
+      expect(types()).not.toContain('guess.idle');
+      session.close();
+    });
+
+    it('is not sent for fluent speech or before anything is said', async () => {
+      const { session, events, say } = setup(abstain);
+      say('we shipped the new release on Tuesday and the customers liked it.');
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(events).toEqual([]);
+      session.close();
+    });
+
+    it('is sent when the speaker carries on and the waiting guess is thrown away', async () => {
+      let finish: () => void = () => undefined;
+      const slow: Guesser = async () => {
+        await new Promise<void>((resolve) => (finish = resolve));
+        return { candidates: [], abstain: true, latencyMs: 1 };
+      };
+      const { session, events, say, types } = setup(slow);
+      say('we need to talk about the');
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(types()).toEqual(['stuck.detected']);
+      say('budget for next year');
+      expect(idleCount(events)).toBe(1);
+      finish();
+      await vi.advanceTimersByTimeAsync(300);
+      expect(idleCount(events)).toBe(1); // the stale result adds nothing
+      session.close();
+    });
+  });
+
+  describe('session.reset', () => {
+    const asked: { brief?: string; signal?: AbortSignal }[] = [];
+    const recording: Guesser = async (input, signal) => {
+      asked.push({ ...(input.brief ? { brief: input.brief } : {}), ...(signal ? { signal } : {}) });
+      return mockGuesser(input);
+    };
+    beforeEach(() => {
+      asked.length = 0;
+    });
+
+    it('a guess still running at reset never shows, and is aborted', async () => {
+      let finish: () => void = () => undefined;
+      const slow: Guesser = async (input, signal) => {
+        asked.push(signal ? { signal } : {});
+        await new Promise<void>((resolve) => (finish = resolve));
+        return mockGuesser(input);
+      };
+      const { session, events, say, types } = setup(slow);
+      say('I need to go to the the place where you get medicine');
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(types()).toEqual(['stuck.detected']);
+      session.handle({ type: 'session.reset' });
+      expect(asked[0]?.signal?.aborted).toBe(true);
+      finish();
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(types()).toEqual(['stuck.detected', 'session.cleared']); // no offer, no idle
+      expect(events.some((e) => e.type === 'guess.offered')).toBe(false);
+      session.close();
+    });
+
+    it('an open offer is forgotten: saying its word later does nothing, and it never expires', async () => {
+      const { session, events, say, types } = setup();
+      say('I need to go to the the place where you get medicine');
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(types()).toContain('guess.offered');
+      session.handle({ type: 'session.reset' });
+      say('pharmacy');
+      await vi.advanceTimersByTimeAsync(12_000);
+      expect(events.filter((e) => e.type === 'guess.offered')).toHaveLength(1);
+      expect(events.some((e) => e.type === 'guess.accepted' || e.type === 'guess.expired')).toBe(
+        false,
+      );
+      session.close();
+    });
+
+    it('forgets the cooldown and the offer history: the same word can be offered at once', async () => {
+      const { session, events, say } = setup();
+      say('I need to go to the the place where you get medicine');
+      await vi.advanceTimersByTimeAsync(2000);
+      session.handle({ type: 'session.reset' });
+      await vi.advanceTimersByTimeAsync(300);
+      say('now I need to go to the the place where you get medicine');
+      await vi.advanceTimersByTimeAsync(2000);
+      const offers = events.filter((e) => e.type === 'guess.offered');
+      expect(offers).toHaveLength(2);
+      session.close();
+    });
+
+    it('keeps the brief and the settings', async () => {
+      const { session, events, say } = setup(recording);
+      session.handle({ type: 'session.brief', text: 'Q3 review with Northwind' });
+      session.handle({ type: 'session.settings', pauseMs: 4000 });
+      session.handle({ type: 'session.reset' });
+      say('we need to talk about the');
+      await vi.advanceTimersByTimeAsync(2500); // longer than the default pause, shorter than 4 s
+      // The brief's terms were sent when it was loaded; nothing else but the reset's answer.
+      expect(events.map((e) => e.type)).toEqual(['brief.terms', 'session.cleared']);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(events.map((e) => e.type)).toContain('stuck.detected');
+      expect(asked[0]?.brief).toContain('Northwind');
+      session.close();
+    });
+
+    it('drops words that were in flight from before the reset, keeps later ones', async () => {
+      const { session, events, say } = setup();
+      const before = Date.now();
+      say('we need to talk about the'); // advances the clock past `before`
+      session.handle({ type: 'session.reset' });
+      const old = { text: 'thing', startMs: before, endMs: before + 200 };
+      session.handle({ type: 'transcript.final', words: [old] });
+      session.handle({ type: 'transcript.partial', words: [old] });
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(events.map((e) => e.type)).toEqual(['session.cleared']); // nothing left to be stuck on
+      say('and then the');
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(events.map((e) => e.type)).toContain('stuck.detected');
+      session.close();
+    });
+
+    it('afterReset filters words by the time of the reset', () => {
+      const { session } = setup();
+      vi.advanceTimersByTime(1000);
+      session.handle({ type: 'session.reset' });
+      const at = Date.now();
+      const kept = session.afterReset([
+        { text: 'old', startMs: at - 500, endMs: at - 100 },
+        { text: 'edge', startMs: at - 100, endMs: at },
+        { text: 'new', startMs: at + 10, endMs: at + 200 },
+      ]);
+      expect(kept.map((w) => w.text)).toEqual(['new']);
+      session.close();
+    });
+
+    it('answers with session.cleared, after which nothing from the old conversation follows', async () => {
+      const { session, events, say } = setup();
+      say('I need to go to the the place where you get medicine');
+      session.handle({ type: 'session.reset' });
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(events.at(-1)?.type).toBe('session.cleared');
+      expect(events.filter((e) => e.type === 'session.cleared')).toHaveLength(1);
+      session.close();
+    });
+
+    it('a reset with nothing going on is harmless', () => {
+      const { session, events } = setup();
+      session.handle({ type: 'session.reset' });
+      session.handle({ type: 'session.reset' });
+      expect(events).toEqual([{ type: 'session.cleared' }, { type: 'session.cleared' }]);
       session.close();
     });
   });

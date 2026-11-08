@@ -61,6 +61,18 @@ describe('toTranscriptEvent', () => {
     expect(url.searchParams.get('punctuate')).toBe('false');
   });
 
+  it('asks for speaker labels only when told to, and maps them onto the words', () => {
+    expect(new URL(deepgramUrl('en')).searchParams.has('diarize')).toBe(false);
+    expect(new URL(deepgramUrl('en', [], true)).searchParams.get('diarize')).toBe('true');
+    const msg = results(true, [['hello', 0, 0.3]]);
+    const word = msg.channel.alternatives[0]?.words[0];
+    if (word) Object.assign(word, { speaker: 1 });
+    expect(toTranscriptEvent(msg, 0)?.words[0]?.speaker).toBe(1);
+    expect(toTranscriptEvent(results(true, [['hello', 0, 0.3]]), 0)?.words[0]).not.toHaveProperty(
+      'speaker',
+    );
+  });
+
   it('adds one keyterm parameter per term, encoded, and none when there are no terms', () => {
     expect(new URL(deepgramUrl('en')).searchParams.has('keyterm')).toBe(false);
     const url = new URL(deepgramUrl('en', ['SOC 2', 'Corner Mart', 'R&D', 'naïve']));
@@ -239,6 +251,29 @@ describe('server with Deepgram', () => {
     await expect.poll(() => events[0]).toEqual({ type: 'session.ready', stt: 'deepgram' });
     ws.send(Buffer.alloc(3200));
     await expect.poll(() => events.some((e) => e.type === 'transcript.partial')).toBe(true);
+    ws.close();
+    await app.close();
+  });
+
+  it('words still in flight from Deepgram after a reset are not shown or used', async () => {
+    let socket: WebSocket | undefined;
+    const dg = await fakeDeepgram((ws) => (socket = ws));
+    servers.push(dg.wss);
+    const { app, ws, events } = await connectClient({
+      deepgram: { apiKey: 'k', language: 'en', connect: dg.connect },
+    });
+    ws.send(Buffer.alloc(3200));
+    await expect.poll(() => socket).toBeDefined();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    ws.send(JSON.stringify({ type: 'session.reset' }));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    // A late result for words spoken before the reset, then one for words spoken after it.
+    socket?.send(JSON.stringify(results(true, [['old', 0, 0.02]])));
+    socket?.send(JSON.stringify(results(true, [['fresh', 30, 30.2]])));
+    await expect.poll(() => events.filter((e) => e.type === 'transcript.final').length).toBe(1);
+    const final = events.find((e) => e.type === 'transcript.final');
+    expect(final?.type === 'transcript.final' && final.words.map((w) => w.text)).toEqual(['fresh']);
     ws.close();
     await app.close();
   });

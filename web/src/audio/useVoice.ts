@@ -12,6 +12,7 @@ export function useVoice(
   onChange: (voiced: boolean, atMs: number) => void,
   // Called with the signal strength (RMS, 0 to 1) on every reading, for the waveform.
   onLevel?: (level: number) => void,
+  deviceId?: string | null,
 ) {
   const handler = useRef(onChange);
   const levelHandler = useRef(onLevel);
@@ -28,7 +29,12 @@ export function useVoice(
     void (async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: false,
+            autoGainControl: false,
+            ...(deviceId ? { deviceId: { ideal: deviceId } } : {}),
+          },
         });
         const ctx = new AudioContext();
         if (cancelled) {
@@ -70,5 +76,5 @@ export function useVoice(
       cancelled = true;
       stop();
     };
-  }, [active]);
+  }, [active, deviceId]);
 }

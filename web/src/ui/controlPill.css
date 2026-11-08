@@ -143,18 +143,6 @@ html.desktop body {
   white-space: nowrap;
 }
 
-/* Until the new suggestion card lands, the current one sits in the slot under the pill, in the
-   page flow so the desktop window grows to fit it. */
-.overlay aside[aria-label='Word suggestions'] {
-  position: static;
-}
-.overlay .offer {
-  position: static;
-  transform: none;
-  animation: none;
-  width: 100%;
-}
-
 html:not(.desktop) body {
   margin: 0;
   min-height: 100vh;

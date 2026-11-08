@@ -38,6 +38,8 @@ export interface Trace {
 }
 
 export interface Replay {
+  // Which voice the session took to be the user's, if it knew.
+  speaker: number | undefined;
   offers: Offer[];
   trace: Trace;
   // Guess calls started, including early ones that were thrown away.
@@ -114,6 +116,7 @@ export async function replay(
   if (sc.brief) session.handle({ type: 'session.brief', text: sc.brief });
 
   const finalised = new Set<number>();
+  let speaker: number | undefined;
   const endMs = (placed.at(-1)?.endMs ?? 0) + TAIL_MS;
   try {
     for (now = 0; now <= endMs; now += STEP_MS) {
@@ -139,7 +142,8 @@ export async function replay(
       await tick();
     }
   } finally {
+    speaker = session.speaker();
     session.close();
   }
-  return { offers, guessCalls, trace };
+  return { offers, guessCalls, trace, speaker };
 }

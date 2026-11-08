@@ -1,13 +1,24 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { ClientEvent, ServerEvent, Word } from '../../server/src/events';
-import { Offer } from './offer/Offer';
-import { offerReducer } from './offer/offerState';
+import { SettingsGear, SettingsPanel } from './ui/Settings';
+import { SuggestionCard } from './ui/SuggestionCard';
+import { cardReducer, emptyCard } from './ui/cardState';
+import { statusLine } from './ui/cardView';
+import { createResetGate } from './ui/resetGate';
+import { useCardClock } from './ui/useCardClock';
+import { saveDebug, savedDebug } from './settings/debug';
+import { saveMicId, savedMicId } from './settings/mic';
 import { useManualKey } from './audio/useManualKey';
 import { useMic } from './audio/useMic';
 import { useVoice } from './audio/useVoice';
 import { useSocket } from './socket/useSocket';
 import { speechSupported, useSpeech } from './speech/useSpeech';
-import { SENSITIVITIES, savedSensitivity, type Sensitivity } from './settings/sensitivity';
+import {
+  SENSITIVITIES,
+  saveSensitivity,
+  savedSensitivity,
+  type Sensitivity,
+} from './settings/sensitivity';
 import { ControlPill } from './ui/ControlPill';
 import { DevTools } from './ui/DevTools';
 import { PrepDrawer } from './ui/PrepDrawer';
@@ -23,7 +34,11 @@ const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
 const text = (words: Word[]) => words.map((w) => w.text).join(' ');
 
 export function App() {
-  const [offer, dispatch] = useReducer(offerReducer, null);
+  const [card, dispatchCard] = useReducer(cardReducer, emptyCard);
+  const gate = useRef(createResetGate()).current;
+  const [micId, setMicId] = useState<string | null>(savedMicId);
+  const [debugOn, setDebugOn] = useState(savedDebug);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [heard, setHeard] = useState<string[]>([]);
   const [visible, setVisible] = useState(true);
   const [partial, setPartial] = useState('');
@@ -31,8 +46,8 @@ export function App() {
   const [brief, setBrief] = useState<{ text: string; source?: string } | null>(null);
   const [briefTerms, setBriefTerms] = useState<string[]>([]);
   const [prepOpen, setPrepOpen] = useState(false);
-  // The saved choice, or null so the server's own defaults apply. The settings popover changes it.
-  const [sensitivity] = useState<Sensitivity | null>(savedSensitivity);
+  // The saved choice, or null so the server's own defaults apply until the user picks one.
+  const [sensitivity, setSensitivity] = useState<Sensitivity | null>(savedSensitivity);
   const [guesserDown, setGuesserDown] = useState(false);
 
   // Who recognises speech: the server (Deepgram, audio streamed from here) or this browser.
@@ -40,24 +55,33 @@ export function App() {
   const [notice, setNotice] = useState('');
   const sttRef = useRef(stt);
 
-  const onServerEvent = useCallback((e: ServerEvent) => {
-    dispatch(e);
-    if (e.type === 'guesser.status') setGuesserDown(!e.ok);
-    else if (e.type === 'brief.terms') setBriefTerms(e.terms);
-    else if (e.type === 'session.ready') {
-      if (sttRef.current === 'deepgram' && e.stt === 'browser') {
-        setNotice('Switched to this browser\u2019s speech recognition.');
+  const onServerEvent = useCallback(
+    (e: ServerEvent) => {
+      if (e.type === 'guesser.status') return setGuesserDown(!e.ok);
+      if (e.type === 'brief.terms') return setBriefTerms(e.terms);
+      if (e.type === 'session.ready') {
+        // A new connection is a new server session.
+        gate.connected();
+        dispatchCard({ type: 'clear' });
+        if (sttRef.current === 'deepgram' && e.stt === 'browser') {
+          setNotice('Switched to this browser\u2019s speech recognition.');
+        }
+        sttRef.current = e.stt;
+        return setStt(e.stt);
       }
-      sttRef.current = e.stt;
-      setStt(e.stt);
-    } else if (e.type === 'transcript.partial') setPartial(text(e.words));
-    else if (e.type === 'transcript.final') {
-      setPartial('');
-      setHeard((h) => [...h, ...e.words.map((w) => w.text)].slice(-MAX_WORDS));
-    }
-  }, []);
-  const { status, send, sendBinary } = useSocket(onServerEvent);
-  const mic = useMic(sendBinary);
+      // Anything the server sent before it answered a reset belongs to the old conversation.
+      if (!gate.pass(e)) return;
+      dispatchCard({ type: 'server', event: e, nowMs: Date.now() });
+      if (e.type === 'transcript.partial') setPartial(text(e.words));
+      else if (e.type === 'transcript.final') {
+        setPartial('');
+        setHeard((h) => [...h, ...e.words.map((w) => w.text)].slice(-MAX_WORDS));
+      }
+    },
+    [gate],
+  );
+  const { status, send, sendBinary } = useSocket(onServerEvent, debugOn);
+  const mic = useMic(sendBinary, micId);
 
   // A dropped connection ends the server session, so its guesser problem is forgotten too.
   const [prevStatus, setPrevStatus] = useState(status);
@@ -81,7 +105,7 @@ export function App() {
     },
     [send],
   );
-  const speech = useSpeech({ onPartial: sendPartial, onFinal: sendFinal, debug: DEBUG });
+  const speech = useSpeech({ onPartial: sendPartial, onFinal: sendFinal, debug: DEBUG || debugOn });
   const { trace } = speech;
 
   // One Start/Pause for both ways of listening. `wanted` is what the user asked for.
@@ -94,6 +118,7 @@ export function App() {
     listening,
     (voiced, atMs) => send({ type: 'voice.activity', voiced, atMs }),
     levelStore.set,
+    micId,
   );
   useManualKey(listening, () => send({ type: 'stuck.manual' }));
   const canListen = stt === 'deepgram' || speechSupported;
@@ -150,16 +175,39 @@ export function App() {
     }
   }, [status, sensitivity, send]);
 
-  const clearOffer = useCallback(() => dispatch({ type: 'offer.clear' }), []);
+  const dismissCard = useCallback(() => dispatchCard({ type: 'dismiss' }), []);
+  useCardClock(card.view !== null, dispatchCard);
+  const problem = statusLine({ micError: error, connection: status, guesserDown });
+
+  const changeSensitivity = (value: Sensitivity) => {
+    setSensitivity(value);
+    saveSensitivity(value);
+  };
+  const changeMic = (id: string | null) => {
+    setMicId(id);
+    saveMicId(id);
+  };
+  const changeDebug = (on: boolean) => {
+    setDebugOn(on);
+    saveDebug(on);
+  };
+  const openDebugView = () =>
+    window.open('/?view=debug', 'tott-debug', 'popup,width=480,height=720');
 
   const clock = useSessionClock(listening);
   const { reset: resetClock } = clock;
+  const { reset: resetSpeech } = speech;
+  // A new conversation: forget what was heard here and on the server. The brief and settings stay.
+  // The server answers with session.cleared; until then nothing it sends is shown.
   const newConversation = useCallback(() => {
     resetClock();
+    gate.reset();
+    dispatchCard({ type: 'clear' });
     setHeard([]);
     setPartial('');
-    clearOffer();
-  }, [resetClock, clearOffer]);
+    resetSpeech();
+    send({ type: 'session.reset' });
+  }, [resetClock, gate, resetSpeech, send]);
 
   useCommands((command) => {
     if (command === 'toggle-visible') setVisible((v) => !v);
@@ -184,7 +232,6 @@ export function App() {
 
   const noteState = [
     !canListen && 'This browser has no speech recognition. Use Chrome or Edge.',
-    error,
   ].filter((m): m is string => Boolean(m));
 
   return (
@@ -205,7 +252,22 @@ export function App() {
             modifier={modifierLabel(navigator.platform)}
             onToggleListening={listening ? pauseListening : startListening}
             onNewConversation={newConversation}
+            gear={<SettingsGear open={settingsOpen} onToggle={() => setSettingsOpen((o) => !o)} />}
           />
+
+          {settingsOpen && (
+            <SettingsPanel
+              sensitivity={sensitivity}
+              onSensitivity={changeSensitivity}
+              micId={micId}
+              onMic={changeMic}
+              debugOn={debugOn}
+              onDebug={changeDebug}
+              onOpenDebugView={openDebugView}
+              onDownloadTrace={downloadTrace}
+              onClose={() => setSettingsOpen(false)}
+            />
+          )}
 
           {prepOpen && (
             <PrepDrawer
@@ -227,15 +289,16 @@ export function App() {
               ? 'Listening paused: not connected to the server, so no word suggestions'
               : notice}
           </p>
-          <p role="status" className="overlay-note glass">
-            {guesserDown ? 'Word suggestions are unavailable right now; listening continues.' : ''}
-          </p>
 
           <div className="card-slot">
-            <Offer
-              offer={offer}
-              onClear={clearOffer}
-              onPick={(id, word) => send({ type: 'guess.picked', id, word })}
+            <SuggestionCard
+              card={card}
+              problem={problem}
+              onPick={(id, word) => {
+                dispatchCard({ type: 'picked', word, nowMs: Date.now() });
+                send({ type: 'guess.picked', id, word });
+              }}
+              onDismiss={dismissCard}
             />
           </div>
         </div>

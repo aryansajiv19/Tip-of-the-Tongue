@@ -191,6 +191,7 @@ describe('guesser trouble', () => {
     await sleep(600);
     expect(events.map((e) => e.type).filter((t) => t !== 'session.ready')).toEqual([
       'stuck.detected',
+      'guess.idle',
     ]);
     // The same connection still works afterwards.
     ws.send(final('okay so now I need to go to the place where you get medicine'));
