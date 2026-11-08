@@ -4,7 +4,7 @@ import WebSocket from 'ws';
 import { z } from 'zod';
 import type { Word } from '../events.js';
 
-export const AUDIO_SAMPLE_RATE = 16_000;
+const AUDIO_SAMPLE_RATE = 16_000;
 
 const DeepgramWordSchema = z.object({
   word: z.string(),

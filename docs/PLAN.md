@@ -1,5 +1,7 @@
 # Plan — one week
 
+_History: the plan we started from. Current status and decisions are in `CHECKPOINT.md`._
+
 | Day | Goal                       | Done when                                                                                         |
 | --- | -------------------------- | ------------------------------------------------------------------------------------------------- |
 | 1   | Skeleton + live transcript | Clean clone runs; mic → words on screen with timestamps; CI green                                 |
@@ -29,8 +31,8 @@
 
 - 2026-11-06: MIT licence. Spoken cue via browser `speechSynthesis` (no ElevenLabs). Work split across a lead session and parallel worker sessions, one git worktree each; status in `docs/CHECKPOINT.md`.
 
-- 2026-11-06: Deepgram adapter and spoken cue deferred. The browser STT is enough for the prototype, and a spoken cue would be picked up by the mic as the user saying the word, so it needs echo handling first.
-- 2026-11-06: First real eval with Claude (Haiku): dev top-1 94%, holdout 89%, no false triggers on fluent items. Numbers and caveats in `docs/write-up.md`.
+- 2026-11-06: Spoken cue deferred: it would be picked up by the mic as the user saying the word, so it needs echo handling first. (The Deepgram adapter was deferred then too, and built later: PRs #24, #26, #27, #33.)
+- 2026-11-06: First real eval with Claude (Haiku) on single sentences: dev top-1 94%, holdout 89%. Later runs, whole-conversation tests and all caveats: `docs/write-up.md`.
 
 ## Outreach (optional, high value)
 

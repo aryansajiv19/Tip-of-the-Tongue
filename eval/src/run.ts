@@ -15,7 +15,6 @@ import { degradeWords, hashSeed } from './noise.js';
 import { sweep, toTimedWords } from './timeline.js';
 import { renderMarkdown, type RunMeta } from './report.js';
 
-const COOLDOWN_MS = 10_000;
 // Fixed so the noisy run is repeatable.
 const NOISE_SEED = 1;
 
@@ -87,7 +86,7 @@ export async function runItem(
   const decision = decideOffer(
     result,
     { saidSinceStuck, nowMs, recentlyOffered: new Map() },
-    { minConfidence: config.gateMinConfidence, cooldownMs: COOLDOWN_MS },
+    { minConfidence: config.gateMinConfidence, cooldownMs: config.cooldownMs },
   );
 
   return {

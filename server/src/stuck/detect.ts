@@ -154,7 +154,7 @@ export interface VoiceInfo {
 }
 
 // Sound with no words for this long is a hum ("mmm", "uhhh") that speech recognition dropped.
-export const HUM_MS = 800;
+const HUM_MS = 800;
 // Browser speech recognition stamps words when it first sees them, up to about this much
 // after they were spoken, so a hum may start slightly "before" the last word ends.
 const HUM_TOLERANCE_MS = 600;

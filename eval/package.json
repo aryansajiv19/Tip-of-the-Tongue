@@ -5,10 +5,14 @@
   "scripts": {
     "eval": "tsx src/run.ts",
     "compare": "tsx src/compare.ts",
+    "scenarios": "tsx src/runScenarios.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit"
   },
   "devDependencies": {
     "tsx": "^4.23.15"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
   }
 }

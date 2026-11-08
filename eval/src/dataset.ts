@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
-export const ItemSchema = z.object({
+const ItemSchema = z.object({
   id: z.string(),
   context: z.string(),
   brief: z.string().optional(),
