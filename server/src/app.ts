@@ -89,8 +89,12 @@ export async function buildApp(deps: AppDeps = {}) {
           ...deepgramOpts,
           keyterms: () => session.keyterms(),
           onEvent: (event) => {
-            send(event);
-            session.handle(event);
+            // Words still in flight from before a reset are neither shown nor used.
+            const words = session.afterReset(event.words);
+            if (words.length === 0 && event.type === 'transcript.final') return;
+            const current = { ...event, words };
+            send(current);
+            session.handle(current);
           },
           onError: (err) => {
             app.log.error({ err }, 'deepgram: failed, falling back to browser speech recognition');

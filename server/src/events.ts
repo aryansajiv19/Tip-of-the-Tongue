@@ -47,6 +47,9 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('voice.activity'), voiced: z.boolean(), atMs: z.number().finite() }),
   // The user asks for a suggestion now (Space key), without waiting for a pause.
   z.object({ type: z.literal('stuck.manual') }),
+  // A new conversation: forget what was heard and any suggestion in progress. The brief and
+  // settings stay.
+  z.object({ type: z.literal('session.reset') }),
 ]);
 export type ClientEvent = z.infer<typeof ClientEventSchema>;
 
@@ -55,6 +58,8 @@ export type StuckReason = 'pause' | 'filler' | 'describing' | 'hum' | 'manual';
 export interface Candidate {
   word: string;
   confidence: number;
+  // Where the word came from (for example a file name from the brief), when known.
+  source?: string;
 }
 
 // What the server reports while debug is on: what it heard, what the detector decided, each
@@ -89,6 +94,9 @@ export type ServerEvent =
   | { type: 'guess.withdrawn'; id: string; reason: 'self-recovered' | 'timeout' }
   | { type: 'guess.accepted'; id: string; word: string; afterMs: number }
   | { type: 'guess.expired'; id: string }
+  // A stall was confirmed but no suggestion followed (not confident enough, or the speaker went
+  // on): whatever the page shows for "looking for the word" can stop.
+  | { type: 'guess.idle' }
   // The guesser is failing (ok: false) or working again (ok: true). Sent only on a change.
   | { type: 'guesser.status'; ok: boolean }
   // Only while the client has turned debug on.
