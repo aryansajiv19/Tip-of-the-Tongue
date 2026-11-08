@@ -49,6 +49,7 @@ async function main(): Promise<void> {
           score: scoreScenario(sc.id, sc.type, placed, result.offers),
           placed,
           offers: result.offers,
+          trace: result.trace,
           guessCalls: result.guessCalls,
         });
       }
@@ -63,7 +64,7 @@ async function main(): Promise<void> {
   const tag = `scenarios-${kind}-${split}${values.model ? `-${values.model}` : ''}`;
   await writeFile(
     `${outDir}${tag}.json`,
-    `${JSON.stringify({ meta, runs: runs.map((r) => ({ score: r.score, offers: r.offers })) }, null, 2)}\n`,
+    `${JSON.stringify({ meta, runs: runs.map((r) => ({ score: r.score, offers: r.offers, trace: r.trace })) }, null, 2)}\n`,
   );
   await writeFile(`${outDir}${tag}.md`, md);
   console.log(md);

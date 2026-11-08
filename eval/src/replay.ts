@@ -20,8 +20,26 @@ export interface Offer {
   silenceMs: number;
 }
 
+// What the session did on each line, to explain a miss or a false pop-up.
+export interface Trace {
+  // The detector decided the user was stuck.
+  stuck: { atMs: number; line: number; reason: string }[];
+  guesses: {
+    atMs: number;
+    line: number;
+    // The end of the text the guesser was asked about.
+    phrase: string;
+    // Empty when it abstained or failed.
+    words: string[];
+    abstain: boolean;
+    error: boolean;
+    latencyMs: number;
+  }[];
+}
+
 export interface Replay {
   offers: Offer[];
+  trace: Trace;
   // Guess calls started, including early ones that were thrown away.
   guessCalls: number;
 }
@@ -41,6 +59,7 @@ export async function replay(
   const offers: Offer[] = [];
   const events: ServerEvent[] = [];
   let guessCalls = 0;
+  const trace: Trace = { stuck: [], guesses: [] };
 
   const inFlight = new Set<Promise<void>>();
   let waiting: { releaseAt: number; fire: () => void }[] = [];
@@ -49,6 +68,15 @@ export async function replay(
       guessCalls++;
       const startedAt = now;
       const call = guess(input, signal).then((result) => {
+        trace.guesses.push({
+          atMs: startedAt,
+          line: lineAt(placed, startedAt),
+          phrase: input.stuckPhrase.split(' ').slice(-10).join(' '),
+          words: result.candidates.map((c) => `${c.word} ${c.confidence.toFixed(2)}`),
+          abstain: result.abstain,
+          error: result.error === true,
+          latencyMs: result.latencyMs,
+        });
         waiting.push({ releaseAt: startedAt + result.latencyMs, fire: () => resolve(result) });
       });
       inFlight.add(call);
@@ -59,6 +87,9 @@ export async function replay(
   const session = createSession(
     (event) => {
       events.push(event);
+      if (event.type === 'stuck.detected') {
+        trace.stuck.push({ atMs: now, line: lineAt(placed, now), reason: event.reason });
+      }
       if (event.type !== 'guess.offered') return;
       const lastEnd = Math.max(0, ...allWords.filter((w) => w.endMs <= now).map((w) => w.endMs));
       offers.push({
@@ -110,5 +141,5 @@ export async function replay(
   } finally {
     session.close();
   }
-  return { offers, guessCalls };
+  return { offers, guessCalls, trace };
 }

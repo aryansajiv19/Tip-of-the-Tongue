@@ -1,6 +1,6 @@
 import { groupBy, wilson, type Rate } from './metrics.js';
 import type { PlacedLine } from './layout.js';
-import type { Offer } from './replay.js';
+import type { Offer, Trace } from './replay.js';
 import { summarize, type ScenarioScore, type TypeSummary } from './score.js';
 
 const pct = ({ hits, total }: Rate): string =>
@@ -15,6 +15,7 @@ export interface ScenarioRun {
   score: ScenarioScore;
   placed: PlacedLine[];
   offers: Offer[];
+  trace: Trace;
   guessCalls: number;
 }
 
@@ -25,7 +26,16 @@ function row(name: string, s: TypeSummary): string {
 // What went wrong, line by line, so failures can be sorted into kinds.
 function failures(runs: ScenarioRun[]): string[] {
   const out: string[] = [];
-  for (const { score, placed, offers } of runs) {
+  for (const { score, placed, offers, trace } of runs) {
+    const why = (i: number) => {
+      const stuck = trace.stuck.filter((s) => s.line === i).map((s) => s.reason);
+      const guesses = trace.guesses
+        .filter((g) => g.line === i)
+        .map(
+          (g) => `${g.error ? 'ERROR' : g.abstain ? 'abstain' : g.words.join(', ')} (…${g.phrase})`,
+        );
+      return `\n  detector: ${stuck.length > 0 ? stuck.join(', ') : 'did not fire'}; guesses: ${guesses.join(' / ') || 'none'}`;
+    };
     const show = (i: number) =>
       offers
         .filter((o) => o.line === i)
@@ -35,7 +45,7 @@ function failures(runs: ScenarioRun[]): string[] {
       if (st.outcome === 'correct') continue;
       const line = placed[st.line]?.line;
       out.push(
-        `- ${score.id} (${score.type}) ${st.outcome.toUpperCase()}: wanted "${line?.w}", got ${show(st.line)}. "${line?.t}"`,
+        `- ${score.id} (${score.type}) ${st.outcome.toUpperCase()}: wanted "${line?.w}", got ${show(st.line)}. "${line?.t}"${why(st.line)}`,
       );
     }
     placed.forEach((p, i) => {
@@ -48,7 +58,7 @@ function failures(runs: ScenarioRun[]): string[] {
             : p.line.recover
               ? 'DURING SELF-RECOVERY'
               : 'DURING FLUENT SPEECH';
-        out.push(`- ${score.id} (${score.type}) ${what}: ${show(i)}. "${p.line.t}"`);
+        out.push(`- ${score.id} (${score.type}) ${what}: ${show(i)}. "${p.line.t}"${why(i)}`);
       }
     });
   }
