@@ -12,6 +12,7 @@ const DeepgramWordSchema = z.object({
   start: z.number(),
   end: z.number(),
   confidence: z.number().min(0).max(1).optional(),
+  speaker: z.number().int().min(0).max(31).optional(),
 });
 
 const ResultsSchema = z.object({
@@ -36,6 +37,7 @@ export function toTranscriptEvent(message: unknown, streamStartMs: number): Tran
       startMs: streamStartMs + w.start * 1000,
       endMs: streamStartMs + w.end * 1000,
       ...(w.confidence !== undefined ? { confidence: w.confidence } : {}),
+      ...(w.speaker !== undefined ? { speaker: w.speaker } : {}),
     }));
   if (parsed.data.is_final && words.length === 0) return null;
   return { type: parsed.data.is_final ? 'transcript.final' : 'transcript.partial', words };
@@ -43,7 +45,11 @@ export function toTranscriptEvent(message: unknown, streamStartMs: number): Tran
 
 // `keyterm` is repeated once per term (Nova-3 only). Callers keep the list inside Deepgram's limits
 // (see keyterms.ts); over the limit, Deepgram refuses the connection.
-export function deepgramUrl(language: string, keyterms: readonly string[] = []): string {
+export function deepgramUrl(
+  language: string,
+  keyterms: readonly string[] = [],
+  diarize = false,
+): string {
   const params = new URLSearchParams({
     model: 'nova-3',
     language,
@@ -58,6 +64,8 @@ export function deepgramUrl(language: string, keyterms: readonly string[] = []):
     punctuate: 'false',
     endpointing: '300',
   });
+  // Adds a speaker number to each word.
+  if (diarize) params.set('diarize', 'true');
   for (const term of keyterms) params.append('keyterm', term);
   return `wss://api.deepgram.com/v1/listen?${params}`;
 }
@@ -67,6 +75,8 @@ export interface DeepgramOptions {
   language: string;
   // Asked for each time a stream opens, so a change shows up after `restart()`.
   keyterms?: () => readonly string[];
+  // Ask Deepgram to label who said each word.
+  diarize?: boolean;
   onEvent: (event: TranscriptEvent) => void;
   onError: (err: Error) => void;
   // Injectable for tests.
@@ -120,7 +130,10 @@ export function createDeepgramStream(opts: DeepgramOptions) {
   function open() {
     streamStartMs = now() - CHUNK_MS;
     const origin = streamStartMs;
-    const socket = connect(deepgramUrl(opts.language, opts.keyterms?.() ?? []), opts.apiKey);
+    const socket = connect(
+      deepgramUrl(opts.language, opts.keyterms?.() ?? [], opts.diarize),
+      opts.apiKey,
+    );
     ws = socket;
     socket.on('open', () => {
       for (const chunk of pending) socket.send(chunk);

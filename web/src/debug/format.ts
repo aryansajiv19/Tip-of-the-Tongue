@@ -21,6 +21,8 @@ export function formatDebug(info: DebugInfo): string {
         : `gate: silent (${info.reason ?? 'unknown'})`;
     case 'stt':
       return `stt: ${info.mode}, ${info.keyterms.length} keyterms`;
+    case 'speaker':
+      return `you are voice ${info.me} (${info.why})`;
     case 'transcript':
       return `heard: ${info.text}`;
   }

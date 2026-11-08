@@ -19,6 +19,7 @@ async function main(): Promise<void> {
       split: { type: 'string', default: 'dev' },
       guesser: { type: 'string', default: 'mock' },
       model: { type: 'string' },
+      diarize: { type: 'boolean', default: false },
     },
   });
   const split = values.split;
@@ -43,7 +44,7 @@ async function main(): Promise<void> {
   await Promise.all(
     Array.from({ length: CONCURRENCY }, async () => {
       for (let sc = queue.shift(); sc; sc = queue.shift()) {
-        const placed = layoutScenario(sc);
+        const placed = layoutScenario(sc, values.diarize);
         const startedAt = Date.now();
         const result = await replay(sc, placed, guess, sc.profile ? profile : undefined);
         const errors = result.trace.guesses.filter((g) => g.error).length;
@@ -55,6 +56,7 @@ async function main(): Promise<void> {
           placed,
           offers: result.offers,
           trace: result.trace,
+          speaker: result.speaker,
           guessCalls: result.guessCalls,
         });
       }
@@ -62,11 +64,16 @@ async function main(): Promise<void> {
   );
   runs.sort((a, b) => a.score.id.localeCompare(b.score.id));
 
-  const meta = { guesser: kind, split, ...(kind === 'claude' ? { model } : {}) };
+  const meta = {
+    guesser: kind,
+    split,
+    diarize: values.diarize,
+    ...(kind === 'claude' ? { model } : {}),
+  };
   const md = renderScenarioReport(meta, runs);
   const outDir = fileURLToPath(new URL('../../eval-results/', import.meta.url));
   await mkdir(outDir, { recursive: true });
-  const tag = `scenarios-${kind}-${split}${values.model ? `-${values.model}` : ''}`;
+  const tag = `scenarios-${kind}-${split}${values.model ? `-${values.model}` : ''}${values.diarize ? '-diarize' : ''}`;
   await writeFile(
     `${outDir}${tag}.json`,
     `${JSON.stringify({ meta, runs: runs.map((r) => ({ score: r.score, offers: r.offers, trace: r.trace })) }, null, 2)}\n`,
