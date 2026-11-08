@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { mockGuesser } from './mock.js';
 import { firstObjectEnd, parseGuess } from './parse.js';
-import { profileTermList } from './profile.js';
+import { profileForPrompt } from './profile.js';
 import type { GuessInput, GuessResult, Guesser } from './types.js';
 
 const SYSTEM = `Someone has lost a word mid-conversation. Guess the word they are reaching for.
@@ -14,8 +14,7 @@ const MAX_TOKENS = 100;
 export function buildPrompt(input: GuessInput): string {
   const parts: string[] = [];
   if (input.brief) parts.push(`Meeting brief:\n${input.brief}`);
-  if (input.profile)
-    parts.push(`Their personal words: ${profileTermList(input.profile).join(', ')}`);
+  if (input.profile) parts.push(`Their personal words: ${profileForPrompt(input.profile)}`);
   parts.push(`Conversation so far:\n${input.conversation}`);
   parts.push(`Just said (they are stuck here):\n${input.stuckPhrase}`);
   return parts.join('\n\n');
