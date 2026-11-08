@@ -81,7 +81,7 @@ export function renderScenarioReport(
     ...byType,
     row('All', summarize(scores)),
     '',
-    `Guess calls: ${calls} for ${scores.length} conversations (including early guesses that were thrown away).`,
+    `Guess calls: ${calls} for ${scores.length} conversations (including early guesses that were thrown away); ${runs.reduce((n, r) => n + r.trace.guesses.filter((g) => g.error).length, 0)} failed or timed out.`,
     '',
     '## Failures',
     '',

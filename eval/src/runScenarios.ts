@@ -44,7 +44,12 @@ async function main(): Promise<void> {
     Array.from({ length: CONCURRENCY }, async () => {
       for (let sc = queue.shift(); sc; sc = queue.shift()) {
         const placed = layoutScenario(sc);
+        const startedAt = Date.now();
         const result = await replay(sc, placed, guess, sc.profile ? profile : undefined);
+        const errors = result.trace.guesses.filter((g) => g.error).length;
+        console.error(
+          `${sc.id} done in ${Math.round((Date.now() - startedAt) / 1000)} s: ${result.guessCalls} guess calls, ${errors} failed or timed out`,
+        );
         runs.push({
           score: scoreScenario(sc.id, sc.type, placed, result.offers),
           placed,
