@@ -22,7 +22,9 @@ export function formatDebug(info: DebugInfo): string {
     case 'stt':
       return `stt: ${info.mode}, ${info.keyterms.length} keyterms`;
     case 'speaker':
-      return `you are voice ${info.me} (${info.why})`;
+      return info.me === undefined
+        ? `voice forgotten (${info.why}); picking again from the next words`
+        : `you are voice ${info.me} (${info.why})`;
     case 'transcript':
       return `heard: ${info.text}`;
   }

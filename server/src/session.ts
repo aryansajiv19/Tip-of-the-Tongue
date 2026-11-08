@@ -104,6 +104,14 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
 
   // Who the user is: the voice of their first words, then corrected by evidence (a pop-up they
   // accepted, or a word they asked for by hand).
+  // Whose voice is the user's is learned again: after a new Deepgram stream (it numbers voices from
+  // 0 again) and after a new conversation.
+  function forgetMe(why: 'new stream' | 'new conversation') {
+    if (me === undefined) return;
+    me = undefined;
+    debug(() => ({ kind: 'speaker', me: undefined, why }));
+  }
+
   function setMe(speaker: number, why: 'first words' | 'accepted' | 'manual') {
     if (speaker === me) return;
     me = speaker;
@@ -349,8 +357,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     offer = undefined;
     lastOfferAtMs = undefined;
     recentlyOffered.clear();
-    // Whose voice is "me" is learned again in the new conversation.
-    me = undefined;
+    forgetMe('new conversation');
     buffer.clear();
     handledUpToMs = -Infinity;
     voice = undefined;
@@ -452,6 +459,9 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     keyterms: () => keyterms,
     // Which voice the session takes to be the user's, if it knows.
     speaker: () => me,
+    // Deepgram numbers voices per stream: when a new stream opens (after a pause in listening, or a
+    // keyterm change) the old numbers mean nothing, so pick again from its first words.
+    forgetSpeaker: () => forgetMe('new stream'),
     close() {
       closed = true;
       spec?.abort.abort();

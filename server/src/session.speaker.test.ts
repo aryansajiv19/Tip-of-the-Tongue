@@ -177,6 +177,50 @@ describe('who is speaking', () => {
     session.close();
   });
 
+  it("forgets the user's voice when a new stream starts, because its voice numbers start again", async () => {
+    const { session, say, offers, stalls } = setup();
+    // Stream 1: the user is voice 1.
+    say(1, 'Hello everyone thanks for joining the call');
+    expect(session.speaker()).toBe(1);
+
+    // Listening paused and resumed: a new stream, numbered again from 0.
+    vi.advanceTimersByTime(5000);
+    session.forgetSpeaker();
+    expect(session.speaker()).toBeUndefined();
+    say(0, 'Okay so let us carry on with the plan');
+    expect(session.speaker()).toBe(0);
+
+    // The other person is now labelled 1 and stalls: not the user's stall.
+    await vi.advanceTimersByTimeAsync(3000);
+    const before = { offers: offers(), stalls: stalls() };
+    say(1, STALL);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(offers()).toBe(before.offers);
+    expect(stalls()).toBe(before.stalls);
+    session.close();
+  });
+
+  it('forgets it the same way on a new conversation, and says why in the debug stream', () => {
+    const { session, events, say } = setup();
+    session.handle({ type: 'session.debug', on: true });
+    say(0, 'Hello everyone thanks for joining');
+    session.handle({ type: 'session.reset' });
+    expect(session.speaker()).toBeUndefined();
+    const reasons = events.flatMap((e) =>
+      e.type === 'debug' && e.info.kind === 'speaker' ? [e.info.why] : [],
+    );
+    expect(reasons).toEqual(['first words', 'new conversation']);
+    session.close();
+  });
+
+  it('has nothing to forget before it has picked a voice', () => {
+    const { session, events } = setup();
+    session.handle({ type: 'session.debug', on: true });
+    session.forgetSpeaker();
+    expect(events.some((e) => e.type === 'debug' && e.info.kind === 'speaker')).toBe(false);
+    session.close();
+  });
+
   it('reports the voice it chose, and why, in the debug stream', () => {
     const { session, events, say } = setup();
     session.handle({ type: 'session.debug', on: true });
