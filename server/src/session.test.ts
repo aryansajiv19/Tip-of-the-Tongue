@@ -649,7 +649,7 @@ describe('session pipeline', () => {
     session.close();
   });
 
-  it('does not offer the same word again for a while, but the manual ask may', async () => {
+  it('does not offer the same word again for a while', async () => {
     const guess: Guesser = () =>
       Promise.resolve({
         candidates: [{ word: 'hotfix', confidence: 0.9 }],
