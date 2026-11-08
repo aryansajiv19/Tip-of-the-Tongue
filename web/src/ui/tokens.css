@@ -1,0 +1,102 @@
+/* Design tokens for the overlay. Every colour, size, radius, shadow and timing in the UI
+   comes from here; components use only these variables. */
+:root {
+  /* Surfaces: dark translucent glass */
+  --surface-bg: rgba(20, 20, 22, 0.72);
+  --surface-blur: blur(24px) saturate(140%);
+  --surface-border: 1px solid rgba(255, 255, 255, 0.08);
+  --surface-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --surface-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  /* Used when transparency is reduced or backdrop-filter is unsupported */
+  --surface-solid: #141416;
+  --radius-card: 16px;
+  --radius-pill: 22px;
+  --radius-keycap: 5px;
+
+  /* Colour: neutrals, one accent, red for errors only */
+  --text: #f5f5f7;
+  --text-muted: #a1a1aa;
+  --text-faint: #6b6b73; /* ~3.4:1 on the glass: icons and dividers only, never text */
+  --accent: #7dd3fc; /* listening state and the primary word underline only */
+  --error: #f87171;
+  --hover: rgba(255, 255, 255, 0.06);
+  --focus-ring: 0 0 0 2px var(--accent);
+
+  /* Type */
+  --font:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, 'Segoe UI', system-ui, sans-serif;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --text-xs: 11px; /* smallest text allowed */
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-word: 30px;
+
+  /* Spacing: 4/8 grid */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+
+  /* Sizes */
+  --overlay-width: 340px;
+  --pill-height: 44px;
+  --icon: 16px;
+  --icon-stroke: 1.5;
+  --keycap-height: 20px;
+
+  /* Motion: opacity + 4px translate, ease-out */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 150ms;
+  --dur: 200ms;
+  --shift: 4px;
+  --card-linger: 6s; /* a suggestion fades out on its own after this */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur: 0ms;
+    --shift: 0px;
+  }
+}
+
+/* Shared glass surface. Falls back to solid when transparency is unwanted or unsupported. */
+.glass {
+  background: var(--surface-bg);
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  border: var(--surface-border);
+  box-shadow: var(--surface-shadow), var(--surface-highlight);
+  color: var(--text);
+  font-family: var(--font);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--surface-solid);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--surface-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Keyboard hint, e.g. ⌘ \ */
+.keycap {
+  display: inline-flex;
+  align-items: center;
+  height: var(--keycap-height);
+  padding: 0 var(--space-1);
+  border: var(--surface-border);
+  border-radius: var(--radius-keycap);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
