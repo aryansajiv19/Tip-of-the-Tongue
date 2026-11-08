@@ -73,7 +73,7 @@ The page is a control pill (pause/resume, a five-bar mic waveform, a listening t
 ## Limits
 
 - Tested only on our own written, scripted examples; not tested with people with aphasia. No claim of clinical benefit.
-- One mic hears both sides and the prototype cannot tell speakers apart; there is no speaker separation.
+- One mic hears both sides. With Deepgram the voices are labelled and only the user's voice starts a guess; with browser speech there is no speaker separation.
 - Speech-to-text may mishear real aphasic speech; accuracy on atypical speech is unknown.
 - Planned, not built: a spoken cue (needs echo handling, because the mic would hear the cue and count it as the user saying the word).
 
