@@ -31,3 +31,15 @@ Two runs of the 56-item set, then a final holdout run with the shipped prompt (s
 
 - **No profile means confidently wrong.** Without the personal profile, personal words (Corner Mart, Priya, Dr Okafor) got generic guesses ("corner shop", "daughter", "GP") at 0.6-0.8 confidence, so 3 of 3 offers were wrong. The gate cannot catch this, since the model is confident. Design answer: keep the profile in the prompt; with an empty profile, expect generic, wrong offers on personal words.
 - **Mishearings can bring back the multi-word split.** In one noisy dev run "traffic lights" came back as "traffic" and "lights" again. See `docs/write-up.md` for the numbers.
+
+## Findings from the scenario suite
+
+Whole two-speaker conversations (`data/eval/scenarios.json`), see `docs/write-up.md` for the numbers.
+
+- **Other speaker stalls.** One microphone, no speaker separation: when the other person says "um… the thing for the…", the app can offer the user a word (3 of 45 other-speaker lines on the holdout, 1 to 2 of 152 on dev). Known main limit. Not tried yet: speaker separation from the speech-to-text service.
+- **No punctuation means no sentence ends.** The recogniser sends plain words, so a finished sentence followed by silence looks like an unfinished phrase. The guesser has to judge it. Pauses are marked "…" between words so a description that follows a stall can be told from a finished sentence; there is deliberately no mark at the end, which made finished sentences look like searches.
+- **Old words come back.** After a finished sentence the model sometimes reaches for a word offered earlier in the call. An offered word stays off the list for 3 minutes.
+- **Right word, too little confidence.** About 3 per dev run (and the one holdout miss, "sun cream" 0.40) were the right word under the 0.6 gate. Kept silent on purpose.
+- **A weak first guess at the bare pause.** A pop-up can appear at "I need to pop to the…" before the description. If the user talks on, the cooldown is cleared so a better guess can follow; the wrong first pop-up has already been seen.
+- **Pop-up then self-recovery.** The user pauses 2 s, a pop-up appears, then they find the word: the pop-up is withdrawn. Expected, scored as a pop-up during self-recovery.
+- **Very long calls.** The guesser reads the last 1,200 words (about 8 minutes) and the buffer keeps 3,000; a word needed from before that is not seen. Measured only up to a 560-word conversation.

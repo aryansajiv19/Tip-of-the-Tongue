@@ -90,6 +90,23 @@ Listens, notices the struggle, guesses the word from context, and offers it quie
 
   The glossary kept every term the guesser needed, and the control shows the terms really are missing from the start of the document: it missed "SOC 2" (no guess) and offered "deferred income" for "deferred revenue". With 8 items, though, the intervals overlap, so this shows the mechanism works rather than proving it beats the alternatives. The documents are short next to the 50,000 characters now allowed, so the saving in prompt size, and whether a glossary of 60 terms still captures a very long document, are not measured here. A long brief now reaches Anthropic twice: once to build the glossary and then, shortened, with each guess.
 
+- **Whole conversations, not single sentences** (`data/eval/scenarios.json`: 15 written two-speaker conversations of 21 to 46 lines, played through the real session on a virtual clock with one microphone hearing both speakers; 37 moments on dev where the user is reaching for a word, 8 on the 4 held-out conversations; 95% Wilson intervals). This is the most realistic test we have, and it first came out well below the single-sentence results.
+
+  | Run           | What changed                                                                         | Correct               | Top-1  | Pop-ups in fluent lines | On the other speaker |
+  | ------------- | ------------------------------------------------------------------------------------ | --------------------- | ------ | ----------------------- | -------------------- |
+  | 1, 2          | start                                                                                | 25/37, 23/37 (62-68%) | 23, 20 | 2/111, 2/111            | 0/152, 1/152         |
+  | 3, 4          | profile words labelled; guesser reads 8 minutes of the call, not 60 words            | 24, 26                | 23, 25 | 1/111, 2/111            | 1/152, 2/152         |
+  | 5, 6          | pauses marked as "…" in the text; cooldown cleared if the user talks on              | 30, 34                | 29, 31 | 5/111, 5/111            | 2/152, 1/152         |
+  | 7, 8          | no mark at the very end                                                              | 35, 31                | 34, 29 | 5/111, 4/111            | 1/152, 1/152         |
+  | 9, 10         | an offered word stays off for 3 minutes; prompt: a finished sentence is not a search | 34, 33 (89-92%)       | 32, 32 | 0/111, 1/111            | 1/152, 1/152         |
+  | Holdout, once | final code                                                                           | 7/8 [53-98%]          | 5/8    | 0/36                    | 3/45                 |
+
+  What the failures were, and what fixed them: (1) the model abstained on a description it read as a finished sentence, because the recogniser sends no punctuation and the pause lives only in the timings, so the earlier tests, which wrote "…" into the text, had been giving the model a hint the product never gave. Marking pauses between words fixed most of these. (2) A weak first guess at a bare pause was shown and then the cooldown blocked the better one made after the description. (3) The profile was flattened to a list of names, so "Corner Mart" lost its meaning as a local shop. (4) A call longer than 60 words lost early names. (5) Complete sentences at the end of a call or after a closing remark made the model re-offer a word offered earlier; a 3-minute no-repeat window and a prompt sentence stopped that. Right words under the 0.6 confidence gate (0.50 to 0.55) were left alone on purpose.
+
+  **Main remaining limit: the other speaker.** One microphone hears both people and the prototype cannot tell them apart. When the other person searches for a word ("um… the, the numbers smaller… less digits after the dot"), the app can offer the user a word: 1 to 2 of 152 other-speaker lines on dev (all in the one conversation built for this) and 3 of 45 on the holdout, all in the support call where the customer stalls. In real use with someone who hesitates a lot, expect this to be more visible. Self-recoveries (the user finds the word 2 s after pausing) can show a pop-up that is withdrawn when the word comes: 1 of 3 in every recent dev run.
+
+  Caveats: scripted conversations written by us, text on a virtual clock, not real speech; the dev conversations were used to tune, so the holdout (8 stall moments, one run, wide interval) is the only untouched figure; results vary between runs; not tested with people with aphasia.
+
 ## Approach and why
 
 No training; speech-to-text + rules + Claude + a confidence gate. Silence is a feature.

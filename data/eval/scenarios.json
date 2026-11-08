@@ -1,0 +1,1806 @@
+{
+  "note": "Realistic multi-turn conversations written for this project, two speakers (me = the user, other = the other person; one microphone hears both). Stall moments are lines with a target word w. Not copied from any corpus. Scripted text, not real speech. Do not tune on split holdout.",
+  "scenarios": [
+    {
+      "id": "s01",
+      "type": "sales",
+      "split": "dev",
+      "title": "Sales call to a clinic manager",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Hello, this is Hannah from Greenfield Clinic."
+        },
+        {
+          "s": "me",
+          "t": "Hi Hannah, it's Sam from Lumenfield. Thanks for making time today."
+        },
+        {
+          "s": "other",
+          "t": "Of course. I only have about twenty minutes, so let's get to it."
+        },
+        {
+          "s": "me",
+          "t": "Sure. I understand you run scheduling for three sites and the phones are a big pain point."
+        },
+        {
+          "s": "other",
+          "t": "Yes, the front desk spends half the day on the phone moving appointments around."
+        },
+        {
+          "s": "me",
+          "t": "That's exactly what we fix. Patients book online and get a text reminder the day before."
+        },
+        {
+          "s": "other",
+          "t": "Does it work with our current system? We use a very old one."
+        },
+        {
+          "s": "me",
+          "t": "It does, we connect to most of them. The setup is handled by our... the team that gets new customers started, the first two weeks",
+          "w": "onboarding",
+          "a": ["onboarding", "implementation", "setup team"]
+        },
+        {
+          "s": "other",
+          "t": "Sorry, the first two weeks of what?"
+        },
+        {
+          "s": "me",
+          "t": "Onboarding. They import your diary and train the staff, so there's no disruption."
+        },
+        {
+          "s": "other",
+          "t": "That sounds reassuring. What would it cost for three sites?"
+        },
+        {
+          "s": "me",
+          "t": "I'll send you a proper... the document with the prices on it, so you can show your director",
+          "w": "quote",
+          "a": ["quote", "quotation", "proposal", "price list"]
+        },
+        {
+          "s": "other",
+          "t": "A quote would be great. Can you include the reminder texts?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, texts are included up to five thousand a month. After that it's a small extra fee."
+        },
+        {
+          "s": "other",
+          "t": "Okay. And is there a way to try it first?"
+        },
+        {
+          "s": "me",
+          "t": "Absolutely. We offer a free... a trial period, thirty days, nothing to sign",
+          "w": "trial",
+          "a": ["trial", "free trial", "pilot"],
+          "gap": 2500
+        },
+        {
+          "s": "me",
+          "t": "A thirty day trial, I mean. You can switch it off any time."
+        },
+        {
+          "s": "other",
+          "t": "Good. My director will want to know about security, patient data and so on."
+        },
+        {
+          "s": "me",
+          "t": "Right. We're audited every year, and I can send you the report under the usual confidentiality terms."
+        },
+        {
+          "s": "other",
+          "t": "Please do. What happens if a patient cancels at the last minute?"
+        },
+        {
+          "s": "me",
+          "t": "Then the slot goes to the waiting list automatically. The next person on the list gets a text."
+        },
+        {
+          "s": "other",
+          "t": "Oh, that's clever. We lose a lot of money on empty slots."
+        },
+        {
+          "s": "me",
+          "t": "Most of our clinics recover about one in four of those. It depends on how many people are on the... the list of people who want an earlier appointment",
+          "w": "waiting list",
+          "a": ["waiting list", "waitlist", "wait list"]
+        },
+        {
+          "s": "other",
+          "t": "The waiting list, yes. We have quite a long one for physiotherapy."
+        },
+        {
+          "s": "me",
+          "t": "Then you'll see the benefit quickly. Shall I book a demo for your director next week?"
+        },
+        {
+          "s": "other",
+          "t": "Yes, Thursday afternoon would work. Around three?"
+        },
+        {
+          "s": "me",
+          "t": "Three on Thursday. I'll send the invite and the quote tonight."
+        },
+        {
+          "s": "other",
+          "t": "Thanks Sam, speak soon."
+        },
+        {
+          "s": "me",
+          "t": "Thanks Hannah. Have a good afternoon."
+        }
+      ]
+    },
+    {
+      "id": "s02",
+      "type": "sales",
+      "split": "holdout",
+      "title": "Recruitment agency pitch to an HR director",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Good morning, Marcus speaking."
+        },
+        {
+          "s": "me",
+          "t": "Good morning Marcus, it's Priyanka from Talentbridge. We spoke briefly at the conference."
+        },
+        {
+          "s": "other",
+          "t": "Yes, I remember. You place engineers, don't you?"
+        },
+        {
+          "s": "me",
+          "t": "Mostly engineers and data people. You mentioned you had three roles open."
+        },
+        {
+          "s": "other",
+          "t": "Four now, actually. Two backend, one data analyst and a product designer."
+        },
+        {
+          "s": "me",
+          "t": "We have people for all of those. The analyst role especially, we've just finished with someone very strong."
+        },
+        {
+          "s": "other",
+          "t": "What's your process? I've had bad experiences with agencies sending me piles of CVs."
+        },
+        {
+          "s": "me",
+          "t": "We never do that. We send a short... the list of the best three or four people, with notes on each",
+          "w": "shortlist",
+          "a": ["shortlist", "short list", "short-list"]
+        },
+        {
+          "s": "other",
+          "t": "A shortlist. Good. How quickly?"
+        },
+        {
+          "s": "me",
+          "t": "Within a week of the briefing call. Our placements start on average five weeks after."
+        },
+        {
+          "s": "other",
+          "t": "And the fee?"
+        },
+        {
+          "s": "me",
+          "t": "Twenty percent of first year salary, paid only when someone starts. There's no upfront cost."
+        },
+        {
+          "s": "other",
+          "t": "Some agencies ask for a deposit."
+        },
+        {
+          "s": "me",
+          "t": "Some do. We could also agree a... an arrangement where you pay a monthly amount to have us work only for you",
+          "w": "retainer",
+          "a": ["retainer", "retained search"]
+        },
+        {
+          "s": "other",
+          "t": "A retainer? I'd rather not tie us in."
+        },
+        {
+          "s": "me",
+          "t": "Understood. Most of our clients don't, to be honest, unless the role is senior."
+        },
+        {
+          "s": "other",
+          "t": "What if the person leaves after two months?"
+        },
+        {
+          "s": "me",
+          "t": "We replace them free of charge within the first six months. That's in the standard terms."
+        },
+        {
+          "s": "other",
+          "t": "Good. Let me talk to my team and come back to you on Friday."
+        },
+        {
+          "s": "me",
+          "t": "Of course. Shall I send over the terms and a couple of anonymised profiles in the meantime?"
+        },
+        {
+          "s": "other",
+          "t": "Please do. Send them to my work address."
+        },
+        {
+          "s": "me",
+          "t": "Will do. It was good to talk, Marcus."
+        },
+        {
+          "s": "other",
+          "t": "You too. Goodbye."
+        }
+      ]
+    },
+    {
+      "id": "s03",
+      "type": "interview",
+      "split": "dev",
+      "title": "Job interview with a company document as the brief",
+      "brief": "Brightwell Energy (fictional) company overview. Brightwell helps households and small businesses use less electricity at expensive times. Our core products are a smart meter that reports usage every minute, a time-of-use tariff that charges less overnight, and a demand response service that pays customers to lower their use when the grid is under strain.\n\nOur engineers also run a virtual power plant: thousands of home batteries and heat pumps controlled together, so that they behave like one large power station. Data scientists forecast demand hour by hour and decide when to charge and discharge the batteries.\n\nThe team you are joining builds the customer app and the data pipelines behind it. We value clear writing, small teams and learning from outages.",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Thanks for coming in. I'm Ruth, I lead the data team here."
+        },
+        {
+          "s": "me",
+          "t": "Thank you, Ruth. I'm Jordan. I've been looking forward to this."
+        },
+        {
+          "s": "other",
+          "t": "Let's start with what you know about Brightwell."
+        },
+        {
+          "s": "me",
+          "t": "I read your overview. You help people use less electricity when it's expensive, with a smart meter and a tariff that's cheaper at night."
+        },
+        {
+          "s": "other",
+          "t": "That's right. Which part interests you most?"
+        },
+        {
+          "s": "me",
+          "t": "The part where batteries and heat pumps are controlled together, so they act like one big power station. The, um... the virtual power plant is a lovely idea",
+          "w": "virtual power plant",
+          "a": ["virtual power plant", "vpp"],
+          "recover": true
+        },
+        {
+          "s": "other",
+          "t": "Yes, that's the part we're proudest of. Tell me about a data project you've owned."
+        },
+        {
+          "s": "me",
+          "t": "At my last job I rebuilt the forecasting for a delivery company. We predicted orders per hour and cut waste by about eleven percent."
+        },
+        {
+          "s": "other",
+          "t": "How did you measure that?"
+        },
+        {
+          "s": "me",
+          "t": "We compared against the old method for three months on live traffic. I wrote up the results and the team adopted the new model."
+        },
+        {
+          "s": "other",
+          "t": "Good. What was the hardest part?"
+        },
+        {
+          "s": "me",
+          "t": "Honestly the messy input. Sensors dropping out, missing hours. We needed a way to fill gaps without inventing data, so I built a... the system that moves the data along in stages, cleaning each stage",
+          "w": "pipeline",
+          "a": ["pipeline", "data pipeline"]
+        },
+        {
+          "s": "other",
+          "t": "A pipeline, yes. How did you test it?"
+        },
+        {
+          "s": "me",
+          "t": "With a small set of known bad cases, and checks that ran every night."
+        },
+        {
+          "s": "other",
+          "t": "Nice. How would you handle our customers who have a smart meter that fails?"
+        },
+        {
+          "s": "me",
+          "t": "I'd flag the gap, estimate from similar homes, and tell the customer. And I'd keep the estimate marked as an estimate."
+        },
+        {
+          "s": "other",
+          "t": "Good answer. One thing we do is pay customers to turn down their use when the grid is stressed. Have you worked on anything like that?"
+        },
+        {
+          "s": "me",
+          "t": "Not directly, no. But it sounds like the, um... the programme where you pay people when demand is high",
+          "w": "demand response",
+          "a": ["demand response"],
+          "gap": 2500
+        },
+        {
+          "s": "me",
+          "t": "Demand response, right. I'd love to learn how you decide who to ask and when."
+        },
+        {
+          "s": "other",
+          "t": "We'll cover that in your first month. Do you have questions for me?"
+        },
+        {
+          "s": "me",
+          "t": "Yes. How big is the team, and how do you handle it when something breaks overnight?"
+        },
+        {
+          "s": "other",
+          "t": "Seven people, and we run a blameless review after every outage. We write it up and share it."
+        },
+        {
+          "s": "me",
+          "t": "That's what I hoped. I like learning from mistakes in the open."
+        },
+        {
+          "s": "other",
+          "t": "Wonderful. What about the pricing side? Do you know how our night-time rates work?"
+        },
+        {
+          "s": "me",
+          "t": "Only from your site. Customers pay less overnight, so the, uh... the pricing plan that changes with the hour of the day",
+          "w": "time-of-use tariff",
+          "a": ["time-of-use tariff", "time of use tariff", "tariff", "time-of-use"]
+        },
+        {
+          "s": "other",
+          "t": "Time-of-use, yes. We'll go through the details when you join."
+        },
+        {
+          "s": "me",
+          "t": "Great. I'm very keen."
+        },
+        {
+          "s": "other",
+          "t": "Thank you Jordan. We'll let you know by Friday."
+        },
+        {
+          "s": "me",
+          "t": "Thank you, Ruth. It was a pleasure."
+        }
+      ]
+    },
+    {
+      "id": "s04",
+      "type": "doctor",
+      "split": "dev",
+      "title": "Doctor's appointment (me = patient)",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Come in and sit down. What can I do for you today?"
+        },
+        {
+          "s": "me",
+          "t": "Hello doctor. I've had a headache for about two weeks now, most days."
+        },
+        {
+          "s": "other",
+          "t": "Is it all over, or in one place?"
+        },
+        {
+          "s": "me",
+          "t": "Mostly behind my eyes, and it's worse in the evening."
+        },
+        {
+          "s": "other",
+          "t": "Have you taken anything for it?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, I've been taking the... the tablets for pain and swelling, the white ones from the chemist",
+          "w": "ibuprofen",
+          "a": ["ibuprofen", "painkillers", "anti-inflammatory", "nurofen"]
+        },
+        {
+          "s": "other",
+          "t": "Ibuprofen? How many a day?"
+        },
+        {
+          "s": "me",
+          "t": "Two, sometimes three. It helps for a few hours."
+        },
+        {
+          "s": "other",
+          "t": "Any problems with your sight, or feeling sick?"
+        },
+        {
+          "s": "me",
+          "t": "No, my sight is fine. I did feel dizzy once when I stood up too quickly."
+        },
+        {
+          "s": "other",
+          "t": "I'll check a few things. Let me take your blood pressure."
+        },
+        {
+          "s": "me",
+          "t": "Okay. My mother has always had high... the number the nurse measures with the cuff on your arm",
+          "w": "blood pressure",
+          "a": ["blood pressure"]
+        },
+        {
+          "s": "other",
+          "t": "Yes, it runs in families. Yours is a little high today, one forty over ninety."
+        },
+        {
+          "s": "me",
+          "t": "Is that bad?"
+        },
+        {
+          "s": "other",
+          "t": "It's borderline. I'd like you to keep a diary for two weeks, measuring at home."
+        },
+        {
+          "s": "me",
+          "t": "I can do that. Do I need to buy a machine?"
+        },
+        {
+          "s": "other",
+          "t": "The pharmacy can lend you one. Now, are you sleeping well?"
+        },
+        {
+          "s": "me",
+          "t": "Not really. I wake up at four and my mind starts racing about work."
+        },
+        {
+          "s": "other",
+          "t": "That could be part of the headaches. Are you drinking much coffee?"
+        },
+        {
+          "s": "me",
+          "t": "Three or four cups, yes. I know I should cut down."
+        },
+        {
+          "s": "other",
+          "t": "It would help. I'd also like you to see someone about your neck, it's very tense."
+        },
+        {
+          "s": "me",
+          "t": "Oh, I did that last year. I went to a... the person who does exercises and massage to fix muscles",
+          "w": "physiotherapist",
+          "a": ["physiotherapist", "physio", "physical therapist", "physiotherapy"]
+        },
+        {
+          "s": "other",
+          "t": "A physiotherapist, good. Did it help?"
+        },
+        {
+          "s": "me",
+          "t": "For a while. I stopped going when the course ended."
+        },
+        {
+          "s": "other",
+          "t": "Then let's restart it. Is there anything you're allergic to? I'm about to write a prescription."
+        },
+        {
+          "s": "me",
+          "t": "Yes, penicillin. It gave me a rash when I was a child. I'm quite... what's the word, I react badly to it",
+          "w": "allergic",
+          "a": ["allergic", "allergy"]
+        },
+        {
+          "s": "other",
+          "t": "Allergic to penicillin, noted. Thank you for telling me."
+        },
+        {
+          "s": "me",
+          "t": "Should I come back?"
+        },
+        {
+          "s": "other",
+          "t": "In two weeks with your diary. If the headache gets suddenly severe, come straight in."
+        },
+        {
+          "s": "me",
+          "t": "Thank you, doctor. I'll make the appointment at the desk."
+        }
+      ]
+    },
+    {
+      "id": "s05",
+      "type": "standup",
+      "split": "dev",
+      "title": "Team standup, checkout service (technical jargon)",
+      "brief": "Sprint 42, checkout service. Goals: ship the new payment form, fix the failed-order bug, move test runs to the faster build server. Release candidate goes to the staging environment on Wednesday. Reviewer rota this week: Ana, Luis, Wei.",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Morning everyone. Let's go round. Ana, you first."
+        },
+        {
+          "s": "me",
+          "t": "Wait, I'll go, I have a meeting at ten. Yesterday I finished the card form and opened the change for review."
+        },
+        {
+          "s": "other",
+          "t": "Great. Anything blocking you?"
+        },
+        {
+          "s": "me",
+          "t": "Only that I need someone to look at it. It's the, um... the request I raised so you can read my changes before they're merged",
+          "w": "pull request",
+          "a": ["pull request", "pr", "merge request"]
+        },
+        {
+          "s": "other",
+          "t": "I'll take it after standup. Luis?"
+        },
+        {
+          "s": "me",
+          "t": "Sorry, one more thing. The order bug from last week, the failed ones, I think I found why."
+        },
+        {
+          "s": "other",
+          "t": "Oh nice. What was it?"
+        },
+        {
+          "s": "me",
+          "t": "A timeout in the payment call. It only happens on slow connections, so nobody saw it."
+        },
+        {
+          "s": "other",
+          "t": "That explains the support tickets. Can you add a test for it?"
+        },
+        {
+          "s": "me",
+          "t": "Yes. And I want to add something to catch it earlier, a... the group of automatic tests that checks that old bugs don't come back",
+          "w": "regression suite",
+          "a": ["regression suite", "regression tests", "regression test", "regression"]
+        },
+        {
+          "s": "other",
+          "t": "Good idea. Wei, how is the build server move going?"
+        },
+        {
+          "s": "other",
+          "t": "I've moved half of the tests. The rest depend on a database that is still being copied."
+        },
+        {
+          "s": "me",
+          "t": "How long will the copy take?"
+        },
+        {
+          "s": "other",
+          "t": "Probably until tomorrow. It's a big one."
+        },
+        {
+          "s": "me",
+          "t": "Fine. Then the release candidate will be ready for the... the copy of the live system we use for the last tests before customers see it",
+          "w": "staging environment",
+          "a": ["staging environment", "staging", "stage environment"]
+        },
+        {
+          "s": "other",
+          "t": "Staging, yes, on Wednesday as planned."
+        },
+        {
+          "s": "me",
+          "t": "If anything breaks there we can fix it fast. I'll keep my laptop open all day Wednesday."
+        },
+        {
+          "s": "other",
+          "t": "Thanks Ana. Luis, your update?"
+        },
+        {
+          "s": "other",
+          "t": "I'm on the invoices export. It's half done, and I need a decision about the date format."
+        },
+        {
+          "s": "me",
+          "t": "Use the ISO one. Year, month, day. Finance prefers it anyway."
+        },
+        {
+          "s": "other",
+          "t": "Great, that settles it. Anyone has blockers?"
+        },
+        {
+          "s": "me",
+          "t": "One more. If production breaks before Wednesday, I'd rather push a small quick repair, a... an urgent fix that skips the normal wait",
+          "w": "hotfix",
+          "a": ["hotfix", "hot fix", "quick fix"]
+        },
+        {
+          "s": "other",
+          "t": "Agreed, a hotfix needs two approvals but no more."
+        },
+        {
+          "s": "me",
+          "t": "Understood."
+        },
+        {
+          "s": "other",
+          "t": "Okay, that's it. Thanks everyone."
+        },
+        {
+          "s": "me",
+          "t": "Thanks. I'll post my notes in the channel."
+        }
+      ]
+    },
+    {
+      "id": "s06",
+      "type": "standup",
+      "split": "holdout",
+      "title": "Data team standup (technical jargon)",
+      "brief": "Data platform team. Flow: ingest, transform, serve. This week: schema change for the orders table, loading old 2023 orders into the new table, and fixing the nightly Airflow job that keeps failing.",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Morning. Let's start with the nightly job."
+        },
+        {
+          "s": "me",
+          "t": "It failed three times last week. I looked at the logs and it's always the same step, the one that reads the partner files."
+        },
+        {
+          "s": "other",
+          "t": "Is the partner sending bad files?"
+        },
+        {
+          "s": "me",
+          "t": "Sometimes a column is missing. I want the job to stop that file and carry on with the rest, not fall over."
+        },
+        {
+          "s": "other",
+          "t": "Makes sense."
+        },
+        {
+          "s": "me",
+          "t": "And for the orders table, the change to the structure goes in tonight, the... the change to the shape of the table, the columns and their types",
+          "w": "schema migration",
+          "a": ["schema migration", "migration", "schema change"]
+        },
+        {
+          "s": "other",
+          "t": "The schema migration, yes. Is it safe to run at night?"
+        },
+        {
+          "s": "me",
+          "t": "It adds columns only, nothing is removed, so the old reports still work."
+        },
+        {
+          "s": "other",
+          "t": "Good. And the old data?"
+        },
+        {
+          "s": "me",
+          "t": "That's the next part. Once the new columns exist I need to fill them for 2023. Re-loading all the old rows, the... filling in the history",
+          "w": "backfill",
+          "a": ["backfill", "back fill", "backfilling"]
+        },
+        {
+          "s": "other",
+          "t": "That's a big one. How long?"
+        },
+        {
+          "s": "me",
+          "t": "About six hours if I run it in chunks. I'll start after the migration."
+        },
+        {
+          "s": "other",
+          "t": "Don't overload the database during the day."
+        },
+        {
+          "s": "me",
+          "t": "No, it runs between midnight and six."
+        },
+        {
+          "s": "other",
+          "t": "Okay. Anything else?"
+        },
+        {
+          "s": "me",
+          "t": "The dashboard is slow. I think it reads the same big table every time, so I'd like to keep the answers ready, a... storing the results so they don't get calculated each time",
+          "w": "caching",
+          "a": ["caching", "cache", "cached"]
+        },
+        {
+          "s": "other",
+          "t": "Yes, try that after the backfill."
+        },
+        {
+          "s": "me",
+          "t": "Will do."
+        },
+        {
+          "s": "other",
+          "t": "Thanks. Meeting over."
+        },
+        {
+          "s": "me",
+          "t": "Thanks everyone."
+        },
+        {
+          "s": "other",
+          "t": "Wait, one more thing about access, the new analysts need accounts."
+        },
+        {
+          "s": "me",
+          "t": "I'll ask IT today. They need read access only, for now."
+        }
+      ]
+    },
+    {
+      "id": "s07",
+      "type": "renewal",
+      "split": "dev",
+      "title": "Client renewal meeting (profile and brief)",
+      "profile": true,
+      "brief": "Q3 review with Northwind (fictional). Renewal of the analytics licence, 120 seats, ends 31 March. Contacts: Maya Chen (procurement), Dev Patel (IT). Open topics: price uplift of 4 percent, onboarding for new analysts, and the SOC 2 report Northwind asked for.",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Welcome back everyone. Maya Chen here, and Dev Patel from IT."
+        },
+        {
+          "s": "me",
+          "t": "Thank you both. Good to see you again. I'm Alex from the account team."
+        },
+        {
+          "s": "other",
+          "t": "We wanted to talk about the licence. It comes up for renewal soon."
+        },
+        {
+          "s": "me",
+          "t": "Yes, it ends on the thirty-first of March. I'd like to start the... the process of signing it again for another year, so nothing lapses",
+          "w": "renewal",
+          "a": ["renewal", "renew", "renewing"]
+        },
+        {
+          "s": "other",
+          "t": "The renewal. Yes, that's what we need to discuss."
+        },
+        {
+          "s": "me",
+          "t": "Before that, how is the team finding the product? Anything IT should know, Dev?"
+        },
+        {
+          "s": "other",
+          "t": "It's been stable. The only complaint is that new analysts struggle in their first weeks."
+        },
+        {
+          "s": "me",
+          "t": "That's a good point. We can offer a session for the new people, a... the training where we show them around and answer their questions",
+          "w": "onboarding",
+          "a": ["onboarding", "induction", "training"]
+        },
+        {
+          "s": "other",
+          "t": "Onboarding would be very welcome. Can you include it?"
+        },
+        {
+          "s": "me",
+          "t": "I'd like to include it in the price. Now, on the price itself, we need to raise it a little, about four percent."
+        },
+        {
+          "s": "other",
+          "t": "Four percent is more than our budget allows."
+        },
+        {
+          "s": "me",
+          "t": "I hear that. What number would work for you?"
+        },
+        {
+          "s": "other",
+          "t": "Two percent, with the onboarding included."
+        },
+        {
+          "s": "me",
+          "t": "Let me check with my manager. Maybe we could meet in the middle, three percent, if you commit to two years. It would be a... a reduction in the price if you sign for a longer time",
+          "w": "discount",
+          "a": ["discount", "reduction"]
+        },
+        {
+          "s": "other",
+          "t": "A multi-year discount, that is interesting."
+        },
+        {
+          "s": "me",
+          "t": "I'll put it in writing today."
+        },
+        {
+          "s": "other",
+          "t": "We also need your security report. Our auditors asked for it."
+        },
+        {
+          "s": "me",
+          "t": "Of course. I'll send the, uh... the certificate from the independent audit, the two-letter name and a number",
+          "w": "SOC 2",
+          "a": ["soc 2", "soc2", "soc two"]
+        },
+        {
+          "s": "other",
+          "t": "The SOC 2 report, yes. Please send it to Maya."
+        },
+        {
+          "s": "me",
+          "t": "Will do, tonight. Sorry, how is Biscuit, by the way? Dev, you mentioned your dog was ill."
+        },
+        {
+          "s": "other",
+          "t": "Much better, thanks for asking. He's back to chasing squirrels."
+        },
+        {
+          "s": "me",
+          "t": "Wonderful. Shall we agree to speak again on Friday?"
+        },
+        {
+          "s": "other",
+          "t": "Friday works. Let's say ten o'clock."
+        },
+        {
+          "s": "me",
+          "t": "Ten on Friday. Thank you both."
+        }
+      ]
+    },
+    {
+      "id": "s08",
+      "type": "casual",
+      "split": "dev",
+      "title": "Catch-up with a friend (profile)",
+      "profile": true,
+      "lines": [
+        {
+          "s": "other",
+          "t": "Hey! It's been ages. How are you?"
+        },
+        {
+          "s": "me",
+          "t": "I'm good, thanks. Busy, but good. How about you?"
+        },
+        {
+          "s": "other",
+          "t": "Same. The kids are exhausting. How's your family?"
+        },
+        {
+          "s": "me",
+          "t": "Everyone's well. Priya's started a new job, she's loving it."
+        },
+        {
+          "s": "other",
+          "t": "Oh, that's great news. Is she still living near you?"
+        },
+        {
+          "s": "me",
+          "t": "Ten minutes away. She comes for dinner on Sundays."
+        },
+        {
+          "s": "other",
+          "t": "Lovely. And the dog? I remember you had a puppy."
+        },
+        {
+          "s": "me",
+          "t": "Oh, he's not a puppy anymore! He's four. I take him out every morning, he's called... the little brown one, the one who loves chasing balls",
+          "w": "Biscuit",
+          "a": ["biscuit"]
+        },
+        {
+          "s": "other",
+          "t": "Biscuit, that's right. I love that name."
+        },
+        {
+          "s": "me",
+          "t": "He eats too many of them, that's the problem. The vet says he's a bit fat."
+        },
+        {
+          "s": "other",
+          "t": "Ha! Where do you walk him?"
+        },
+        {
+          "s": "me",
+          "t": "Usually in the big green... the park near the lake, where the ducks are, we go every Sunday",
+          "w": "Victoria Park",
+          "a": ["victoria park"]
+        },
+        {
+          "s": "other",
+          "t": "Victoria Park, of course. Is the café still open?"
+        },
+        {
+          "s": "me",
+          "t": "It is. Their coffee has improved, honestly."
+        },
+        {
+          "s": "other",
+          "t": "Good to know. Do you still play snooker?"
+        },
+        {
+          "s": "me",
+          "t": "Every Thursday. I'm getting better, I think. Last week I made a... my highest break ever, forty-three",
+          "w": "break",
+          "a": ["break", "break of forty-three"],
+          "recover": true
+        },
+        {
+          "s": "other",
+          "t": "Forty-three! You're showing off."
+        },
+        {
+          "s": "me",
+          "t": "A little. What about you, still gardening?"
+        },
+        {
+          "s": "other",
+          "t": "Yes, the tomatoes are huge this year. Come and take some."
+        },
+        {
+          "s": "me",
+          "t": "I'd love to. I need to pop to the... the shop on the corner for milk first, the one we always use",
+          "w": "Corner Mart",
+          "a": ["corner mart"]
+        },
+        {
+          "s": "other",
+          "t": "Corner Mart? Is it still run by the same family?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, the same lovely people. They know everyone's name."
+        },
+        {
+          "s": "other",
+          "t": "That's rare these days."
+        },
+        {
+          "s": "me",
+          "t": "It is. Anyway, shall we meet on the weekend?"
+        },
+        {
+          "s": "other",
+          "t": "Saturday afternoon? I'll bring the tomatoes."
+        },
+        {
+          "s": "me",
+          "t": "Perfect. See you then."
+        }
+      ]
+    },
+    {
+      "id": "s09",
+      "type": "casual",
+      "split": "holdout",
+      "title": "Chat about a holiday and a check-up (profile)",
+      "profile": true,
+      "lines": [
+        {
+          "s": "other",
+          "t": "So where are you going this summer?"
+        },
+        {
+          "s": "me",
+          "t": "Portugal, for ten days. We've booked a little flat near the beach."
+        },
+        {
+          "s": "other",
+          "t": "Lovely. Have you sorted out your documents?"
+        },
+        {
+          "s": "me",
+          "t": "Mostly. I almost forgot, my... the little book with my photo in it, it expires in July",
+          "w": "passport",
+          "a": ["passport"]
+        },
+        {
+          "s": "other",
+          "t": "Better renew it soon, it can take weeks."
+        },
+        {
+          "s": "me",
+          "t": "I'll do it tomorrow. And I should see my doctor before we go. Dr Okafor is always so booked."
+        },
+        {
+          "s": "other",
+          "t": "Ring first thing in the morning."
+        },
+        {
+          "s": "me",
+          "t": "Good idea. I need a check-up and something for my... what's it called, the cream for the sun",
+          "w": "sunscreen",
+          "a": ["sunscreen", "sun cream", "suncream", "sun block"]
+        },
+        {
+          "s": "other",
+          "t": "Sun cream, you can buy that anywhere."
+        },
+        {
+          "s": "me",
+          "t": "True. Priya says the water is freezing there, though."
+        },
+        {
+          "s": "other",
+          "t": "Really? I thought it was warm."
+        },
+        {
+          "s": "me",
+          "t": "Not in the morning, apparently. It's the cold current from the ocean."
+        },
+        {
+          "s": "other",
+          "t": "Hm. Bring a wetsuit then."
+        },
+        {
+          "s": "me",
+          "t": "I don't own one. We'll just swim in the afternoons."
+        },
+        {
+          "s": "other",
+          "t": "Are you taking the dog?"
+        },
+        {
+          "s": "me",
+          "t": "No, he's staying with my sister. He doesn't like... the metal box with a handle you put the clothes in when you travel",
+          "w": "suitcase",
+          "a": ["suitcase", "luggage", "bag", "case"]
+        },
+        {
+          "s": "other",
+          "t": "Ha, suitcases. They remind him you're leaving."
+        },
+        {
+          "s": "me",
+          "t": "Exactly. He sits in the hall and stares at me."
+        },
+        {
+          "s": "other",
+          "t": "Poor Biscuit."
+        },
+        {
+          "s": "me",
+          "t": "I know. Anyway, send me your recommendations for restaurants."
+        },
+        {
+          "s": "other",
+          "t": "I'll write them down tonight."
+        }
+      ]
+    },
+    {
+      "id": "s10",
+      "type": "non_native",
+      "split": "dev",
+      "title": "Booking and returning goods (non-native phrasing)",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Good afternoon, Riverside Hotel, how can I help?"
+        },
+        {
+          "s": "me",
+          "t": "Good afternoon. I want to make a reservation for next weekend, please."
+        },
+        {
+          "s": "other",
+          "t": "Certainly. How many nights?"
+        },
+        {
+          "s": "me",
+          "t": "Two nights, Friday and Saturday. For two persons."
+        },
+        {
+          "s": "other",
+          "t": "We have a double room for ninety pounds a night."
+        },
+        {
+          "s": "me",
+          "t": "That is good price. Do I need to pay something now? How you say, the money you give first, before you come",
+          "w": "deposit",
+          "a": ["deposit", "advance payment", "down payment"]
+        },
+        {
+          "s": "other",
+          "t": "Yes, a deposit of thirty pounds, to confirm."
+        },
+        {
+          "s": "me",
+          "t": "Okay, I pay by card. Can you also write my name correctly? It is Wojciech, W, O, J, C, I, E, C, H."
+        },
+        {
+          "s": "other",
+          "t": "Got it. And a contact number?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, it is zero seven nine, one two..., sorry, I will say again slowly."
+        },
+        {
+          "s": "other",
+          "t": "Take your time."
+        },
+        {
+          "s": "me",
+          "t": "Zero seven nine one two three four five six seven."
+        },
+        {
+          "s": "other",
+          "t": "Thank you. Is there anything else?"
+        },
+        {
+          "s": "me",
+          "t": "Yes. Last month I bought a lamp in your shop. It was broken when it arrive. I want my money back, I have the... the paper from the shop with the price, in my bag",
+          "w": "receipt",
+          "a": ["receipt", "invoice", "proof of purchase"]
+        },
+        {
+          "s": "other",
+          "t": "You'd need to bring the receipt to the shop. Could you do that on Friday?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, I bring it on Friday. And they give me my money back, yes? The... the return of the money, not another lamp",
+          "w": "refund",
+          "a": ["refund", "money back"]
+        },
+        {
+          "s": "other",
+          "t": "A refund, yes, if the lamp is faulty."
+        },
+        {
+          "s": "me",
+          "t": "Good, thank you. One more question. Is breakfast included?"
+        },
+        {
+          "s": "other",
+          "t": "It's included, from seven to ten."
+        },
+        {
+          "s": "me",
+          "t": "Perfect. And is there a place to leave the car? A place where cars stay when people sleep in the hotel",
+          "w": "car park",
+          "a": ["car park", "parking", "parking lot", "garage"]
+        },
+        {
+          "s": "other",
+          "t": "Yes, we have a car park behind the building, it's free for guests."
+        },
+        {
+          "s": "me",
+          "t": "Wonderful. I think that is everything. Thank you very much for your help."
+        },
+        {
+          "s": "other",
+          "t": "You're welcome. We look forward to seeing you."
+        },
+        {
+          "s": "me",
+          "t": "See you on Friday. Goodbye."
+        }
+      ]
+    },
+    {
+      "id": "s11",
+      "type": "stammer",
+      "split": "dev",
+      "title": "Ordering and errands (repeated starts, written plainly)",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Hello, how can I help you?"
+        },
+        {
+          "s": "me",
+          "t": "Hello. I'd like to order a... a... a c-... a coffee, please",
+          "w": "coffee",
+          "a": ["coffee"],
+          "recover": true
+        },
+        {
+          "s": "other",
+          "t": "Of course. What size?"
+        },
+        {
+          "s": "me",
+          "t": "A medium, please. And one of those... the... the round sweet thing with a hole in the middle, covered in sugar",
+          "w": "doughnut",
+          "a": ["doughnut", "donut"]
+        },
+        {
+          "s": "other",
+          "t": "A doughnut, certainly. Anything else?"
+        },
+        {
+          "s": "me",
+          "t": "No, that's all. How much is it?"
+        },
+        {
+          "s": "other",
+          "t": "Four pounds fifty."
+        },
+        {
+          "s": "me",
+          "t": "Here you are. Keep the change."
+        },
+        {
+          "s": "other",
+          "t": "Thank you. Have a lovely day."
+        },
+        {
+          "s": "me",
+          "t": "You too. Oh, I almost forgot. Could I have a b-... a b-... the thing to carry it in, made of paper, with handles",
+          "w": "bag",
+          "a": ["bag", "paper bag", "carrier bag"]
+        },
+        {
+          "s": "other",
+          "t": "Of course, here you go."
+        },
+        {
+          "s": "me",
+          "t": "Thank you. I'm going to the... the b-... the place where you post parcels, next door, the one with the red sign",
+          "w": "post office",
+          "a": ["post office", "post"]
+        },
+        {
+          "s": "other",
+          "t": "Yes, that's the post office. It opens at nine."
+        },
+        {
+          "s": "me",
+          "t": "Good, it's nearly nine. Thanks again."
+        },
+        {
+          "s": "other",
+          "t": "Bye now."
+        },
+        {
+          "s": "me",
+          "t": "Hi, I'd like to send this to Manchester."
+        },
+        {
+          "s": "other",
+          "t": "Certainly. Would you like it tracked?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, please. And can I get the... the little c-... the paper with the number I can check later, to see where it is",
+          "w": "tracking number",
+          "a": ["tracking number", "receipt", "tracking", "reference number"]
+        },
+        {
+          "s": "other",
+          "t": "Here's the receipt, with the tracking number on it."
+        },
+        {
+          "s": "me",
+          "t": "Thank you very much."
+        },
+        {
+          "s": "other",
+          "t": "It'll arrive in two days."
+        },
+        {
+          "s": "me",
+          "t": "That's great. Goodbye."
+        },
+        {
+          "s": "other",
+          "t": "Goodbye."
+        }
+      ]
+    },
+    {
+      "id": "s12",
+      "type": "other_stalls",
+      "split": "dev",
+      "title": "Helping a colleague who keeps searching for words (the other speaker stalls)",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Hi Sam, thanks for calling back. I need help with the, um... the thing for the report, the chart with the bars."
+        },
+        {
+          "s": "me",
+          "t": "A bar chart? Sure, I can show you."
+        },
+        {
+          "s": "other",
+          "t": "Yes. And the... what's it called... the part at the bottom, where it says what each bar is."
+        },
+        {
+          "s": "me",
+          "t": "The axis labels. You click on the chart and choose the axis options."
+        },
+        {
+          "s": "other",
+          "t": "Okay. I'm looking for it. It's in the... the menu on the right."
+        },
+        {
+          "s": "me",
+          "t": "Take your time. It's the third icon down."
+        },
+        {
+          "s": "other",
+          "t": "Found it. Thanks. Now I also want to send it to the, uh... to Dana, in the, um... in finance."
+        },
+        {
+          "s": "me",
+          "t": "Sure. Do you want me to wait while you do it?"
+        },
+        {
+          "s": "other",
+          "t": "No, no. I can do it. It's just I always forget the... the way of sending the file, you know, the long name."
+        },
+        {
+          "s": "me",
+          "t": "You mean the shared link. Click share, then copy link."
+        },
+        {
+          "s": "other",
+          "t": "Right. The link. Thanks Sam."
+        },
+        {
+          "s": "me",
+          "t": "No problem. How's the rest of the report going?"
+        },
+        {
+          "s": "other",
+          "t": "Slow. I have the numbers but not the... the explanation of why they went down."
+        },
+        {
+          "s": "me",
+          "t": "Do you want to bounce ideas? I think the main reason was the delay in the new price list, the one that was supposed to be ready in March, the... the list of what every product costs",
+          "w": "price list",
+          "a": ["price list", "pricing", "price sheet", "tariff"]
+        },
+        {
+          "s": "other",
+          "t": "Ah, yes. The price list was late. I'll mention that."
+        },
+        {
+          "s": "me",
+          "t": "And the supplier problem too. I can send you my notes."
+        },
+        {
+          "s": "other",
+          "t": "That would be great. I also need, um... the person who, uh... who is in charge of the, the budget."
+        },
+        {
+          "s": "me",
+          "t": "That's Marta. She's in the office on Tuesdays."
+        },
+        {
+          "s": "other",
+          "t": "Good. I'll ask her. Thanks."
+        },
+        {
+          "s": "me",
+          "t": "Anytime. Anything else?"
+        },
+        {
+          "s": "other",
+          "t": "No. Well, actually, yes. How do I, um... make the, the numbers smaller. Not smaller, I mean, the... less digits, after the dot."
+        },
+        {
+          "s": "me",
+          "t": "Right-click and choose the number format, then reduce the decimals."
+        },
+        {
+          "s": "other",
+          "t": "Got it. Thanks, you're a lifesaver."
+        },
+        {
+          "s": "me",
+          "t": "Happy to help. Send it over when you're done."
+        }
+      ]
+    },
+    {
+      "id": "s13",
+      "type": "other_stalls",
+      "split": "holdout",
+      "title": "Support call where the customer stalls (the other speaker stalls)",
+      "lines": [
+        {
+          "s": "me",
+          "t": "Thank you for calling Helpline, my name is Sam. How can I help?"
+        },
+        {
+          "s": "other",
+          "t": "Hello. Yes. I have a problem with my, um... my router. The, uh... the box with the lights."
+        },
+        {
+          "s": "me",
+          "t": "I'm sorry to hear that. What is it doing?"
+        },
+        {
+          "s": "other",
+          "t": "It's, um... the light is red, and before it was... what do you call it... green."
+        },
+        {
+          "s": "me",
+          "t": "A red light usually means there's no internet. Let's try restarting it. Can you unplug it?"
+        },
+        {
+          "s": "other",
+          "t": "Okay. I'm unplugging the, the... the cable at the back. Which one is it?"
+        },
+        {
+          "s": "me",
+          "t": "The power cable, the black one. Count to thirty and plug it back in."
+        },
+        {
+          "s": "other",
+          "t": "One, two, three... okay, that's thirty. It's flashing now, the, um... the orange light."
+        },
+        {
+          "s": "me",
+          "t": "That's normal while it starts. Give it two minutes."
+        },
+        {
+          "s": "other",
+          "t": "Okay. While we wait, I wanted to ask about my, uh... my bill. There's something on it, the... the extra charge."
+        },
+        {
+          "s": "me",
+          "t": "Let me look at your account. What's your name and postcode?"
+        },
+        {
+          "s": "other",
+          "t": "It's Gerald, and the postcode is... um... let me find it... it's on the, the letter."
+        },
+        {
+          "s": "me",
+          "t": "No rush."
+        },
+        {
+          "s": "other",
+          "t": "Here it is. Bravo Delta, four, five, three Echo Tango."
+        },
+        {
+          "s": "me",
+          "t": "Thank you Gerald. I can see a charge of eight pounds for a late payment."
+        },
+        {
+          "s": "other",
+          "t": "Oh. I thought I paid on, um... the, the date at the end of the month."
+        },
+        {
+          "s": "me",
+          "t": "It was paid two days after. I can remove it as a one-off."
+        },
+        {
+          "s": "other",
+          "t": "Oh, that's very kind."
+        },
+        {
+          "s": "me",
+          "t": "Is the light green now?"
+        },
+        {
+          "s": "other",
+          "t": "Yes! It's, um... it says green. Brilliant."
+        },
+        {
+          "s": "me",
+          "t": "Wonderful. Is there anything else I can help with?"
+        },
+        {
+          "s": "other",
+          "t": "No. Thank you, you've been very patient."
+        },
+        {
+          "s": "me",
+          "t": "My pleasure. Have a good evening."
+        }
+      ]
+    },
+    {
+      "id": "s14",
+      "type": "long_memory",
+      "split": "dev",
+      "title": "Long planning call: words needed from ten minutes earlier",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Okay, thanks for joining. Today I want to plan the pilot of the cold storage project."
+        },
+        {
+          "s": "me",
+          "t": "Good. Let me start with what we agreed last week. The supplier for the refrigerated trucks is Brightstone Logistics."
+        },
+        {
+          "s": "other",
+          "t": "Right, Brightstone. They quoted us ninety thousand for the first six months."
+        },
+        {
+          "s": "me",
+          "t": "And the scientific lead on the customer side is Dr Nakamura. She wants weekly updates."
+        },
+        {
+          "s": "other",
+          "t": "Noted. And the first delivery goes to Rotterdam, correct?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, Rotterdam, in the second week of May."
+        },
+        {
+          "s": "other",
+          "t": "Good. Now let's talk about staffing. Who is on the project?"
+        },
+        {
+          "s": "me",
+          "t": "Three drivers, one coordinator, and me for the first month."
+        },
+        {
+          "s": "other",
+          "t": "Is that enough for the first phase?"
+        },
+        {
+          "s": "me",
+          "t": "I think so. The drivers have all done similar routes before, and the coordinator is experienced."
+        },
+        {
+          "s": "other",
+          "t": "What about training?"
+        },
+        {
+          "s": "me",
+          "t": "A one day course on handling temperature-sensitive goods. We run it in April."
+        },
+        {
+          "s": "other",
+          "t": "Okay. What about the insurance? The goods are valuable."
+        },
+        {
+          "s": "me",
+          "t": "I asked the broker. We need a specific policy for goods in transit, and it adds about four percent to the cost."
+        },
+        {
+          "s": "other",
+          "t": "That's acceptable. Next, the equipment. Do the trucks have sensors?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, each one has a thermometer that reports every five minutes to our dashboard."
+        },
+        {
+          "s": "other",
+          "t": "What happens if the temperature goes out of range?"
+        },
+        {
+          "s": "me",
+          "t": "An alert goes to the coordinator's phone, and the driver is called. We wrote a procedure for it."
+        },
+        {
+          "s": "other",
+          "t": "Good. Do you want to review that procedure together?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, on Thursday. I'll bring a printed copy."
+        },
+        {
+          "s": "other",
+          "t": "Fine. Let's talk about the schedule. Week one is preparation."
+        },
+        {
+          "s": "me",
+          "t": "Right. Week two is the trial run with an empty truck, to check the route and the timings."
+        },
+        {
+          "s": "other",
+          "t": "And week three?"
+        },
+        {
+          "s": "me",
+          "t": "Week three, the first real load, a small one. Then we scale up if all goes well."
+        },
+        {
+          "s": "other",
+          "t": "What's the biggest risk?"
+        },
+        {
+          "s": "me",
+          "t": "Delays at the border and customs paperwork. We've had problems before."
+        },
+        {
+          "s": "other",
+          "t": "Can we reduce that?"
+        },
+        {
+          "s": "me",
+          "t": "We can hire a customs agent who knows the port. It costs a bit more, but it saves days."
+        },
+        {
+          "s": "other",
+          "t": "I like that. Let's include it."
+        },
+        {
+          "s": "me",
+          "t": "I'll add it to the budget. That brings us to about ninety-five thousand."
+        },
+        {
+          "s": "other",
+          "t": "Hm, that's a bit over. Where can we save?"
+        },
+        {
+          "s": "me",
+          "t": "The training could be shorter, or we could use fewer sensors on the first trucks."
+        },
+        {
+          "s": "other",
+          "t": "I'd rather not cut safety. Let's discuss the budget with finance."
+        },
+        {
+          "s": "me",
+          "t": "Agreed. I'll write a short note for them."
+        },
+        {
+          "s": "other",
+          "t": "Good. Now, communication. Who talks to the customer?"
+        },
+        {
+          "s": "me",
+          "t": "I'd like to be the single contact for the first month, then hand over to the coordinator."
+        },
+        {
+          "s": "other",
+          "t": "Okay. Do you have the contact details for the lead?"
+        },
+        {
+          "s": "me",
+          "t": "I'll send them to you. I need to write to the... the person at the customer side who wants the weekly updates, the scientist we talked about at the start",
+          "w": "Dr Nakamura",
+          "a": ["dr nakamura", "nakamura", "doctor nakamura"]
+        },
+        {
+          "s": "other",
+          "t": "Nakamura, right. Let's invite her to the kickoff."
+        },
+        {
+          "s": "me",
+          "t": "Good idea. I'll also confirm the booking of the trucks with the... the company we agreed on, the one that supplies the refrigerated vehicles",
+          "w": "Brightstone",
+          "a": ["brightstone", "brightstone logistics"]
+        },
+        {
+          "s": "other",
+          "t": "Brightstone. Make sure the contract has a penalty for late delivery."
+        },
+        {
+          "s": "me",
+          "t": "I'll ask the lawyers. And the first destination, the... the big port city in the Netherlands, we need to book the warehouse slot there",
+          "w": "Rotterdam",
+          "a": ["rotterdam"]
+        },
+        {
+          "s": "other",
+          "t": "Yes, Rotterdam. Book it for the day before the first truck arrives."
+        },
+        {
+          "s": "me",
+          "t": "Will do. Anything else for today?"
+        },
+        {
+          "s": "other",
+          "t": "No, I think we've covered it. Send me a summary."
+        },
+        {
+          "s": "me",
+          "t": "I'll send it this afternoon. Thanks everyone."
+        }
+      ]
+    },
+    {
+      "id": "s15",
+      "type": "fast",
+      "split": "dev",
+      "title": "Fast talking, short pauses (sensitivity set to the fastest)",
+      "wordMs": 160,
+      "stallMs": 1100,
+      "settings": {
+        "pauseMs": 900
+      },
+      "lines": [
+        {
+          "s": "other",
+          "t": "Quick sync, five minutes. Where are we with the launch?"
+        },
+        {
+          "s": "me",
+          "t": "Nearly there. Design is done, copy is done, we're waiting on the last legal check."
+        },
+        {
+          "s": "other",
+          "t": "Who's doing the legal check?"
+        },
+        {
+          "s": "me",
+          "t": "Hanna, she said Wednesday. I'm chasing her today."
+        },
+        {
+          "s": "other",
+          "t": "Good. What about the press list?"
+        },
+        {
+          "s": "me",
+          "t": "Ready. Forty journalists, mostly tech and business. I sent the draft to marketing."
+        },
+        {
+          "s": "other",
+          "t": "Did they have comments?"
+        },
+        {
+          "s": "me",
+          "t": "A few small ones. They want a bigger quote from the CEO, a stronger... the line at the top that summarises the news in one sentence",
+          "w": "headline",
+          "a": ["headline", "title", "lead"]
+        },
+        {
+          "s": "other",
+          "t": "A stronger headline, fine. Can you rewrite?"
+        },
+        {
+          "s": "me",
+          "t": "Already did. Also the timing. We should send it out at nine, not at noon."
+        },
+        {
+          "s": "other",
+          "t": "Why nine?"
+        },
+        {
+          "s": "me",
+          "t": "Journalists read in the morning. And the competitor announces at noon."
+        },
+        {
+          "s": "other",
+          "t": "Good point. And the website?"
+        },
+        {
+          "s": "me",
+          "t": "The landing page is live in staging. We need someone to check it on phones, the small... the screens people hold, not the computers",
+          "w": "mobile",
+          "a": ["mobile", "mobile phones", "smartphones", "phones"]
+        },
+        {
+          "s": "other",
+          "t": "Mobile, yes. I'll ask Ben."
+        },
+        {
+          "s": "me",
+          "t": "Thanks. Another thing, the form on the page sends emails to the old address."
+        },
+        {
+          "s": "other",
+          "t": "Can you fix that today?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, it's one line. I'll also add the tracking, the... the code that counts how many people visit and where they come from",
+          "w": "analytics",
+          "a": ["analytics", "tracking", "tracking code"]
+        },
+        {
+          "s": "other",
+          "t": "Analytics, good. Anything else?"
+        },
+        {
+          "s": "me",
+          "t": "No, that's it from me."
+        },
+        {
+          "s": "other",
+          "t": "Great. Thanks, talk tomorrow."
+        },
+        {
+          "s": "me",
+          "t": "Bye."
+        }
+      ]
+    }
+  ]
+}

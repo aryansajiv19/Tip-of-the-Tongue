@@ -592,6 +592,83 @@ describe('session pipeline', () => {
     });
   });
 
+  it('gives the guesser the whole recent call, not just the last few sentences', async () => {
+    const guess = vi.fn<Guesser>(mockGuesser);
+    const { session, say } = setup(guess);
+    say('Brightstone is our supplier');
+    const filler = Array.from({ length: 300 }, (_, i) => `word${i}`).join(' ');
+    say(filler);
+    say('I need to go to the the place where you get medicine');
+    await vi.advanceTimersByTimeAsync(2000);
+    const conversation = guess.mock.calls.at(-1)?.[0].conversation ?? '';
+    expect(conversation).toContain('Brightstone');
+    expect(conversation).toContain('medicine');
+    session.close();
+  });
+
+  it('marks pauses between words in what the guesser reads, but not at the end', async () => {
+    const guess = vi.fn<Guesser>(mockGuesser);
+    const { session, say } = setup(guess);
+    say('I need to go to the');
+    vi.advanceTimersByTime(1500);
+    say('the place where you get medicine');
+    await vi.advanceTimersByTimeAsync(2500);
+    const input = guess.mock.calls.at(-1)?.[0];
+    expect(input?.stuckPhrase).toContain('to the … the place');
+    expect(input?.conversation).toContain('to the … the place');
+    expect(input?.stuckPhrase.endsWith('…')).toBe(false);
+    expect(input?.conversation.endsWith('…')).toBe(false);
+    session.close();
+  });
+
+  it('allows a better offer for the same stall after the user talked on past a wrong one', async () => {
+    let calls = 0;
+    const guess: Guesser = () => {
+      calls++;
+      const word = calls === 1 ? 'wrongword' : 'rightword';
+      return Promise.resolve({
+        candidates: [{ word, confidence: 0.9 }],
+        abstain: false,
+        latencyMs: 0,
+      });
+    };
+    const { session, events, say } = setup(guess);
+    say('I need to go to the');
+    await vi.advanceTimersByTimeAsync(2000);
+    const offered = () =>
+      events.flatMap((e) => (e.type === 'guess.offered' ? [e.candidates[0]?.word] : []));
+    expect(offered()).toEqual(['wrongword']);
+
+    // They ignore it and describe what they mean; a second stall follows within the cooldown.
+    say('the place where you get your tablets');
+    await vi.advanceTimersByTimeAsync(100);
+    say('from the man at the');
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(events.some((e) => e.type === 'guess.withdrawn')).toBe(true);
+    expect(offered()).toEqual(['wrongword', 'rightword']);
+    session.close();
+  });
+
+  it('does not offer the same word again for a while', async () => {
+    const guess: Guesser = () =>
+      Promise.resolve({
+        candidates: [{ word: 'hotfix', confidence: 0.9 }],
+        abstain: false,
+        latencyMs: 0,
+      });
+    const { session, events, say } = setup(guess);
+    const offers = () => events.filter((e) => e.type === 'guess.offered').length;
+    say('I would push a quick repair, an urgent fix, a');
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(offers()).toBe(1);
+    // Well past the 8 s cooldown, another pause; the old word must not come back.
+    vi.advanceTimersByTime(30_000);
+    say('so thanks everyone I will post my notes in the channel');
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(offers()).toBe(1);
+    session.close();
+  });
+
   it('uses the meeting brief in the guess', async () => {
     const guess = vi.fn(mockGuesser);
     const { session, say } = setup(guess);

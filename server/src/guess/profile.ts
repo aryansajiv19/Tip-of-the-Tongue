@@ -27,3 +27,19 @@ export function profileTermList(profile: Profile): string[] {
     ...profile.frequentlyLostWords,
   ];
 }
+
+// The profile as one line for the prompt, with what each word is ("dog Biscuit", "local shop Corner
+// Mart"), so the guesser can tell a person from a place and match a description to the right one.
+export function profileForPrompt(profile: Profile): string {
+  const named = (group: Record<string, string>) =>
+    Object.entries(group).map(([role, name]) => `${role} ${name}`);
+  return [
+    ...named(profile.people),
+    ...named(profile.pets),
+    ...named(profile.places),
+    ...(profile.hobbies.length > 0 ? [`hobbies ${profile.hobbies.join(', ')}`] : []),
+    ...(profile.frequentlyLostWords.length > 0
+      ? [`often forgets ${profile.frequentlyLostWords.join(', ')}`]
+      : []),
+  ].join('; ');
+}
