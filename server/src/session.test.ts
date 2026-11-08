@@ -546,7 +546,7 @@ describe('session pipeline', () => {
       expect(asked[0]?.signal?.aborted).toBe(true);
       finish();
       await vi.advanceTimersByTimeAsync(2000);
-      expect(types()).toEqual(['stuck.detected']); // no offer, no idle
+      expect(types()).toEqual(['stuck.detected', 'session.cleared']); // no offer, no idle
       expect(events.some((e) => e.type === 'guess.offered')).toBe(false);
       session.close();
     });
@@ -586,7 +586,7 @@ describe('session pipeline', () => {
       session.handle({ type: 'session.reset' });
       say('we need to talk about the');
       await vi.advanceTimersByTimeAsync(2500); // longer than the default pause, shorter than 4 s
-      expect(events).toEqual([]);
+      expect(events.map((e) => e.type)).toEqual(['session.cleared']);
       await vi.advanceTimersByTimeAsync(2000);
       expect(events.map((e) => e.type)).toContain('stuck.detected');
       expect(asked[0]?.brief).toContain('Northwind');
@@ -602,7 +602,7 @@ describe('session pipeline', () => {
       session.handle({ type: 'transcript.final', words: [old] });
       session.handle({ type: 'transcript.partial', words: [old] });
       await vi.advanceTimersByTimeAsync(3000);
-      expect(events).toEqual([]); // nothing left to be stuck on
+      expect(events.map((e) => e.type)).toEqual(['session.cleared']); // nothing left to be stuck on
       say('and then the');
       await vi.advanceTimersByTimeAsync(2000);
       expect(events.map((e) => e.type)).toContain('stuck.detected');
@@ -623,11 +623,21 @@ describe('session pipeline', () => {
       session.close();
     });
 
+    it('answers with session.cleared, after which nothing from the old conversation follows', async () => {
+      const { session, events, say } = setup();
+      say('I need to go to the the place where you get medicine');
+      session.handle({ type: 'session.reset' });
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(events.at(-1)?.type).toBe('session.cleared');
+      expect(events.filter((e) => e.type === 'session.cleared')).toHaveLength(1);
+      session.close();
+    });
+
     it('a reset with nothing going on is harmless', () => {
       const { session, events } = setup();
       session.handle({ type: 'session.reset' });
       session.handle({ type: 'session.reset' });
-      expect(events).toEqual([]);
+      expect(events).toEqual([{ type: 'session.cleared' }, { type: 'session.cleared' }]);
       session.close();
     });
   });

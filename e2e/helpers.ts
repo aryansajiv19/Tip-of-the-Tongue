@@ -23,7 +23,7 @@ export async function watchOffers(page: Page) {
     const w = window as unknown as { offerSeen: boolean };
     w.offerSeen = false;
     new MutationObserver(() => {
-      if (document.querySelector('aside')?.textContent?.includes('word you')) w.offerSeen = true;
+      if (document.querySelector('aside .card-primary')) w.offerSeen = true;
     }).observe(document.body, { subtree: true, childList: true, characterData: true });
   });
 }

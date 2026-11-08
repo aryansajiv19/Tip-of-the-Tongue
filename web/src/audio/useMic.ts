@@ -10,7 +10,7 @@ interface Capture {
 }
 
 // Captures the mic as 16 kHz PCM chunks (about 100 ms each) for server-side recognition.
-export function useMic(onChunk: (pcm: Int16Array<ArrayBuffer>) => void) {
+export function useMic(onChunk: (pcm: Int16Array<ArrayBuffer>) => void, deviceId: string | null) {
   const [capturing, setCapturing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const capture = useRef<Capture | null>(null);
@@ -39,7 +39,13 @@ export function useMic(onChunk: (pcm: Int16Array<ArrayBuffer>) => void) {
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          // ideal, not exact: a microphone that was unplugged falls back to the default one.
+          ...(deviceId ? { deviceId: { ideal: deviceId } } : {}),
+        },
       });
       const ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
       await ctx.audioWorklet.addModule('/pcm-worklet.js');
@@ -62,7 +68,7 @@ export function useMic(onChunk: (pcm: Int16Array<ArrayBuffer>) => void) {
           : 'Could not start the microphone. Check that one is connected, then press Start.',
       );
     }
-  }, []);
+  }, [deviceId]);
 
   useEffect(() => stop, [stop]);
 

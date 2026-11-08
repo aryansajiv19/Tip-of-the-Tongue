@@ -318,6 +318,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     voice = undefined;
     lastDetector = '';
     resetAtMs = now();
+    send({ type: 'session.cleared' });
   }
 
   const afterReset = (words: Word[]) => words.filter((w) => w.endMs > resetAtMs);

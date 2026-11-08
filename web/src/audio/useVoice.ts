@@ -7,7 +7,11 @@ const FRAME_MS = 50; // 20 readings a second
 // stops making sound. It opens its own stream so it also works when the browser does the speech
 // recognition (which keeps its microphone to itself). If the microphone can't be opened it
 // stays quiet and the server falls back to words only.
-export function useVoice(active: boolean, onChange: (voiced: boolean, atMs: number) => void) {
+export function useVoice(
+  active: boolean,
+  onChange: (voiced: boolean, atMs: number) => void,
+  deviceId: string | null,
+) {
   const handler = useRef(onChange);
   useEffect(() => {
     handler.current = onChange;
@@ -21,7 +25,12 @@ export function useVoice(active: boolean, onChange: (voiced: boolean, atMs: numb
     void (async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: false,
+            autoGainControl: false,
+            ...(deviceId ? { deviceId: { ideal: deviceId } } : {}),
+          },
         });
         const ctx = new AudioContext();
         if (cancelled) {
@@ -60,5 +69,5 @@ export function useVoice(active: boolean, onChange: (voiced: boolean, atMs: numb
       cancelled = true;
       stop();
     };
-  }, [active]);
+  }, [active, deviceId]);
 }

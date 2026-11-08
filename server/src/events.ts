@@ -97,6 +97,9 @@ export type ServerEvent =
   // A stall was confirmed but no suggestion followed (not confident enough, or the speaker went
   // on): whatever the page shows for "looking for the word" can stop.
   | { type: 'guess.idle' }
+  // Answers session.reset. Everything the server sent before this belongs to the old
+  // conversation; the page ignores it.
+  | { type: 'session.cleared' }
   // The guesser is failing (ok: false) or working again (ok: true). Sent only on a change.
   | { type: 'guesser.status'; ok: boolean }
   // Only while the client has turned debug on.

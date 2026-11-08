@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Word } from '../../../server/src/events';
-import { applyResults, emptySpeech, flushSpeech, type SpeechState } from './results';
+import { applyResults, emptySpeech, flushSpeech, resetSpeech, type SpeechState } from './results';
 import { isStale } from './stampWords';
 
 // The Web Speech API is not in TypeScript's DOM types, so declare the little we use.
@@ -197,5 +197,10 @@ export function useSpeech({ onPartial, onFinal, debug = false }: Handlers) {
     [],
   );
 
-  return { listening, error, start, stop, trace: () => trace.current };
+  // A new conversation: words heard so far are not sent again.
+  const reset = useCallback(() => {
+    speech.current = resetSpeech(speech.current);
+  }, []);
+
+  return { listening, error, start, stop, reset, trace: () => trace.current };
 }

@@ -8,7 +8,7 @@
   --card-border: rgb(255 255 255 / 0.1);
   --ink: #f1f4fa;
   --muted: #aeb7c9;
-  --accent: #8fb0ff;
+  --page-accent: #8fb0ff;
   --on-accent: #0b1020;
   --field: #0f1320;
   --field-border: rgb(255 255 255 / 0.28);
@@ -25,7 +25,7 @@
     --card-border: rgb(15 23 42 / 0.12);
     --ink: #111827;
     --muted: #4b5568;
-    --accent: #2a55d6;
+    --page-accent: #2a55d6;
     --on-accent: #ffffff;
     --field: #ffffff;
     --field-border: rgb(15 23 42 / 0.4);
@@ -164,11 +164,11 @@ h2 {
   padding: 12px 36px;
   font-size: 1.25rem;
   color: var(--on-accent);
-  background: var(--accent);
+  background: var(--page-accent);
   border-color: transparent;
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent);
+  background: var(--page-accent);
   filter: brightness(1.08);
 }
 .btn-small {
@@ -278,7 +278,7 @@ legend {
 }
 .segment input:checked + span {
   color: var(--on-accent);
-  background: var(--accent);
+  background: var(--page-accent);
   font-weight: 600;
 }
 .hint {
