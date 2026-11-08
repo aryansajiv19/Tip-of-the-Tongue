@@ -58,6 +58,10 @@ Defined once in `server/src/events.ts`. Times are epoch ms.
   - Speculative guessing: after `SPECULATE_AFTER_MS` (300) of silence the early signal starts the guess in the background. If the user speaks again first, the result is dropped and the call aborted. When the stall is confirmed, a result already in hand is gated and offered at once; one still in flight is offered the moment it lands. The gate still uses the words said since the stall marker, so self-recovery suppresses it. The cost is one extra Claude call per pause that does not become a stall; the server logs `speculated`/`discarded` counts and `stallToOfferMs`. `SPECULATE_AFTER_MS=0` turns it off.
   - The gate is given the words said after `sinceMs` (the stall marker), not after the final silence, so a word the user has already said is never offered back.
 
+## Overlay and desktop app
+
+The page is a control pill (pause/resume, a five-bar mic waveform, a listening timer, the mode "Everyday" or "Meeting" when a brief is loaded, keycap hints, New conversation) with the suggestion card under it. `app/` is an Electron shell around that same page: a frameless, transparent, always-on-top window at the top right of the active screen (16 px margin, re-placed when displays change), no taskbar or Dock icon, never focused when shown, and deliberately not content-protected so it appears in screenshots and screen sharing. The main process starts the server and the Vite dev server as child processes and stops them on quit, registers the global shortcuts (Cmd/Ctrl+\\ show/hide, Cmd/Ctrl+Enter manual trigger), owns the tray menu, and sizes the window to the page. The page and the main process talk over a small preload bridge (`window.tott`): commands in, window height and listening state out. Window placement is pure code in `app/src/placement.ts`. In a browser the page runs the same shortcuts itself.
+
 ## Key decisions
 
 - No training: prompting + rules, measured by the eval set.
