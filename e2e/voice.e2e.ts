@@ -45,7 +45,7 @@ test('sends voice.activity only when sound starts and stops, back-dated to the c
   await installToneMic(page);
   await installFakeSpeech(page);
   const sent = await fakeServer(page);
-  await page.goto('/');
+  await page.goto('/?debug=1');
   await start(page);
   await page.waitForTimeout(600);
   expect(count(sent, 'voice.activity')).toBe(0); // silence is not an event
@@ -70,7 +70,7 @@ test('a short blip of sound is ignored', async ({ page }) => {
   await installToneMic(page);
   await installFakeSpeech(page);
   const sent = await fakeServer(page);
-  await page.goto('/');
+  await page.goto('/?debug=1');
   await start(page);
   await page.waitForTimeout(400);
   await tone(page, true);
@@ -84,7 +84,7 @@ test('pausing while sound is going on tells the server it stopped', async ({ pag
   await installToneMic(page);
   await installFakeSpeech(page);
   const sent = await fakeServer(page);
-  await page.goto('/');
+  await page.goto('/?debug=1');
   await start(page);
   await page.waitForTimeout(400);
   await tone(page, true);
@@ -100,7 +100,7 @@ test('Space asks for a word, but not inside a text field or when not listening',
   await installToneMic(page);
   await installFakeSpeech(page);
   const sent = await fakeServer(page);
-  await page.goto('/');
+  await page.goto('/?debug=1');
 
   await page.locator('body').press('Space');
   expect(count(sent, 'stuck.manual')).toBe(0); // not listening yet

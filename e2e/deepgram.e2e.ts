@@ -36,7 +36,7 @@ test('streams 100 ms PCM chunks as binary frames when the server does the recogn
   await installFakeMic(page);
   await installFakeSpeech(page);
   const { audio, server } = await fakeServer(page);
-  await page.goto('/');
+  await page.goto('/?debug=1');
   await expect(status(page)).toHaveText('Server: connected');
   server.say({ type: 'session.ready', stt: 'deepgram' });
 
@@ -65,7 +65,7 @@ test('falls back to browser speech with a calm notice when the server switches',
   await installFakeMic(page);
   await installFakeSpeech(page);
   const { audio, server } = await fakeServer(page);
-  await page.goto('/');
+  await page.goto('/?debug=1');
   await expect(status(page)).toHaveText('Server: connected');
   server.say({ type: 'session.ready', stt: 'deepgram' });
   await page.getByRole('button', { name: 'Start listening' }).click();
@@ -87,7 +87,7 @@ test('shows the microphone-blocked message when capture is refused', async ({ pa
       Promise.reject(new DOMException('no', 'NotAllowedError'));
   });
   const { server } = await fakeServer(page);
-  await page.goto('/');
+  await page.goto('/?debug=1');
   await expect(status(page)).toHaveText('Server: connected');
   server.say({ type: 'session.ready', stt: 'deepgram' });
   await page.getByRole('button', { name: 'Start listening' }).click();

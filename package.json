@@ -8,7 +8,8 @@
   "workspaces": [
     "server",
     "web",
-    "eval"
+    "eval",
+    "app"
   ],
   "scripts": {
     "dev": "concurrently -n server,web -c blue,green \"npm run dev -w server\" \"npm run dev -w web\"",
@@ -19,7 +20,8 @@
     "build": "npm run build --workspaces",
     "e2e": "playwright test -c e2e/playwright.config.ts",
     "eval": "npm run eval -w eval --",
-    "e2e:live": "playwright test -c e2e/live/playwright.live.config.ts"
+    "e2e:live": "playwright test -c e2e/live/playwright.live.config.ts",
+    "app": "npm run start -w app"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

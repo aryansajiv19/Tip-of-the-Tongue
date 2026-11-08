@@ -97,7 +97,7 @@ test('watchdog restarts recognition after 20 s of silence', async ({ page }) => 
 test('shows "Listening paused" while the socket is down', async ({ page }) => {
   await installFakeSpeech(page);
   await page.routeWebSocket('**/ws', (ws) => void ws.close());
-  await page.goto('/');
+  await page.goto('/?debug=1');
   await start(page);
   await expect(page.getByText('Listening paused')).toBeVisible();
 });

@@ -16,6 +16,8 @@ npm install
 npm run dev      # server on :3000, web on http://localhost:5173
 ```
 
+**Desktop overlay (macOS menu-bar app):** `npm run app` starts the server and the web dev server and opens a small always-on-top overlay at the top right of the screen you are working on. It never takes focus, appears in screenshots and screen sharing, and has a tray icon (click to show or hide; right-click for Start/Pause, New conversation and Quit). Shortcuts: Cmd/Ctrl+\\ shows or hides it, Cmd/Ctrl+Enter asks for a word, Esc dismisses a suggestion. The tray icon is a placeholder (`app/assets/trayTemplate.png`). In a browser the same pill is fixed at the top right of the page; add `?debug=1` for developer tools (transcript, meeting brief, a no-mic test input, the debug panel).
+
 Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, and `npm run e2e` (Playwright, through the no-mic test input). `npm run format` rewrites files with Prettier.
 
 ### Optional keys (`.env`, see `.env.example`)

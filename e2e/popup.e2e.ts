@@ -38,16 +38,16 @@ test('the close button dismisses it', async ({ page }) => {
   await expect(offer(page)).toHaveText('');
 });
 
-test('it floats at the right edge, mid-height, and takes no space in the page', async ({
-  page,
-}) => {
+test('the card sits under the control pill at the top right', async ({ page }) => {
   await showOffer(page);
-  const box = await offer(page).locator('section').boundingBox();
+  const card = await offer(page).locator('section').boundingBox();
+  const pill = await page.getByRole('group', { name: 'Listening controls' }).boundingBox();
   const view = page.viewportSize();
-  expect(box && view).toBeTruthy();
-  if (!box || !view) return;
-  expect(box.x + box.width).toBeGreaterThan(view.width - 40);
-  expect(Math.abs(box.y + box.height / 2 - view.height / 2)).toBeLessThan(2);
+  expect(card && pill && view).toBeTruthy();
+  if (!card || !pill || !view) return;
+  expect(pill.x + pill.width).toBeCloseTo(view.width - 16, 0);
+  expect(card.y).toBeGreaterThanOrEqual(pill.y + pill.height);
+  expect(card.x + card.width).toBeCloseTo(view.width - 16, 0);
 });
 
 test('with reduced transparency the card is solid, with no blur', async ({ page }) => {

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { ClientEvent, ServerEvent, Word } from '../../server/src/events';
-import { DebugPanel } from './debug/DebugPanel';
 import { Offer } from './offer/Offer';
 import { offerReducer } from './offer/offerState';
 import { useManualKey } from './audio/useManualKey';
@@ -8,16 +7,14 @@ import { useMic } from './audio/useMic';
 import { useVoice } from './audio/useVoice';
 import { useSocket } from './socket/useSocket';
 import { speechSupported, useSpeech } from './speech/useSpeech';
-import { stampWords } from './speech/stampWords';
-import { TYPED_FINAL_DELAY_MS, typedSteps } from './speech/typedWords';
-import {
-  SENSITIVITIES,
-  SENSITIVITY_KEYS,
-  saveSensitivity,
-  savedSensitivity,
-  type Sensitivity,
-} from './settings/sensitivity';
-import './app.css';
+import { SENSITIVITIES, savedSensitivity, type Sensitivity } from './settings/sensitivity';
+import { ControlPill } from './ui/ControlPill';
+import { DevTools } from './ui/DevTools';
+import { desktop, useCommands } from './ui/desktop';
+import { levelStore } from './ui/levelStore';
+import { sessionMode } from './ui/sessionState';
+import { modifierLabel } from './ui/commands';
+import { useSessionClock } from './ui/useSessionClock';
 
 const MAX_WORDS = 60;
 const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
@@ -27,14 +24,11 @@ const text = (words: Word[]) => words.map((w) => w.text).join(' ');
 export function App() {
   const [offer, dispatch] = useReducer(offerReducer, null);
   const [heard, setHeard] = useState<string[]>([]);
+  const [visible, setVisible] = useState(true);
   const [partial, setPartial] = useState('');
-  const [brief, setBrief] = useState('');
   const [briefSent, setBriefSent] = useState<string | null>(null);
-  const [typed, setTyped] = useState('');
-  // null until the user chooses, so the server's own defaults apply until then.
-  const [sensitivity, setSensitivity] = useState<Sensitivity | null>(savedSensitivity);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
+  // The saved choice, or null so the server's own defaults apply. The settings popover changes it.
+  const [sensitivity] = useState<Sensitivity | null>(savedSensitivity);
   const [guesserDown, setGuesserDown] = useState(false);
 
   // Who recognises speech: the server (Deepgram, audio streamed from here) or this browser.
@@ -91,7 +85,11 @@ export function App() {
   const { start: startMic, stop: stopMic } = mic;
   const listening = stt === 'deepgram' ? mic.capturing : speech.listening;
   const error = stt === 'deepgram' ? mic.error : speech.error;
-  useVoice(listening, (voiced, atMs) => send({ type: 'voice.activity', voiced, atMs }));
+  useVoice(
+    listening,
+    (voiced, atMs) => send({ type: 'voice.activity', voiced, atMs }),
+    levelStore.set,
+  );
   useManualKey(listening, () => send({ type: 'stuck.manual' }));
   const canListen = stt === 'deepgram' || speechSupported;
 
@@ -143,172 +141,95 @@ export function App() {
     }
   }, [status, sensitivity, send]);
 
-  const changeSensitivity = (value: Sensitivity) => {
-    setSensitivity(value);
-    saveSensitivity(value);
-  };
-
   const clearOffer = useCallback(() => dispatch({ type: 'offer.clear' }), []);
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const clock = useSessionClock(listening);
+  const { reset: resetClock } = clock;
+  const newConversation = useCallback(() => {
+    resetClock();
+    setHeard([]);
+    setPartial('');
+    clearOffer();
+  }, [resetClock, clearOffer]);
 
-  // No-mic test: words arrive 300 ms apart, then ~1 s of silence, then a final (as Chrome does).
-  const playTyped = () => {
-    timers.current.forEach(clearTimeout);
-    let prev: Word[] = [];
-    const steps = typedSteps(typed);
-    const lastMs = steps.at(-1)?.delayMs ?? 0;
-    timers.current = steps.map(({ transcript, delayMs }) =>
-      setTimeout(() => {
-        prev = stampWords(prev, transcript, Date.now());
-        sendPartial(prev);
-      }, delayMs),
-    );
-    timers.current.push(setTimeout(() => sendFinal(prev), lastMs + TYPED_FINAL_DELAY_MS));
-    setTyped('');
-  };
+  useCommands((command) => {
+    if (command === 'toggle-visible') setVisible((v) => !v);
+    else if (command === 'toggle-listening') (listening ? pauseListening : startListening)();
+    else if (command === 'manual') {
+      if (listening) send({ type: 'stuck.manual' });
+    } else newConversation();
+  });
+
+  // Tell the desktop app whether the mic is live (for its tray menu), and how tall the overlay
+  // is, so its window fits the pill and the card.
+  useEffect(() => desktop?.report({ listening }), [listening]);
+  const overlay = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = overlay.current;
+    const bridge = desktop;
+    if (!el || !bridge) return;
+    const observer = new ResizeObserver(() => bridge.setHeight(Math.ceil(el.offsetHeight)));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [visible]);
+
+  const noteState = [
+    !canListen && 'This browser has no speech recognition. Use Chrome or Edge.',
+    error,
+  ].filter((m): m is string => Boolean(m));
 
   return (
-    <main className="page">
-      <header className="top">
-        <h1>Tip of the Tongue</h1>
-        <div className="pills">
-          <p role="status" className={`pill pill-${status}`}>
-            <span className="sr-only">Server: </span>
-            {status}
-          </p>
-          <p className="pill pill-plain">Speech: {stt === 'deepgram' ? 'Deepgram' : 'browser'}</p>
-        </div>
-      </header>
-
-      <section aria-labelledby="listen-h" className="card listen">
-        <h2 id="listen-h" className="sr-only">
-          Listening
-        </h2>
-        {canListen ? (
-          <>
-            <div className="actions">
-              <button
-                type="button"
-                className={listening ? 'btn btn-primary btn-on' : 'btn btn-primary'}
-                onClick={listening ? pauseListening : startListening}
-              >
-                {listening ? 'Pause listening' : 'Start listening'}
-              </button>
-              <button type="button" className="btn" disabled title="Not available yet">
-                What&apos;s the word?
-              </button>
-            </div>
-            <p role="status" className="listen-state">
-              <span className={listening ? 'dot dot-on' : 'dot'} aria-hidden="true" />
-              {!listening
-                ? 'Not listening'
-                : status === 'connected'
-                  ? 'Listening'
-                  : 'Listening paused: not connected to the server, so no word suggestions'}
-            </p>
-          </>
-        ) : (
-          <p role="alert" className="notice">
-            This browser has no speech recognition. Use Chrome or Edge, or try the test input below.
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="notice">
-            {error}
-          </p>
-        )}
-        <p role="status" className="notice notice-quiet">
-          {notice}
-        </p>
-      </section>
-
-      <p role="status" className="notice notice-quiet">
-        {guesserDown ? 'Word suggestions are unavailable right now; listening continues.' : ''}
+    <>
+      <p role="status" className="sr-only">
+        Server: {status}
       </p>
 
-      <Offer
-        offer={offer}
-        onClear={clearOffer}
-        onPick={(id, word) => send({ type: 'guess.picked', id, word })}
-      />
-
-      <section aria-labelledby="tx-h" className="card transcript">
-        <h2 id="tx-h">Transcript</h2>
-        <p className="reading">
-          {heard.length === 0 && !partial && (
-            <span className="muted">What you say will appear here.</span>
-          )}
-          {heard.join(' ')}
-          {partial && <span className="muted"> {partial}</span>}
-        </p>
-        {DEBUG && (
-          <button type="button" className="btn btn-small" onClick={downloadTrace}>
-            Download speech trace
-          </button>
-        )}
-      </section>
-
-      <details className="card fold">
-        <summary>Before the meeting</summary>
-        <fieldset className="sensitivity">
-          <legend>Sensitivity</legend>
-          <div className="segments">
-            {SENSITIVITY_KEYS.map((key) => (
-              <label key={key} className="segment">
-                <input
-                  type="radio"
-                  name="sensitivity"
-                  value={key}
-                  checked={(sensitivity ?? 'balanced') === key}
-                  onChange={() => changeSensitivity(key)}
-                />
-                <span>{SENSITIVITIES[key].label}</span>
-              </label>
-            ))}
-          </div>
-          <p className="hint">
-            Calm waits longer and suggests only when it is sure. Eager suggests sooner, and is wrong
-            more often.
-          </p>
-        </fieldset>
-
-        <div className="field">
-          <label htmlFor="brief">
-            Meeting brief (optional): agenda, names, product or client terms
-          </label>
-          <textarea
-            id="brief"
-            rows={4}
-            maxLength={50_000}
-            value={brief}
-            onChange={(e) => setBrief(e.target.value)}
+      {visible && (
+        <div className="overlay" ref={overlay}>
+          <ControlPill
+            listening={listening}
+            canListen={canListen}
+            elapsedMs={clock.elapsedMs}
+            mode={sessionMode(briefSent)}
+            modifier={modifierLabel(navigator.platform)}
+            onToggleListening={listening ? pauseListening : startListening}
+            onNewConversation={newConversation}
           />
-          <button type="button" className="btn btn-small" onClick={() => setBriefSent(brief)}>
-            Use this brief
-          </button>
-        </div>
-      </details>
 
-      {/* Without speech recognition this is the only way in, so it starts open. */}
-      <details className="card fold" open={!canListen}>
-        <summary>Test without a mic</summary>
-        <div className="field">
-          <label htmlFor="typed">Type a phrase; it is sent as speech, one word every 300 ms</label>
-          <div className="row">
-            <input id="typed" value={typed} onChange={(e) => setTyped(e.target.value)} />
-            <button
-              type="button"
-              className="btn btn-small"
-              onClick={playTyped}
-              disabled={!typed.trim()}
-            >
-              Send as speech
-            </button>
+          {noteState.map((m) => (
+            <p key={m} role="alert" className="overlay-note overlay-note-error glass">
+              {m}
+            </p>
+          ))}
+          <p role="status" className="overlay-note glass">
+            {listening && status !== 'connected'
+              ? 'Listening paused: not connected to the server, so no word suggestions'
+              : notice}
+          </p>
+          <p role="status" className="overlay-note glass">
+            {guesserDown ? 'Word suggestions are unavailable right now; listening continues.' : ''}
+          </p>
+
+          <div className="card-slot">
+            <Offer
+              offer={offer}
+              onClear={clearOffer}
+              onPick={(id, word) => send({ type: 'guess.picked', id, word })}
+            />
           </div>
         </div>
-      </details>
-      {DEBUG && <DebugPanel />}
-    </main>
+      )}
+
+      {DEBUG && (
+        <DevTools
+          heard={heard.join(' ')}
+          partial={partial}
+          onBrief={setBriefSent}
+          sendPartial={sendPartial}
+          sendFinal={sendFinal}
+          onDownloadTrace={downloadTrace}
+        />
+      )}
+    </>
   );
 }

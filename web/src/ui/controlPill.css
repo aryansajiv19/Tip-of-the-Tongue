@@ -1,0 +1,138 @@
+.control-pill {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: var(--overlay-width);
+  height: var(--pill-height);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+}
+
+.pill-button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: calc(var(--pill-height) - var(--space-4));
+  height: calc(var(--pill-height) - var(--space-4));
+  padding: 0;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.pill-button:hover:not(:disabled) {
+  background: var(--hover);
+}
+.pill-button:disabled {
+  color: var(--text-faint);
+  cursor: default;
+}
+.pill-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Bars grow from the middle; their height is a scale of the full icon height. */
+.pill-wave {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--icon);
+}
+.pill-bar {
+  width: var(--space-1);
+  height: var(--icon);
+  border-radius: var(--space-1);
+  background: var(--text-faint);
+  transform-origin: center;
+  transition: transform var(--dur-fast) var(--ease);
+}
+.pill-wave-live .pill-bar {
+  background: var(--accent);
+}
+
+.pill-timer {
+  flex: none;
+  min-width: calc(var(--space-6) + var(--space-3));
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.pill-mode {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.pill-keys {
+  flex: none;
+  display: flex;
+  gap: var(--space-1);
+}
+
+/* The desktop window and the browser both place the overlay; the card slot sits under the pill. */
+.overlay {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: var(--overlay-width);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+}
+html.desktop .overlay {
+  top: 0;
+  right: 0;
+}
+html.desktop,
+html.desktop body {
+  background: transparent;
+}
+
+.overlay-note {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-card);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.overlay-note-error {
+  color: var(--error);
+}
+.overlay-note:empty {
+  display: none;
+}
+.overlay-note,
+.card-slot aside:not(:empty) {
+  margin-top: var(--space-2);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Until the new suggestion card lands, the current one sits in the slot under the pill, in the
+   page flow so the desktop window grows to fit it. */
+.overlay aside[aria-label='Word suggestions'] {
+  position: static;
+}
+.overlay .offer {
+  position: static;
+  transform: none;
+  animation: none;
+  width: 100%;
+}
+
+html:not(.desktop) body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--surface-solid);
+}
