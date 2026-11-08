@@ -80,4 +80,42 @@ describe('TranscriptBuffer', () => {
     input.push(w('b', 100));
     expect(b.words()).toHaveLength(1);
   });
+
+  describe('markedText', () => {
+    const at = (text: string, startMs: number, endMs = startMs + 100): Word => ({
+      text,
+      startMs,
+      endMs,
+    });
+
+    it('puts a pause mark where the speaker went quiet', () => {
+      const b = new TranscriptBuffer();
+      b.applyFinal([at('the', 0), at('place', 300), at('where', 2500), at('you', 2800)]);
+      expect(b.markedText(10, 2900)).toBe('the place … where you');
+    });
+
+    it('marks 800 ms but not 700 ms', () => {
+      const b = new TranscriptBuffer();
+      b.applyFinal([at('a', 0), at('b', 800), at('c', 1600)]);
+      // a ends 100, b starts 800: gap 700. b ends 900, c starts 1600: gap 700.
+      expect(b.markedText(10, 1700)).toBe('a b c');
+      const c = new TranscriptBuffer();
+      c.applyFinal([at('a', 0), at('b', 900)]);
+      expect(c.markedText(10, 1000)).toBe('a … b');
+    });
+
+    it('ends with a mark when the speaker is quiet now, and not when they are talking', () => {
+      const b = new TranscriptBuffer();
+      b.applyFinal([at('the', 0), at('thing', 300)]);
+      expect(b.markedText(10, 450)).toBe('the thing');
+      expect(b.markedText(10, 1300)).toBe('the thing …');
+    });
+
+    it('keeps only the last words, and nothing for no words', () => {
+      const b = new TranscriptBuffer();
+      b.applyFinal([at('a', 0), at('b', 300), at('c', 600)]);
+      expect(b.markedText(2, 700)).toBe('b c');
+      expect(new TranscriptBuffer().markedText(5, 1000)).toBe('');
+    });
+  });
 });

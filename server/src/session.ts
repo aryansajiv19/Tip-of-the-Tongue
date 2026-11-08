@@ -62,6 +62,8 @@ const VOICED_MAX_MS = 10_000;
 // How much of the call the guesser reads: about eight minutes of speech, so a name from early in
 // the call is still in view.
 const CONVERSATION_WORDS = 1200;
+// The stretch the guesser is told the user is stuck in.
+const STUCK_WORDS = 60;
 
 export function createSession(send: (event: ServerEvent) => void, opts: SessionOptions) {
   const now = opts.now ?? Date.now;
@@ -122,6 +124,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
       send({ type: 'guess.expired', id: current.id });
     } else if (spoken.filter((w) => w.startMs > current.offeredAtMs).length >= opts.moveOnWords) {
       send({ type: 'guess.withdrawn', id: current.id, reason: 'self-recovered' });
+      // They talked on without choosing: a better guess for the same stall may still be wanted.
+      lastOfferAtMs = undefined;
     } else {
       return;
     }
@@ -167,13 +171,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   }
 
   // Starts a guess and keeps it in `spec`. Whoever confirms the stall later offers it.
-  function startGuess(
-    lastEndMs: number,
-    sinceMs: number,
-    stuckPhrase: string,
-    confirmed: boolean,
-    manual = false,
-  ) {
+  function startGuess(lastEndMs: number, sinceMs: number, confirmed: boolean, manual = false) {
     const mine: Speculation = {
       lastEndMs,
       sinceMs,
@@ -187,8 +185,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     opts
       .guess(
         {
-          conversation: buffer.recentText(CONVERSATION_WORDS),
-          stuckPhrase,
+          conversation: buffer.markedText(CONVERSATION_WORDS, now()),
+          stuckPhrase: buffer.markedText(STUCK_WORDS, now()),
           ...(brief ? { brief: briefForGuesser(brief, glossary) } : {}),
           ...(opts.profile ? { profile: opts.profile } : {}),
         },
@@ -285,7 +283,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     if (stuck.stuck) {
       handledUpToMs = last.endMs;
       send({ type: 'stuck.detected', reason: stuck.reason, contextWindow: stuck.contextWindow });
-      if (!spec) return startGuess(last.endMs, stuck.sinceMs, stuck.contextWindow, true);
+      if (!spec) return startGuess(last.endMs, stuck.sinceMs, true);
       spec.confirmed = true;
       // Already answered: offer at once. Otherwise offer the moment it lands.
       if (spec.result) offerFrom(spec, spec.result);
@@ -295,7 +293,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     const earlyMs = opts.speculateAfterMs ?? 0;
     if (earlyMs > 0 && !spec) {
       const early = detectStuck(words, now(), { pauseMs, earlyMs, ...voiceOpt() });
-      if (early.stuck) startGuess(last.endMs, early.sinceMs, early.contextWindow, false);
+      if (early.stuck) startGuess(last.endMs, early.sinceMs, false);
     }
   }
 
@@ -320,7 +318,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     handledUpToMs = last.endMs;
     const phrase = buffer.recentText();
     send({ type: 'stuck.detected', reason: 'manual', contextWindow: phrase });
-    if (!spec) return startGuess(last.endMs, last.startMs - 1, phrase, true, true);
+    if (!spec) return startGuess(last.endMs, last.startMs - 1, true, true);
     spec.confirmed = true;
     spec.manual = true;
     if (spec.result) offerFrom(spec, spec.result);
