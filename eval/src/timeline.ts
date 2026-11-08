@@ -8,12 +8,20 @@ const PAUSE_MS = 2000;
 // How often the live server checks for a stall.
 const SWEEP_STEP_MS = 200;
 
-export function toTimedWords(utterance: string): Word[] {
+// `stepMs` is the time between word starts and `pauseMs` the silence for each "...". Fast talkers
+// and short pauses are modelled by changing them.
+export function toTimedWords(
+  utterance: string,
+  opts: { stepMs?: number; pauseMs?: number; startMs?: number } = {},
+): Word[] {
+  const step = opts.stepMs ?? WORD_STEP_MS;
+  const pause = opts.pauseMs ?? PAUSE_MS;
+  const len = Math.min(WORD_LEN_MS, step);
   const words: Word[] = [];
-  let startMs = 0;
+  let startMs = opts.startMs ?? 0;
   for (const text of utterance.split(/\s+/).filter(Boolean)) {
-    words.push({ text, startMs, endMs: startMs + WORD_LEN_MS });
-    startMs = text.includes('...') ? startMs + WORD_LEN_MS + PAUSE_MS : startMs + WORD_STEP_MS;
+    words.push({ text, startMs, endMs: startMs + len });
+    startMs = text.includes('...') ? startMs + len + pause : startMs + step;
   }
   return words;
 }
