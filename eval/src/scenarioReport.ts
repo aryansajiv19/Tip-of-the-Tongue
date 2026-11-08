@@ -20,7 +20,7 @@ export interface ScenarioRun {
 }
 
 function row(name: string, s: TypeSummary): string {
-  return `| ${name} | ${s.scenarios} | ${s.stalls} | ${withCi(s.correct)} | ${pct(s.top1)} | ${s.wrong} | ${s.missed} | ${pct(s.fluent)} | ${pct(s.selfRecovered)} | ${pct(s.other)} | ${ms(s.silenceP50)} / ${ms(s.silenceP95)} |`;
+  return `| ${name} | ${s.scenarios} | ${s.stalls} | ${withCi(s.correct)} | ${pct(s.top1)} | ${s.wrong} | ${s.wrongShown} | ${s.missed} | ${pct(s.fluent)} | ${pct(s.selfRecovered)} | ${pct(s.other)} | ${ms(s.silenceP50)} / ${ms(s.silenceP95)} |`;
 }
 
 // What went wrong, line by line, so failures can be sorted into kinds.
@@ -76,8 +76,8 @@ export function renderScenarioReport(
   return [
     `# Scenarios: ${meta.guesser} guesser${meta.model ? ` (${meta.model})` : ''}, split ${meta.split}`,
     '',
-    '| Type | Convs | Stalls | Correct | Top-1 | Wrong | Missed | Pop-up in fluent lines | in self-recoveries | on the other speaker | Silence at pop-up p50 / p95 |',
-    '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+    '| Type | Convs | Stalls | Correct | Top-1 | Wrong | Wrong shown | Missed | Pop-up in fluent lines | in self-recoveries | on the other speaker | Silence at pop-up p50 / p95 |',
+    '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
     ...byType,
     row('All', summarize(scores)),
     '',

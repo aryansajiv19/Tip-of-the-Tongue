@@ -33,6 +33,12 @@ describe('scoreScenario', () => {
     expect(second.stalls[0]).toMatchObject({ outcome: 'correct', top1: false });
   });
 
+  it('counts wrong pop-ups shown on a stall even when a right one follows', () => {
+    const s = scoreScenario('s', 't', placed, [offer(0, ['hospital']), offer(0, ['pharmacy'])]);
+    expect(s.stalls[0]).toMatchObject({ outcome: 'correct', wrongShown: 1 });
+    expect(summarize([s]).wrongShown).toBe(1);
+  });
+
   it('records how long the silence was for a correct pop-up only', () => {
     const s = scoreScenario('s', 't', placed, [
       offer(0, ['pharmacy'], 1800),

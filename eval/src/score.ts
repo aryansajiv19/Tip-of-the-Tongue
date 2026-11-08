@@ -13,6 +13,8 @@ export interface ScenarioScore {
     line: number;
     outcome: StallOutcome;
     top1: boolean;
+    // Pop-ups on this line that did not contain the word, even if a later one did.
+    wrongShown: number;
     // How long the silence had lasted when the pop-up appeared, for a correct one.
     silenceMs?: number;
   }[];
@@ -54,6 +56,7 @@ export function scoreScenario(
         line: i,
         outcome,
         top1: Boolean(hit && right.has(key(hit.candidates[0]?.word ?? ''))),
+        wrongShown: here.filter((o) => !o.candidates.some((c) => right.has(key(c.word)))).length,
         ...(hit ? { silenceMs: hit.silenceMs } : {}),
       });
     } else if (line.recover) {
@@ -73,6 +76,8 @@ export interface TypeSummary {
   correct: Rate;
   top1: Rate;
   wrong: number;
+  // Wrong pop-ups shown on stall lines, including ones followed by a right one.
+  wrongShown: number;
   missed: number;
   fluent: Rate;
   selfRecovered: Rate;
@@ -95,6 +100,7 @@ export function summarize(scores: ScenarioScore[]): TypeSummary {
     correct: { hits: stalls.filter((s) => s.outcome === 'correct').length, total: stalls.length },
     top1: { hits: stalls.filter((s) => s.top1).length, total: stalls.length },
     wrong: stalls.filter((s) => s.outcome === 'wrong').length,
+    wrongShown: stalls.reduce((n, s) => n + s.wrongShown, 0),
     missed: stalls.filter((s) => s.outcome === 'miss').length,
     fluent: sum((s) => s.fluent),
     selfRecovered: sum((s) => s.selfRecovered),
