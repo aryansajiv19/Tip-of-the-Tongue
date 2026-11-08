@@ -1,6 +1,11 @@
 # Tip of the Tongue — one-page write-up
 
-> Track: Accessibility. Structured around the brief's key paragraph. Keep to one page.
+> Track: Accessibility. Structured around the brief's key paragraph. The evidence section is long; this is the short version.
+>
+> - Single sentences (56 written items, Claude Haiku 5.5): dev top-1 32/32 in 3 runs, holdout 8/9; no offers on fluent items.
+> - Whole two-speaker conversations (15, real session, virtual clock): dev 33 to 34 of 37 stall moments correct, holdout 7/8; at most 1 pop-up in 111 fluent lines.
+> - A guess takes about 0.8 s; the pop-up appears about 1.4 s after the last word.
+> - Main limit: one microphone, no speaker separation (3 of 45 other-speaker lines got a pop-up on the holdout). Not tested with people with aphasia.
 
 ## The moment
 

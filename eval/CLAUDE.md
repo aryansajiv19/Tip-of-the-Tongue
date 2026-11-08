@@ -1,7 +1,9 @@
 # eval/
 
-Offline evaluation. `npm run eval -- --split dev|holdout|all --guesser mock|claude` runs `data/eval/circumlocutions.json` through the real server modules.
-Results go to `eval-results/` (gitignored); the summary table goes in `docs/write-up.md`.
-Never tune prompts or the mock on `split: "holdout"`. Items are written by us, never copied from a corpus.
-Metric math lives in `src/metrics.ts` and is unit-tested; keep `run.ts` thin.
-`npm run scenarios` replays whole conversations through the real session (see `src/replay.ts`); `data/eval/scenarios.json` has 4 held-out conversations: don't tune on them.
+Offline evaluation through the real server modules. Data is in `data/eval/` (written by us, never copied from a corpus).
+
+- `npm run eval -- --split dev|holdout|all --guesser mock|claude` on `circumlocutions.json`; flags `--set hard`, `--model`, `--no-context`, `--stt-noise`, `--brief-mode`.
+- `npm run scenarios -w eval -- ...` replays whole conversations through the real session on a virtual clock; `npm run compare -w eval` puts two runs side by side.
+- Results go to `eval-results/` (gitignored); put summaries in `docs/write-up.md` with intervals and caveats.
+- Never tune prompts, the mock or the detector on `holdout`. Claude runs need a key: ask the lead.
+- Metric math (`metrics.ts`, `score.ts`) is pure and unit-tested; keep the runners thin.
