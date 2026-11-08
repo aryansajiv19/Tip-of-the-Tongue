@@ -124,6 +124,27 @@ describe('decideOffer', () => {
     });
   });
 
+  describe('repeat window', () => {
+    const repeat = { ...opts, repeatMs: 180_000 };
+    it('keeps an offered word off the list for the repeat window, then allows it', () => {
+      const offered = (at: number) =>
+        ctx({ nowMs: 300_000, recentlyOffered: new Map([['pharmacy', at]]) });
+      expect(decideOffer(guess(['pharmacy', 0.9]), offered(121_000), repeat)).toEqual({
+        offer: false,
+        reason: 'already-offered',
+      });
+      expect(decideOffer(guess(['pharmacy', 0.9]), offered(120_000), repeat).offer).toBe(true);
+    });
+    it('falls back to the cooldown when no repeat window is given', () => {
+      const old = ctx({ nowMs: 300_000, recentlyOffered: new Map([['pharmacy', 250_000]]) });
+      expect(decideOffer(guess(['pharmacy', 0.9]), old, opts).offer).toBe(true);
+    });
+    it('does not change the global cooldown', () => {
+      const r = decideOffer(guess(['b', 0.9]), ctx({ lastOfferAtMs: 95_000 }), repeat);
+      expect(r).toEqual({ offer: false, reason: 'cooldown' });
+    });
+  });
+
   describe('repeat offers', () => {
     it('does not re-offer the same word within the cooldown, whatever its spelling', () => {
       const recentlyOffered = new Map([["Pharmacy's", 95_000]]);

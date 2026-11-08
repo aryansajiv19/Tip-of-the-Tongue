@@ -1,12 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { mockGuesser } from './mock.js';
 import { firstObjectEnd, parseGuess } from './parse.js';
-import { profileTermList } from './profile.js';
+import { profileForPrompt } from './profile.js';
 import type { GuessInput, GuessResult, Guesser } from './types.js';
 
 const SYSTEM = `Someone has lost a word mid-conversation. Guess the word they are reaching for.
 Reply with JSON only: {"candidates":[{"word":"...","confidence":0.0}],"abstain":false}
-Up to 3 candidates, confidence 0 to 1. Keep multi-word names together as one candidate (e.g. "post office"). If you are not fairly sure, or they are not clearly searching for a specific word (the sentence is complete, or they are just thinking), reply {"candidates":[],"abstain":true}. A wrong guess is worse than none.`;
+"…" marks a pause in their speech. Up to 3 candidates, confidence 0 to 1. Keep multi-word names together as one candidate (e.g. "post office"). If you are not fairly sure, or they are not clearly searching for a specific word (the sentence is complete, or they are just thinking), reply {"candidates":[],"abstain":true}. A finished sentence is never a search. Offer a word only if it completes what they were just saying, not because it came up earlier in the call. A wrong guess is worse than none.`;
 
 // 3 candidates of a few words each is about 70 tokens of JSON.
 const MAX_TOKENS = 100;
@@ -14,8 +14,7 @@ const MAX_TOKENS = 100;
 export function buildPrompt(input: GuessInput): string {
   const parts: string[] = [];
   if (input.brief) parts.push(`Meeting brief:\n${input.brief}`);
-  if (input.profile)
-    parts.push(`Their personal words: ${profileTermList(input.profile).join(', ')}`);
+  if (input.profile) parts.push(`Their personal words: ${profileForPrompt(input.profile)}`);
   parts.push(`Conversation so far:\n${input.conversation}`);
   parts.push(`Just said (they are stuck here):\n${input.stuckPhrase}`);
   return parts.join('\n\n');

@@ -4,6 +4,7 @@
 }
 
 .suggestion {
+  box-sizing: border-box;
   width: 100%;
   border-radius: var(--radius-card);
   padding: var(--space-4);

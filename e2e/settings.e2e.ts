@@ -43,7 +43,7 @@ test('the gear opens a small popover; Escape and clicking away close it', async 
   await page.keyboard.press('Escape');
   await expect(panel(page)).toHaveCount(0);
   await gear(page).click();
-  await page.locator('h1').click();
+  await page.mouse.click(5, 400);
   await expect(panel(page)).toHaveCount(0);
 });
 

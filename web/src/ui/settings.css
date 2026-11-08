@@ -1,43 +1,18 @@
-.settings {
-  position: relative;
-}
-
-.settings button,
-.settings select {
+.settings-panel button,
+.settings-panel select {
   font: inherit;
   color: inherit;
 }
 
-.settings-gear {
-  display: inline-grid;
-  place-items: center;
-  width: var(--pill-height);
-  height: var(--pill-height);
-  background: none;
-  border: 0;
-  border-radius: 50%;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.settings-gear:hover {
-  background: var(--hover);
-}
-
-.settings-gear:focus-visible,
 .settings-panel :focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
 }
 
 .settings-panel {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  z-index: 10;
+  box-sizing: border-box;
   display: grid;
   gap: var(--space-4);
-  width: var(--overlay-width);
   margin-top: var(--space-2);
   padding: var(--space-4);
   border-radius: var(--radius-card);

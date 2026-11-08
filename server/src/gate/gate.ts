@@ -19,7 +19,8 @@ export type GateDecision =
 export function decideOffer(
   result: GuessResult,
   ctx: GateContext,
-  opts: { minConfidence: number; cooldownMs: number },
+  // `repeatMs`: how long a word that was offered stays off the list (default: the cooldown).
+  opts: { minConfidence: number; cooldownMs: number; repeatMs?: number },
 ): GateDecision {
   const ranked = [...result.candidates].sort((a, b) => b.confidence - a.confidence);
   const top = ranked[0];
@@ -39,7 +40,7 @@ export function decideOffer(
   const fresh = ranked.filter((c) => {
     if (findPhrase(ctx.saidSinceStuck, c.word) !== -1) return false;
     const at = offeredAt.get(normalizePhrase(c.word).join(' '));
-    return at === undefined || ctx.nowMs - at >= opts.cooldownMs;
+    return at === undefined || ctx.nowMs - at >= (opts.repeatMs ?? opts.cooldownMs);
   });
   const best = fresh[0];
   if (!best) return { offer: false, reason: 'already-offered' };

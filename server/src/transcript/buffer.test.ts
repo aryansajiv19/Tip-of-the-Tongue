@@ -58,11 +58,11 @@ describe('TranscriptBuffer', () => {
     expect(b.recentText(3)).toBe('w97 w98 w99');
   });
 
-  it('caps stored final words at 500', () => {
+  it('caps stored final words at 3000', () => {
     const b = new TranscriptBuffer();
-    b.applyFinal(Array.from({ length: 700 }, (_, i) => w(`w${i}`, i * 100)));
+    b.applyFinal(Array.from({ length: 3200 }, (_, i) => w(`w${i}`, i * 100)));
     const all = b.words();
-    expect(all).toHaveLength(500);
+    expect(all).toHaveLength(3000);
     expect(all[0]?.text).toBe('w200');
   });
 
@@ -79,5 +79,42 @@ describe('TranscriptBuffer', () => {
     b.applyPartial(input);
     input.push(w('b', 100));
     expect(b.words()).toHaveLength(1);
+  });
+
+  describe('markedText', () => {
+    const at = (text: string, startMs: number, endMs = startMs + 100): Word => ({
+      text,
+      startMs,
+      endMs,
+    });
+
+    it('puts a pause mark where the speaker went quiet', () => {
+      const b = new TranscriptBuffer();
+      b.applyFinal([at('the', 0), at('place', 300), at('where', 2500), at('you', 2800)]);
+      expect(b.markedText(10)).toBe('the place … where you');
+    });
+
+    it('marks 800 ms but not 700 ms', () => {
+      const b = new TranscriptBuffer();
+      b.applyFinal([at('a', 0), at('b', 800), at('c', 1600)]);
+      // a ends 100, b starts 800: gap 700. b ends 900, c starts 1600: gap 700.
+      expect(b.markedText(10)).toBe('a b c');
+      const c = new TranscriptBuffer();
+      c.applyFinal([at('a', 0), at('b', 900)]);
+      expect(c.markedText(10)).toBe('a … b');
+    });
+
+    it('does not end with a mark, however long the speaker has been quiet', () => {
+      const b = new TranscriptBuffer();
+      b.applyFinal([at('the', 0), at('thing', 300)]);
+      expect(b.markedText(10)).toBe('the thing');
+    });
+
+    it('keeps only the last words, and nothing for no words', () => {
+      const b = new TranscriptBuffer();
+      b.applyFinal([at('a', 0), at('b', 300), at('c', 600)]);
+      expect(b.markedText(2)).toBe('b c');
+      expect(new TranscriptBuffer().markedText(5)).toBe('');
+    });
   });
 });

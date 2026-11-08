@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Settings as GearIcon } from 'lucide-react';
 import { micOptions, type MicOption } from '../settings/mic';
 import { SENSITIVITIES, SENSITIVITY_KEYS, type Sensitivity } from '../settings/sensitivity';
@@ -15,17 +15,34 @@ interface Props {
   onDownloadTrace: () => void;
 }
 
-// The gear and its small popover. The gear sits on the control pill.
-export function Settings(p: Props) {
-  const [open, setOpen] = useState(false);
+const ICON = { size: 16, strokeWidth: 1.5, 'aria-hidden': true } as const;
+const PANEL_ID = 'settings-panel';
+
+// The gear on the control pill.
+export function SettingsGear(p: { open: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      className="pill-button settings-gear"
+      aria-label="Settings"
+      aria-expanded={p.open}
+      aria-controls={PANEL_ID}
+      onClick={p.onToggle}
+    >
+      <GearIcon {...ICON} />
+    </button>
+  );
+}
+
+// The settings popover, under the pill. It is part of the overlay's flow so the desktop window
+// grows to fit it.
+export function SettingsPanel(p: Props & { onClose: () => void }) {
   const [mics, setMics] = useState<MicOption[]>([]);
-  const root = useRef<HTMLDivElement>(null);
-  const panelId = useId();
+  const { onClose } = p;
 
   // Microphone names are only known once the user has allowed the microphone, so look again
   // each time the popover opens.
   useEffect(() => {
-    if (!open) return;
     let cancelled = false;
     navigator.mediaDevices
       ?.enumerateDevices()
@@ -34,13 +51,14 @@ export function Settings(p: Props) {
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, []);
 
   useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     const onClick = (e: MouseEvent) => {
-      if (root.current && !root.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Element;
+      // The gear toggles the panel itself.
+      if (!target.closest('#' + PANEL_ID) && !target.closest('.settings-gear')) onClose();
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('mousedown', onClick);
@@ -48,71 +66,52 @@ export function Settings(p: Props) {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('mousedown', onClick);
     };
-  }, [open]);
+  }, [onClose]);
 
   return (
-    <div className="settings" ref={root}>
-      <button
-        type="button"
-        className="settings-gear"
-        aria-label="Settings"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((o) => !o)}
-      >
-        <GearIcon size={16} strokeWidth={1.5} aria-hidden="true" />
-      </button>
+    <div id={PANEL_ID} className="settings-panel glass" role="group" aria-label="Settings">
+      <fieldset>
+        <legend>Sensitivity</legend>
+        <div className="settings-segments">
+          {SENSITIVITY_KEYS.map((key) => (
+            <label key={key}>
+              <input
+                type="radio"
+                name="sensitivity"
+                value={key}
+                checked={(p.sensitivity ?? 'balanced') === key}
+                onChange={() => p.onSensitivity(key)}
+              />
+              <span>{SENSITIVITIES[key].label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
-      {open && (
-        <div id={panelId} className="settings-panel glass" role="group" aria-label="Settings">
-          <fieldset>
-            <legend>Sensitivity</legend>
-            <div className="settings-segments">
-              {SENSITIVITY_KEYS.map((key) => (
-                <label key={key}>
-                  <input
-                    type="radio"
-                    name="sensitivity"
-                    value={key}
-                    checked={(p.sensitivity ?? 'balanced') === key}
-                    onChange={() => p.onSensitivity(key)}
-                  />
-                  <span>{SENSITIVITIES[key].label}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
+      <label className="settings-field">
+        <span>Microphone</span>
+        <select value={p.micId ?? ''} onChange={(e) => p.onMic(e.target.value || null)}>
+          <option value="">System default</option>
+          {mics.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+      </label>
 
-          <label className="settings-field">
-            <span>Microphone</span>
-            <select value={p.micId ?? ''} onChange={(e) => p.onMic(e.target.value || null)}>
-              <option value="">System default</option>
-              {mics.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="settings-check">
-            <input
-              type="checkbox"
-              checked={p.debugOn}
-              onChange={(e) => p.onDebug(e.target.checked)}
-            />
-            <span>Debug</span>
-          </label>
-          {p.debugOn && (
-            <div className="settings-debug">
-              <button type="button" onClick={p.onOpenDebugView}>
-                Open debug view
-              </button>
-              <button type="button" onClick={p.onDownloadTrace}>
-                Download speech trace
-              </button>
-            </div>
-          )}
+      <label className="settings-check">
+        <input type="checkbox" checked={p.debugOn} onChange={(e) => p.onDebug(e.target.checked)} />
+        <span>Debug</span>
+      </label>
+      {p.debugOn && (
+        <div className="settings-debug">
+          <button type="button" onClick={p.onOpenDebugView}>
+            Open debug view
+          </button>
+          <button type="button" onClick={p.onDownloadTrace}>
+            Download speech trace
+          </button>
         </div>
       )}
     </div>

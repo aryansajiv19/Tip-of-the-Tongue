@@ -10,11 +10,15 @@ const FRAME_MS = 50; // 20 readings a second
 export function useVoice(
   active: boolean,
   onChange: (voiced: boolean, atMs: number) => void,
-  deviceId: string | null,
+  // Called with the signal strength (RMS, 0 to 1) on every reading, for the waveform.
+  onLevel?: (level: number) => void,
+  deviceId?: string | null,
 ) {
   const handler = useRef(onChange);
+  const levelHandler = useRef(onLevel);
   useEffect(() => {
     handler.current = onChange;
+    levelHandler.current = onLevel;
   });
 
   useEffect(() => {
@@ -48,13 +52,16 @@ export function useVoice(
           analyser.getFloatTimeDomainData(samples);
           let sum = 0;
           for (const s of samples) sum += s * s;
-          const step = stepVad(vad, Math.sqrt(sum / samples.length), Date.now());
+          const rms = Math.sqrt(sum / samples.length);
+          levelHandler.current?.(rms);
+          const step = stepVad(vad, rms, Date.now());
           vad = step.vad;
           if (step.change) handler.current(step.change.voiced, step.change.atMs);
         }, FRAME_MS);
 
         stop = () => {
           clearInterval(timer);
+          levelHandler.current?.(0);
           // Don't leave the server thinking the user is still talking.
           if (vad.voiced) handler.current(false, Date.now());
           stream.getTracks().forEach((t) => t.stop());
