@@ -73,4 +73,21 @@ describe('replay', () => {
     const { guessCalls } = await replay(sc, layoutScenario(sc), pharmacyGuesser());
     expect(guessCalls).toBeGreaterThanOrEqual(1);
   });
+
+  it('with voices labelled, stays silent for the other speaker and offers for the user', async () => {
+    const sc = scenario([
+      {
+        s: 'me',
+        t: 'Hello everyone thanks for joining I am going to walk you through the plan today',
+      },
+      { s: 'other', t: 'Sure go ahead' },
+      { s: 'me', t: 'Okay that is the plan', gap: 5000 },
+      { s: 'other', t: 'I need to go to the... place where you get medicine', gap: 2500 },
+      { s: 'me', t: 'I need to go to the... place where you get medicine', gap: 2500 },
+    ]);
+    const placed = layoutScenario(sc, true);
+    const { offers, speaker } = await replay(sc, placed, pharmacyGuesser());
+    expect(speaker).toBe(0);
+    expect(offers.map((o) => o.line)).toEqual([4]);
+  });
 });

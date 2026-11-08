@@ -61,6 +61,18 @@ describe('toTranscriptEvent', () => {
     expect(url.searchParams.get('punctuate')).toBe('false');
   });
 
+  it('asks for speaker labels only when told to, and maps them onto the words', () => {
+    expect(new URL(deepgramUrl('en')).searchParams.has('diarize')).toBe(false);
+    expect(new URL(deepgramUrl('en', [], true)).searchParams.get('diarize')).toBe('true');
+    const msg = results(true, [['hello', 0, 0.3]]);
+    const word = msg.channel.alternatives[0]?.words[0];
+    if (word) Object.assign(word, { speaker: 1 });
+    expect(toTranscriptEvent(msg, 0)?.words[0]?.speaker).toBe(1);
+    expect(toTranscriptEvent(results(true, [['hello', 0, 0.3]]), 0)?.words[0]).not.toHaveProperty(
+      'speaker',
+    );
+  });
+
   it('adds one keyterm parameter per term, encoded, and none when there are no terms', () => {
     expect(new URL(deepgramUrl('en')).searchParams.has('keyterm')).toBe(false);
     const url = new URL(deepgramUrl('en', ['SOC 2', 'Corner Mart', 'R&D', 'naïve']));

@@ -10,6 +10,8 @@ const WordSchema = z.object({
   endMs: z.number().finite(),
   // STT confidence 0..1, when the provider gives one.
   confidence: z.number().min(0).max(1).optional(),
+  // Which voice said it (0, 1, ...), when speech-to-text separates speakers. Labels can change.
+  speaker: z.number().int().min(0).max(31).optional(),
 });
 export type Word = z.infer<typeof WordSchema>;
 
@@ -79,7 +81,9 @@ export type DebugInfo =
       latencyMs: number;
     }
   | { kind: 'gate'; offered: boolean; reason?: string; words?: string[] }
-  | { kind: 'stt'; mode: 'deepgram' | 'browser'; keyterms: string[] };
+  | { kind: 'stt'; mode: 'deepgram' | 'browser'; keyterms: string[] }
+  // Which voice is taken to be the user's, and why it changed.
+  | { kind: 'speaker'; me: number; why: 'first words' | 'accepted' | 'manual' };
 
 // Sent by the server. `id` ties an offer to its later withdrawn/accepted/expired event.
 export type ServerEvent =

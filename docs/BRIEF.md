@@ -27,7 +27,7 @@ Example: the brief says "Q3 review with Northwind (fictional), renewal of the an
 ## Honest framing
 
 - Users: anyone who loses words mid-conversation, including people with aphasia after stroke (~350,000 in the UK). No claim of clinical benefit.
-- One mic hears both sides of a conversation; the prototype can't reliably tell speakers apart.
+- One mic hears both sides of a conversation. With Deepgram the voices are labelled and only the user's voice starts a guess, but the voice is chosen from the first words after Start and can be wrong; with browser speech the prototype can't tell speakers apart.
 - No model training: off-the-shelf speech-to-text, Claude prompting and rule-based logic.
 - A 2023 study found ChatGPT identified the intended word from real circumlocutions 91.67% of the time, on text rather than live speech. Our job is to measure the live version.
 - Tested on our own written examples in the documented style of circumlocution, **not** with people with aphasia.

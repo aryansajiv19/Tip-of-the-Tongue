@@ -41,6 +41,8 @@ Defined once in `server/src/events.ts`. Times are epoch ms.
 
   **Keyterms.** Nova-3 can be told words to listen for (`keyterm`, repeated once per term, at most 100 terms and 500 tokens per connection; over the limit Deepgram refuses the connection, so the server stays well under, estimating tokens high). The terms are the profile's personal words, then the glossary of a long brief, or for a short brief its names and jargon (capitalised words, acronyms, anything with a digit). They can only be set when a stream opens, so when the brief or the glossary changes the server closes the current stream and the next chunk of audio opens a new one with the new terms. Audio sent while the old stream is closing may be lost.
 
+  **Speaker labels (on by default with Deepgram; `DEEPGRAM_DIARIZE=0` turns them off).** Deepgram says which voice spoke each word (`diarize=true`; streaming gives only a number, no confidence). The session takes the user to be the voice of the first words after Start (a single first word is skipped, because the first word of a new voice is often mislabelled), and corrects this from evidence: a pop-up the user accepted (spoken or clicked), or a word asked for by hand (Space), sets it to the voice of the words just before. Once it knows, a pause after another voice's words is not a stall and starts no guess; their words still go to the guesser as context. Without labels (browser speech) every voice counts as the user's. The chosen voice and the reason show in the debug stream. A wrong first pick is only fixed by a hand ask or an accepted pop-up. Live check with two macOS voices through real Deepgram: labels were stable and right except the first word of the second voice. The scenario replay (perfect labels) is in the write-up.
+
   **Debug stream.** Turning on Debug in Settings (saved in the browser) sends `session.debug` on every connection, and the server then also sends `debug` events, which the page forwards to the debug view (`?view=debug`, a page or window of its own that is hidden unless opened): the raw transcript (fillers included), each change of the detector's decision, each guesser call (early or confirmed, candidates, latency, error, stale), each gate decision with its reason, and the speech-to-text mode with the current keyterms. They contain what was said, so nothing is built or sent unless asked, and the info-level server log still records only event types, never words.
 
 - **Browser** (no key): the page runs the Web Speech API and sends `transcript.*` events itself.
@@ -75,7 +77,7 @@ The page is a control pill (pause/resume, a five-bar mic waveform, a listening t
 ## Limits
 
 - Tested only on our own written, scripted examples; not tested with people with aphasia. No claim of clinical benefit.
-- One mic hears both sides and the prototype cannot tell speakers apart; there is no speaker separation.
+- One mic hears both sides. With Deepgram the voices are labelled and only the user's voice starts a guess; with browser speech there is no speaker separation.
 - Speech-to-text may mishear real aphasic speech; accuracy on atypical speech is unknown.
 - Planned, not built: a spoken cue (needs echo handling, because the mic would hear the cue and count it as the user saying the word).
 

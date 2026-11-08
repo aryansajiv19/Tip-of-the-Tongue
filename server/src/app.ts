@@ -88,6 +88,7 @@ export async function buildApp(deps: AppDeps = {}) {
       ? createDeepgramStream({
           ...deepgramOpts,
           keyterms: () => session.keyterms(),
+          diarize: config.deepgramDiarize,
           onEvent: (event) => {
             // Words still in flight from before a reset are neither shown nor used.
             const words = session.afterReset(event.words);

@@ -16,6 +16,8 @@ export interface ScenarioRun {
   placed: PlacedLine[];
   offers: Offer[];
   trace: Trace;
+  // The voice the session took to be the user's (0 is right when voices are labelled).
+  speaker: number | undefined;
   guessCalls: number;
 }
 
@@ -66,7 +68,7 @@ function failures(runs: ScenarioRun[]): string[] {
 }
 
 export function renderScenarioReport(
-  meta: { guesser: string; split: string; model?: string },
+  meta: { guesser: string; split: string; model?: string; diarize?: boolean },
   runs: ScenarioRun[],
 ): string {
   const scores = runs.map((r) => r.score);
@@ -83,6 +85,19 @@ export function renderScenarioReport(
     '',
     `Guess calls: ${calls} for ${scores.length} conversations (including early guesses that were thrown away); ${runs.reduce((n, r) => n + r.trace.guesses.filter((g) => g.error).length, 0)} failed or timed out.`,
     '',
+    ...(meta.diarize
+      ? [
+          `Voices labelled as a speaker separator would (the user is voice 0). The session took voice 0 to be the user in ${runs.filter((r) => r.speaker === 0).length} of ${runs.length} conversations${
+            runs.filter((r) => r.speaker !== 0).length > 0
+              ? ` (not in: ${runs
+                  .filter((r) => r.speaker !== 0)
+                  .map((r) => `${r.score.id} took ${r.speaker ?? 'nobody'}`)
+                  .join(', ')})`
+              : ''
+          }.`,
+          '',
+        ]
+      : []),
     '## Failures',
     '',
     ...(f.length > 0 ? f : ['None.']),
