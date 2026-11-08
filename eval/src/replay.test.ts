@@ -81,14 +81,13 @@ describe('replay', () => {
         t: 'Hello everyone thanks for joining I am going to walk you through the plan today',
       },
       { s: 'other', t: 'Sure go ahead' },
-      { s: 'me', t: 'First the budget and then the timeline and then the next steps for the team' },
-      { s: 'me', t: 'Okay that is the plan', gap: 20_000 },
+      { s: 'me', t: 'Okay that is the plan', gap: 5000 },
       { s: 'other', t: 'I need to go to the... place where you get medicine', gap: 2500 },
       { s: 'me', t: 'I need to go to the... place where you get medicine', gap: 2500 },
     ]);
     const placed = layoutScenario(sc, true);
     const { offers, speaker } = await replay(sc, placed, pharmacyGuesser());
     expect(speaker).toBe(0);
-    expect(offers.map((o) => o.line)).toEqual([5]);
+    expect(offers.map((o) => o.line)).toEqual([4]);
   });
 });

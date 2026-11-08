@@ -20,11 +20,14 @@ export const isStall = (l: Line): boolean => l.s === 'me' && Boolean(l.w) && !l.
 
 // Puts the lines of a conversation on one timeline. One microphone hears both speakers, so the
 // session gets the words in this order with no speaker labels.
-// `speakers` labels each word with its voice (the user is 0), as speaker separation would.
+// `speakers` labels each word with its voice (the user is 0), as speaker separation would. It also
+// models the user pressing Start when they begin to talk: lines by the other person before the
+// user's first line are never heard.
 export function layoutScenario(sc: Scenario, speakers = false): PlacedLine[] {
   const placed: PlacedLine[] = [];
   let at = 500;
-  for (const line of sc.lines) {
+  const firstOfUser = sc.lines.findIndex((l) => l.s === 'me');
+  for (const line of speakers ? sc.lines.slice(Math.max(0, firstOfUser)) : sc.lines) {
     const words = toTimedWords(line.t, {
       startMs: at,
       ...(sc.wordMs !== undefined ? { stepMs: sc.wordMs } : {}),

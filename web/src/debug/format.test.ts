@@ -54,4 +54,10 @@ describe('formatDebug', () => {
       'stt: deepgram, 2 keyterms',
     );
   });
+
+  it('says which voice is taken to be the user and why', () => {
+    expect(formatDebug({ kind: 'speaker', me: 1, why: 'accepted' })).toBe(
+      'you are voice 1 (accepted)',
+    );
+  });
 });

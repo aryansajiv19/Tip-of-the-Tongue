@@ -3,7 +3,7 @@ import type { Candidate, ClientEvent, ServerEvent } from './events.js';
 import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck, type VoiceInfo } from './stuck/detect.js';
 import { endsWithAskForWord } from './stuck/manual.js';
-import { loudestSpeaker } from './stuck/speaker.js';
+import { speakerOfFirstUtterance } from './stuck/speaker.js';
 import type { Profile } from './guess/profile.js';
 import { briefForGuesser, LONG_BRIEF_CHARS, type GlossaryBuilder } from './guess/glossary.js';
 import type { GuessResult, Guesser } from './guess/types.js';
@@ -54,6 +54,8 @@ interface Offer {
   id: string;
   candidates: Candidate[];
   offeredAtMs: number;
+  // The voice of the words just before the pause the offer is for.
+  speaker?: number;
 }
 
 // One per WebSocket connection: transcript in, stuck -> guess -> gate -> offer out.
@@ -97,6 +99,14 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   let guessFailures = 0;
   let guesserDown = false;
 
+  // Who the user is: the voice of their first words, then corrected by evidence (a pop-up they
+  // accepted, or a word they asked for by hand).
+  function setMe(speaker: number, why: 'first words' | 'accepted' | 'manual') {
+    if (speaker === me) return;
+    me = speaker;
+    debug(() => ({ kind: 'speaker', me: speaker, why }));
+  }
+
   // Debug events carry what was said, so nothing is built or sent unless the client asked.
   function debug(info: () => DebugInfo) {
     if (debugOn) send({ type: 'debug', atMs: now(), info: info() });
@@ -125,6 +135,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     const result = checkAcceptance(current, spoken, now(), opts.acceptWindowMs);
     if (result.status === 'accepted') {
       send({ type: 'guess.accepted', id: current.id, word: result.word, afterMs: result.afterMs });
+      if (current.speaker !== undefined) setMe(current.speaker, 'accepted');
     } else if (result.status === 'expired') {
       send({ type: 'guess.expired', id: current.id });
     } else if (spoken.filter((w) => w.startMs > current.offeredAtMs).length >= opts.moveOnWords) {
@@ -155,6 +166,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
       word: chosen.word,
       afterMs: now() - offer.offeredAtMs,
     });
+    if (offer.speaker !== undefined) setMe(offer.speaker, 'accepted');
     closeOffer();
   }
 
@@ -251,7 +263,13 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     if (!decision.offer) return;
 
     const offeredAtMs = now();
-    offer = { id: randomUUID(), candidates: decision.candidates, offeredAtMs };
+    const stallSpeaker = buffer.words().find((w) => w.endMs === current.lastEndMs)?.speaker;
+    offer = {
+      id: randomUUID(),
+      candidates: decision.candidates,
+      offeredAtMs,
+      ...(stallSpeaker !== undefined ? { speaker: stallSpeaker } : {}),
+    };
     lastOfferAtMs = offeredAtMs;
     for (const c of decision.candidates) recentlyOffered.set(c.word, offeredAtMs);
     send({
@@ -280,8 +298,6 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     if (last.endMs <= handledUpToMs) return;
     if (endsWithAskForWord(words)) return askNow();
 
-    // The user's voice: the one that talked most in the first 20 s, until they ask by hand.
-    me ??= loudestSpeaker(words, now());
     // The other person is the one who paused: not the user's stall, whatever they say next.
     if (me !== undefined && last.speaker !== undefined && last.speaker !== me) {
       discardSpeculation();
@@ -336,7 +352,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     if (!last) return;
     handledUpToMs = last.endMs;
     // They pressed it because they are stuck, so the last voice is theirs.
-    if (last.speaker !== undefined) me = last.speaker;
+    if (last.speaker !== undefined) setMe(last.speaker, 'manual');
     const phrase = buffer.recentText();
     send({ type: 'stuck.detected', reason: 'manual', contextWindow: phrase });
     if (!spec) return startGuess(last.endMs, last.startMs - 1, true, true);
@@ -389,7 +405,11 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
           text: event.words.map((w) => w.text).join(' '),
         }));
         if (event.type === 'transcript.partial') buffer.applyPartial(event.words);
-        else buffer.applyFinal(event.words);
+        else {
+          buffer.applyFinal(event.words);
+          const first = me === undefined ? speakerOfFirstUtterance(event.words) : undefined;
+          if (first !== undefined) setMe(first, 'first words');
+        }
       }
       check();
     },

@@ -33,12 +33,10 @@ function setup() {
   };
   const offers = () => events.filter((e) => e.type === 'guess.offered').length;
   const stalls = () => events.filter((e) => e.type === 'stuck.detected').length;
-  // The user talks (voice 0) for a while so the session learns whose voice it is.
+  // The user presses Start and talks (voice 0); the other voice answers.
   const introduce = () => {
     say(0, 'Hello everyone thanks for joining I am going to walk you through the plan');
     say(1, 'Sure go ahead');
-    say(0, 'First the budget and then the timeline and then the next steps for the team');
-    vi.advanceTimersByTime(20_000);
     say(0, 'Okay so that is the plan');
   };
   return { session, events, say, offers, stalls, introduce };
@@ -53,9 +51,20 @@ afterEach(() => vi.useRealTimers());
 const STALL = 'I need to go to the the place where you get medicine';
 
 describe('who is speaking', () => {
-  it('learns the user as the voice that talked most in the first 20 seconds', () => {
-    const { session, introduce } = setup();
-    introduce();
+  it('takes the voice of the first words after Start to be the user', () => {
+    const { session, say } = setup();
+    say(1, 'Hello everyone thanks for joining');
+    expect(session.speaker()).toBe(1);
+    say(0, 'Sure go ahead and begin');
+    expect(session.speaker()).toBe(1);
+    session.close();
+  });
+
+  it('skips a single first word, then decides on the next result', () => {
+    const { session, say } = setup();
+    say(1, 'Hello');
+    expect(session.speaker()).toBeUndefined();
+    say(0, 'thanks for joining everyone today');
     expect(session.speaker()).toBe(0);
     session.close();
   });
@@ -85,8 +94,7 @@ describe('who is speaking', () => {
 
   it('does not guess early for the other voice either', async () => {
     const guess = vi.fn(mockGuesser);
-    const events: ServerEvent[] = [];
-    const session = createSession((e) => events.push(e), {
+    const session = createSession(() => undefined, {
       guess,
       pauseMs: 1500,
       minConfidence: 0.6,
@@ -104,7 +112,7 @@ describe('who is speaking', () => {
       speaker: 0,
     }));
     session.handle({ type: 'transcript.final', words });
-    vi.advanceTimersByTime(21_000);
+    vi.advanceTimersByTime(5000);
     const later = Date.now();
     session.handle({
       type: 'transcript.final',
@@ -118,19 +126,37 @@ describe('who is speaking', () => {
 
   it('takes the voice of the last words as the user when they ask by hand', async () => {
     const { session, say, offers } = setup();
-    // The other voice talks most at first, so the session first picks voice 1 as the user.
-    say(1, 'Welcome to the call today I will go through every item on the long agenda');
-    say(0, 'Hi');
-    vi.advanceTimersByTime(21_000);
-    say(1, 'Right so that is item one');
+    say(1, 'Welcome to the call today I will go through the agenda');
     expect(session.speaker()).toBe(1);
-
-    // Voice 0 stalls and presses Space.
     say(0, 'Can you pass the the thing for cutting bread');
     session.handle({ type: 'stuck.manual' });
     await vi.advanceTimersByTimeAsync(1500);
     expect(session.speaker()).toBe(0);
     expect(offers()).toBe(1);
+    session.close();
+  });
+
+  it('learns the voice from a pop-up the user accepted when it did not know it yet', async () => {
+    const { session, events, say, offers } = setup();
+    say(undefined, 'Okay');
+    say(1, STALL);
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(offers()).toBe(1);
+    expect(session.speaker()).toBe(1);
+    say(1, 'pharmacy');
+    await vi.advanceTimersByTimeAsync(300);
+    expect(events.some((e) => e.type === 'guess.accepted')).toBe(true);
+    session.close();
+  });
+
+  it('reports the voice it chose, and why, in the debug stream', () => {
+    const { session, events, say } = setup();
+    session.handle({ type: 'session.debug', on: true });
+    say(0, 'Hello everyone thanks for joining');
+    const speaker = events.flatMap((e) =>
+      e.type === 'debug' && e.info.kind === 'speaker' ? [e.info] : [],
+    );
+    expect(speaker).toEqual([{ kind: 'speaker', me: 0, why: 'first words' }]);
     session.close();
   });
 

@@ -70,6 +70,20 @@ describe('speaker labels', () => {
   });
 });
 
+describe('Start pressed when the user begins', () => {
+  it("drops the other person's lines before the user's first line, only with voices labelled", () => {
+    const lines: Scenario['lines'] = [
+      { s: 'other', t: 'Hello this is Hannah' },
+      { s: 'me', t: 'Hi Hannah' },
+      { s: 'other', t: 'Go ahead' },
+    ];
+    expect(layoutScenario(sc(lines))).toHaveLength(3);
+    const labelled = layoutScenario(sc(lines), true);
+    expect(labelled.map((p) => p.line.t)).toEqual(['Hi Hannah', 'Go ahead']);
+    expect(labelled[0]?.startMs).toBe(500);
+  });
+});
+
 describe('isStall', () => {
   it('is a line of the user with a target, unless they find it themselves', () => {
     expect(isStall({ s: 'me', t: 'x', w: 'a' })).toBe(true);
