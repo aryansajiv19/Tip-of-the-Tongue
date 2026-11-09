@@ -8,37 +8,37 @@ _Last updated: 2026-11-09 (evening)_
 
 Goal: a working MVP with a nice UI. The full loop runs live: Deepgram Nova-3 (keyterms from the profile and brief) or browser speech → stall detector (any pause, cue phrases, sound signals) → Haiku guess started 300 ms into a pause → gate → pop-up. A guess takes about 0.8 s; in the scenario tests the pop-up appears about 1.4 s after the last word.
 
-| Area                                         | PR            | Owner    | State       |
-| -------------------------------------------- | ------------- | -------- | ----------- |
-| Core loop, eval, hardening, e2e              | #1–#21        | all      | merged      |
-| Chrome chunked-speech fix                    | #22           | 93       | merged      |
-| Guesser streaming, thinking-pause items      | #23           | c1       | merged      |
-| Deepgram server + web, punctuation off       | #24, #26, #27 | lead, 93 | merged      |
-| Speculative guessing, any-pause rule         | #25           | 4c       | merged      |
-| Hard set, model comparison (Haiku kept)      | #28           | c1       | merged      |
-| Frosted pop-up, click to accept              | #29           | 4c       | merged      |
-| Long-brief glossary (≤ 50k chars)            | #30           | c1       | merged      |
-| Page design, sensitivity setting             | #31           | 4c       | merged      |
-| Sound signals, hum cue, manual trigger       | #32           | 93       | merged      |
-| Deepgram keyterms, debug panel               | #33           | c1       | merged      |
-| Checkpoint refresh, design tokens, `ai.md`   | #34–#36       | lead, 4c | merged      |
-| Scenario suite of whole conversations, fixes | #37           | c1       | merged      |
-| Context hygiene: docs, dead code             | #38           | c1       | merged      |
-| Overlay pill, Electron shell, card, settings | #39, #41      | 4c, 93   | merged      |
-| Speaker labels; re-pick on new stream        | #40, #42      | c1       | merged      |
-| Meeting-prep drawer (PDF/md/txt), source     | #43           | 4c       | merged      |
-| Live-audio scenarios; pop-up counted for the line in progress | #46 | c1 | merged |
-| First-run UX, pill labels, mic-denied Retry | #47, #49 | 4c | merged |
-| Overlay polish: contrast (0.88 glass), Esc in the desktop app | #45 | 93 | merged |
-| About you + remembered words (`session.profile`) | #48 | 4c | merged |
-| Bigger overlay (420 px, 56 px pill, 44 px targets) | #53 | 4c | merged |
-| Stray voice label; longer forms stay off the list | #51, #52 | c1 | merged |
-| Desktop window 420 px, height clamps to the work area | #50 | 93 | CI |
-| Research on speech diversity (`RESEARCH.md`) | #54 | lead | open |
-| Runtime robustness (network, mic, sleep, long meetings, quiet input) | next | 93 | in progress |
-| ⌘1/2/3 pick; help level (first sound / word / ask only); quiet-input warning; language dropdown | next | 4c | in progress |
-| Pace from the speaker's own gaps; stutter-aware; self-corrections; 9 new scenarios | next | c1 | in progress |
-| STT and languages: noise/rate in live harness, `language` incl. `multi`, Deepgram options | next | 75 | in progress |
+| Area                                                                                            | PR            | Owner    | State       |
+| ----------------------------------------------------------------------------------------------- | ------------- | -------- | ----------- |
+| Core loop, eval, hardening, e2e                                                                 | #1–#21        | all      | merged      |
+| Chrome chunked-speech fix                                                                       | #22           | 93       | merged      |
+| Guesser streaming, thinking-pause items                                                         | #23           | c1       | merged      |
+| Deepgram server + web, punctuation off                                                          | #24, #26, #27 | lead, 93 | merged      |
+| Speculative guessing, any-pause rule                                                            | #25           | 4c       | merged      |
+| Hard set, model comparison (Haiku kept)                                                         | #28           | c1       | merged      |
+| Frosted pop-up, click to accept                                                                 | #29           | 4c       | merged      |
+| Long-brief glossary (≤ 50k chars)                                                               | #30           | c1       | merged      |
+| Page design, sensitivity setting                                                                | #31           | 4c       | merged      |
+| Sound signals, hum cue, manual trigger                                                          | #32           | 93       | merged      |
+| Deepgram keyterms, debug panel                                                                  | #33           | c1       | merged      |
+| Checkpoint refresh, design tokens, `ai.md`                                                      | #34–#36       | lead, 4c | merged      |
+| Scenario suite of whole conversations, fixes                                                    | #37           | c1       | merged      |
+| Context hygiene: docs, dead code                                                                | #38           | c1       | merged      |
+| Overlay pill, Electron shell, card, settings                                                    | #39, #41      | 4c, 93   | merged      |
+| Speaker labels; re-pick on new stream                                                           | #40, #42      | c1       | merged      |
+| Meeting-prep drawer (PDF/md/txt), source                                                        | #43           | 4c       | merged      |
+| Live-audio scenarios; pop-up counted for the line in progress                                   | #46           | c1       | merged      |
+| First-run UX, pill labels, mic-denied Retry                                                     | #47, #49      | 4c       | merged      |
+| Overlay polish: contrast (0.88 glass), Esc in the desktop app                                   | #45           | 93       | merged      |
+| About you + remembered words (`session.profile`)                                                | #48           | 4c       | merged      |
+| Bigger overlay (420 px, 56 px pill, 44 px targets)                                              | #53           | 4c       | merged      |
+| Stray voice label; longer forms stay off the list                                               | #51, #52      | c1       | merged      |
+| Desktop window 420 px, height clamps to the work area                                           | #50           | 93       | CI          |
+| Research on speech diversity (`RESEARCH.md`)                                                    | #54           | lead     | open        |
+| Runtime robustness (network, mic, sleep, long meetings, quiet input)                            | next          | 93       | in progress |
+| ⌘1/2/3 pick; help level (first sound / word / ask only); quiet-input warning; language dropdown | next          | 4c       | in progress |
+| Pace from the speaker's own gaps; stutter-aware; self-corrections; 9 new scenarios              | next          | c1       | in progress |
+| STT and languages: noise/rate in live harness, `language` incl. `multi`, Deepgram options       | next          | 75       | in progress |
 
 ## Decisions
 
