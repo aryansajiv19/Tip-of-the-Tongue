@@ -14,6 +14,19 @@ const THREE: [string, number][] = [
   ['contract', 0.6],
   ['invoice', 0.5],
 ];
+// Remember the word on the check mark, even if it is gone before the test looks.
+async function watchAccepted(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as { accepted: string | null };
+    w.accepted = null;
+    new MutationObserver(() => {
+      const el = document.querySelector('.card-accepted');
+      if (el) w.accepted = el.textContent;
+    }).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
+}
+const acceptedSeen = (page: Page) =>
+  page.evaluate(() => (window as unknown as { accepted: string | null }).accepted);
 const picked = (server: Awaited<ReturnType<typeof fakeServer>>) =>
   server.sent.filter((e) => e.type === 'guess.picked');
 
@@ -27,10 +40,11 @@ test.describe('in a browser', () => {
       const server = await launch(page);
       server.send(offered('a', THREE));
       await expect(offer(page).locator('.card-primary')).toHaveText('renewal');
+      await watchAccepted(page);
       await page.keyboard.press(key);
-      await expect(offer(page)).toContainText(word);
-      await expect(offer(page).locator('.card-accepted')).toBeVisible();
-      expect(picked(server)).toEqual([{ type: 'guess.picked', id: 'a', word }]);
+      await expect.poll(() => picked(server)).toEqual([{ type: 'guess.picked', id: 'a', word }]);
+      // The check mark is only up for a moment, so look for it as it happens, not by polling.
+      await expect.poll(() => acceptedSeen(page)).toBe(word);
     });
   }
 
