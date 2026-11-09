@@ -28,6 +28,8 @@ import { DevTools } from './ui/DevTools';
 import { PrepDrawer } from './ui/PrepDrawer';
 import { desktop, useCommands } from './ui/desktop';
 import { levelStore } from './ui/levelStore';
+import { healthMessage } from './audio/inputHealth';
+import { useInputHealth } from './audio/useInputHealth';
 import { contextLabel } from './ui/sessionState';
 import { modifierLabel } from './ui/commands';
 import { useSessionClock } from './ui/useSessionClock';
@@ -59,6 +61,8 @@ export function App() {
   const [stt, setStt] = useState<'deepgram' | 'browser'>('browser');
   const [notice, setNotice] = useState('');
   const sttRef = useRef(stt);
+  // Words arriving, for the check that the microphone and the words agree (set below).
+  const wordsArrived = useRef<() => void>(() => undefined);
 
   const onServerEvent = useCallback(
     (e: ServerEvent) => {
@@ -78,6 +82,7 @@ export function App() {
       // Anything the server sent before it answered a reset belongs to the old conversation.
       if (!gate.pass(e)) return;
       dispatchCard({ type: 'server', event: e, nowMs: Date.now() });
+      if (e.type === 'transcript.partial' || e.type === 'transcript.final') wordsArrived.current();
       if (e.type === 'transcript.partial') setPartial(text(e.words));
       else if (e.type === 'transcript.final') {
         setPartial('');
@@ -99,6 +104,7 @@ export function App() {
 
   const sendPartial = useCallback(
     (words: Word[]) => {
+      wordsArrived.current();
       setPartial(text(words));
       send({ type: 'transcript.partial', words });
     },
@@ -106,6 +112,7 @@ export function App() {
   );
   const sendFinal = useCallback(
     (words: Word[]) => {
+      wordsArrived.current();
       setPartial('');
       setHeard((h) => [...h, ...words.map((w) => w.text)].slice(-MAX_WORDS));
       send({ type: 'transcript.final', words });
@@ -121,10 +128,17 @@ export function App() {
   const { start: startMic, stop: stopMic } = mic;
   const listening = stt === 'deepgram' ? mic.capturing : speech.listening;
   const error = stt === 'deepgram' ? mic.error : speech.error;
+  const input = useInputHealth(listening);
+  useEffect(() => {
+    wordsArrived.current = input.words;
+  }, [input.words]);
   useVoice(
     listening,
     (voiced, atMs) => send({ type: 'voice.activity', voiced, atMs }),
-    levelStore.set,
+    (rms) => {
+      levelStore.set(rms);
+      input.level(rms);
+    },
     micId,
   );
   useManualKey(listening, () => send({ type: 'stuck.manual' }));
@@ -305,7 +319,12 @@ export function App() {
             </p>
           )}
           <p role="status" className="overlay-note glass">
-            {overlayLine({ listening, connection: status, notice, firstRun })}
+            {overlayLine({
+              listening,
+              connection: status,
+              notice: healthMessage(input.health) || notice,
+              firstRun,
+            })}
           </p>
           <p className="overlay-note overlay-heard glass">
             {heardLine([...heard, ...partialWords])}
