@@ -48,6 +48,8 @@ describe('toTranscriptEvent', () => {
     expect(toTranscriptEvent(results(true, []), 0)).toBeNull();
     expect(toTranscriptEvent({ type: 'Metadata' }, 0)).toBeNull();
     expect(toTranscriptEvent({ type: 'UtteranceEnd' }, 0)).toBeNull();
+    expect(toTranscriptEvent({ type: 'ConfigureSuccess', keyterms: ['SOC 2'] }, 0)).toBeNull();
+    expect(toTranscriptEvent({ type: 'ConfigureFailure', code: 'X' }, 0)).toBeNull();
     expect(toTranscriptEvent('junk', 0)).toBeNull();
   });
 
@@ -88,10 +90,15 @@ async function fakeDeepgram(onAudio: (ws: WebSocket, chunk: Buffer) => void) {
   await new Promise<void>((resolve) => wss.once('listening', () => resolve()));
   const headers: (string | undefined)[] = [];
   const urls: string[] = [];
+  // Text messages from the client (Configure, CloseStream), and every audio chunk, in order.
+  const messages: string[] = [];
   wss.on('connection', (ws, req) => {
     headers.push(req.headers.authorization);
     ws.on('message', (data, isBinary) => {
-      if (isBinary) onAudio(ws, data as Buffer);
+      if (isBinary) {
+        messages.push('audio');
+        onAudio(ws, data as Buffer);
+      } else messages.push(data.toString());
     });
   });
   const port = (wss.address() as AddressInfo).port;
@@ -101,7 +108,7 @@ async function fakeDeepgram(onAudio: (ws: WebSocket, chunk: Buffer) => void) {
       headers: { Authorization: `Token ${apiKey}` },
     });
   };
-  return { wss, headers, urls, connect };
+  return { wss, headers, urls, messages, connect };
 }
 
 const servers: { close: () => void }[] = [];
@@ -140,64 +147,15 @@ describe('createDeepgramStream', () => {
     stream.close();
   });
 
-  it('opens a new stream with the new keyterms after restart, and not before', async () => {
+  it('sends new keyterms on the running stream: no new connection, no lost audio, same speakers', async () => {
     const dg = await fakeDeepgram(() => undefined);
     servers.push(dg.wss);
     let terms = ['Priya'];
-    const stream = createDeepgramStream({
-      apiKey: 'k',
-      language: 'en',
-      keyterms: () => terms,
-      connect: dg.connect,
-      onEvent: () => undefined,
-      onError: (err) => {
-        throw err;
-      },
-    });
-    stream.send(Buffer.alloc(3200));
-    await expect.poll(() => dg.wss.clients.size).toBe(1); // connected
-    expect(dg.urls).toHaveLength(1);
-    expect(new URL(dg.urls[0] ?? '').searchParams.getAll('keyterm')).toEqual(['Priya']);
-
-    terms = ['Priya', 'SOC 2'];
-    stream.send(Buffer.alloc(3200)); // same stream: terms cannot change mid-stream
-    expect(dg.urls).toHaveLength(1);
-
-    stream.restart();
-    stream.send(Buffer.alloc(3200));
-    await expect.poll(() => dg.urls.length).toBe(2);
-    expect(new URL(dg.urls[1] ?? '').searchParams.getAll('keyterm')).toEqual(['Priya', 'SOC 2']);
-    stream.close();
-  });
-
-  it('does not count closing a stream that is still connecting as a failure', async () => {
-    const dg = await fakeDeepgram(() => undefined);
-    servers.push(dg.wss);
-    const errors: Error[] = [];
-    const stream = createDeepgramStream({
-      apiKey: 'k',
-      language: 'en',
-      connect: dg.connect,
-      onEvent: () => undefined,
-      onError: (err) => errors.push(err),
-    });
-    stream.send(Buffer.alloc(3200)); // starts connecting
-    stream.restart(); // e.g. the brief changed right away
-    await new Promise((r) => setTimeout(r, 200));
-    expect(errors).toEqual([]);
-    // And it still works afterwards.
-    stream.send(Buffer.alloc(3200));
-    await expect.poll(() => dg.urls.length).toBe(2);
-    stream.close();
-  });
-
-  it('says when a stream opens: the first one, and again after a restart', async () => {
-    const dg = await fakeDeepgram(() => undefined);
-    servers.push(dg.wss);
     let starts = 0;
     const stream = createDeepgramStream({
       apiKey: 'k',
       language: 'en',
+      keyterms: () => terms,
       connect: dg.connect,
       onStreamStart: () => starts++,
       onEvent: () => undefined,
@@ -206,20 +164,104 @@ describe('createDeepgramStream', () => {
       },
     });
     stream.send(Buffer.alloc(3200));
+    await expect.poll(() => dg.messages.length).toBe(1); // connected, first chunk delivered
+    expect(new URL(dg.urls[0] ?? '').searchParams.getAll('keyterm')).toEqual(['Priya']);
+
+    terms = ['Priya', 'SOC 2'];
+    stream.send(Buffer.alloc(3200)); // the list is not sent until told
+    stream.updateKeyterms();
     stream.send(Buffer.alloc(3200));
-    expect(starts).toBe(1); // same stream
-    await expect.poll(() => dg.wss.clients.size).toBe(1);
-    stream.restart();
-    stream.send(Buffer.alloc(3200));
-    expect(starts).toBe(2);
+    await expect.poll(() => dg.messages.length).toBe(4);
+    expect(dg.messages.map((m) => (m === 'audio' ? m : JSON.parse(m)))).toEqual([
+      'audio',
+      'audio',
+      { type: 'Configure', keyterms: ['Priya', 'SOC 2'] },
+      'audio',
+    ]);
+    expect(dg.urls).toHaveLength(1);
+    expect(starts).toBe(1);
     stream.close();
   });
 
-  it('does nothing on restart when no stream is open', () => {
+  it('applies a change made while the stream was still connecting, before any audio', async () => {
+    const dg = await fakeDeepgram(() => undefined);
+    servers.push(dg.wss);
+    let terms = ['Priya'];
+    const errors: Error[] = [];
+    const stream = createDeepgramStream({
+      apiKey: 'k',
+      language: 'en',
+      keyterms: () => terms,
+      connect: dg.connect,
+      onEvent: () => undefined,
+      onError: (err) => errors.push(err),
+    });
+    stream.send(Buffer.alloc(3200)); // starts connecting, with ['Priya'] in the URL
+    terms = ['Priya', 'Northwind'];
+    stream.updateKeyterms(); // the brief changed right away
+    await expect.poll(() => dg.messages.length).toBe(2);
+    expect(JSON.parse(dg.messages[0] ?? '')).toEqual({
+      type: 'Configure',
+      keyterms: ['Priya', 'Northwind'],
+    });
+    expect(dg.messages[1]).toBe('audio');
+    expect(dg.urls).toHaveLength(1);
+    expect(errors).toEqual([]);
+    stream.close();
+  });
+
+  it('sends nothing when the terms did not change while connecting', async () => {
+    const dg = await fakeDeepgram(() => undefined);
+    servers.push(dg.wss);
+    const stream = createDeepgramStream({
+      apiKey: 'k',
+      language: 'en',
+      keyterms: () => ['Priya'],
+      connect: dg.connect,
+      onEvent: () => undefined,
+      onError: (err) => {
+        throw err;
+      },
+    });
+    stream.send(Buffer.alloc(3200));
+    stream.updateKeyterms();
+    await expect.poll(() => dg.messages.length).toBe(1);
+    expect(dg.messages).toEqual(['audio']);
+    stream.close();
+  });
+
+  it('reports a refused keyterm update by its code, and ignores a successful one', async () => {
+    const dg = await fakeDeepgram((ws) => {
+      ws.send(JSON.stringify({ type: 'ConfigureSuccess', keyterms: ['Priya'] }));
+      ws.send(
+        JSON.stringify({ type: 'ConfigureFailure', code: 'CONFIGURE_KEYTERM_LIMIT_EXCEEDED' }),
+      );
+    });
+    servers.push(dg.wss);
+    const failures: string[] = [];
+    const events: unknown[] = [];
+    const stream = createDeepgramStream({
+      apiKey: 'k',
+      language: 'en',
+      connect: dg.connect,
+      onEvent: (e) => events.push(e),
+      onConfigureFailure: (code) => failures.push(code),
+      onError: (err) => {
+        throw err;
+      },
+    });
+    stream.send(Buffer.alloc(3200));
+    await expect.poll(() => failures).toEqual(['CONFIGURE_KEYTERM_LIMIT_EXCEEDED']);
+    expect(events).toEqual([]);
+    stream.close();
+  });
+
+  it('does nothing when no stream is open', () => {
     let opened = 0;
     const stream = createDeepgramStream({
       apiKey: 'k',
       language: 'en',
+      keyterms: () => ['Priya'],
       connect: () => {
         opened++;
         return new WebSocket('ws://127.0.0.1:1');
@@ -227,7 +269,7 @@ describe('createDeepgramStream', () => {
       onEvent: () => undefined,
       onError: () => undefined,
     });
-    stream.restart();
+    stream.updateKeyterms();
     expect(opened).toBe(0);
   });
 
@@ -329,8 +371,12 @@ describe('server with Deepgram', () => {
     );
     await new Promise((r) => setTimeout(r, 100)); // let the brief reach the session
     ws.send(Buffer.alloc(3200));
-    await expect.poll(() => dg.urls.length).toBe(2);
-    expect(terms(dg.urls[1])).toEqual(['Biscuit', 'Northwind', 'SOC 2']);
+    await expect.poll(() => dg.messages.filter((m) => m !== 'audio').length).toBe(1);
+    expect(dg.urls).toHaveLength(1); // same stream
+    expect(JSON.parse(dg.messages.find((m) => m !== 'audio') ?? '')).toEqual({
+      type: 'Configure',
+      keyterms: ['Biscuit', 'Northwind', 'SOC 2'],
+    });
     ws.close();
     await app.close();
   });

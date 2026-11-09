@@ -44,7 +44,8 @@ export function toTranscriptEvent(message: unknown, streamStartMs: number): Tran
 }
 
 // `keyterm` is repeated once per term (Nova-3 only). Callers keep the list inside Deepgram's limits
-// (see keyterms.ts); over the limit, Deepgram refuses the connection.
+// (see keyterms.ts); over the limit, Deepgram refuses the connection. A running stream takes a
+// new list with a Configure message instead (see `updateKeyterms`).
 export function deepgramUrl(
   language: string,
   keyterms: readonly string[] = [],
@@ -73,13 +74,15 @@ export function deepgramUrl(
 export interface DeepgramOptions {
   apiKey: string;
   language: string;
-  // Asked for each time a stream opens, so a change shows up after `restart()`.
+  // Asked when a stream opens and after `updateKeyterms()`.
   keyterms?: () => readonly string[];
   // Ask Deepgram to label who said each word.
   diarize?: boolean;
   // A new stream has opened. Its speaker numbers start again, so earlier ones no longer apply.
   onStreamStart?: () => void;
   onEvent: (event: TranscriptEvent) => void;
+  // Deepgram refused a keyterm update (the old terms stay). `code` is Deepgram's, never words.
+  onConfigureFailure?: (code: string) => void;
   onError: (err: Error) => void;
   // Injectable for tests.
   connect?: (url: string, apiKey: string) => WebSocket;
@@ -121,7 +124,7 @@ export function createDeepgramStream(opts: DeepgramOptions) {
 
   // `fatal`: retrying cannot help (a refused key).
   function fail(socket: WebSocket, err: Error, fatal = false) {
-    // A stream we closed on purpose (restart, idle, hang-up) may still report an error while it
+    // A stream we closed on purpose (idle, hang-up) may still report an error while it
     // shuts down, for example "closed before the connection was established". That is not a failure.
     if (ws !== socket) return;
     ws = undefined;
@@ -134,6 +137,12 @@ export function createDeepgramStream(opts: DeepgramOptions) {
     } else {
       retryAtMs = now() + wait;
     }
+  }
+
+  // Replaces the stream's keyterms in place: no reconnect, so no audio is lost and the speaker
+  // numbers carry on.
+  function configure(socket: WebSocket) {
+    socket.send(JSON.stringify({ type: 'Configure', keyterms: opts.keyterms?.() ?? [] }));
   }
 
   function close() {
@@ -149,16 +158,16 @@ export function createDeepgramStream(opts: DeepgramOptions) {
     opts.onStreamStart?.();
     streamStartMs = now() - CHUNK_MS;
     const origin = streamStartMs;
-    const socket = connect(
-      deepgramUrl(opts.language, opts.keyterms?.() ?? [], opts.diarize),
-      opts.apiKey,
-    );
+    const urlTerms = opts.keyterms?.() ?? [];
+    const socket = connect(deepgramUrl(opts.language, urlTerms, opts.diarize), opts.apiKey);
     ws = socket;
     let heardAtMs = now();
     let pingTimer: NodeJS.Timeout | undefined;
     socket.on('open', () => {
       failures = 0;
       heardAtMs = now();
+      // The list changed while we were connecting.
+      if (urlTerms.join('\n') !== (opts.keyterms?.() ?? []).join('\n')) configure(socket);
       for (const chunk of pending) socket.send(chunk);
       pending = [];
       pingTimer = setInterval(() => {
@@ -179,6 +188,17 @@ export function createDeepgramStream(opts: DeepgramOptions) {
       try {
         json = JSON.parse(data.toString());
       } catch {
+        return;
+      }
+      if (
+        typeof json === 'object' &&
+        json !== null &&
+        'type' in json &&
+        json.type === 'ConfigureFailure'
+      ) {
+        opts.onConfigureFailure?.(
+          'code' in json && typeof json.code === 'string' ? json.code : '?',
+        );
         return;
       }
       // Results from a stream we already closed still map with that stream's own origin.
@@ -211,10 +231,10 @@ export function createDeepgramStream(opts: DeepgramOptions) {
       idleTimer = setTimeout(close, IDLE_CLOSE_MS);
     },
     close,
-    // Keyterms can only be set when a stream opens. Drop the current one; the next chunk of audio
-    // opens a new stream with the current keyterms.
-    restart() {
-      if (ws) close();
+    // The words to teach Deepgram changed. A stream that is still connecting picks them up when
+    // it opens; a stream that is not open yet uses them from the start.
+    updateKeyterms() {
+      if (ws?.readyState === WebSocket.OPEN) configure(ws);
     },
   };
 }
