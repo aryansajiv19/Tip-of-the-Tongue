@@ -7,12 +7,16 @@ import {
   globalShortcut,
   ipcMain,
   nativeImage,
+  safeStorage,
   screen,
   session,
   systemPreferences,
   type IpcMainEvent,
+  type IpcMainInvokeEvent,
 } from 'electron';
 import { startChildren, waitForUrl } from './children';
+import { checkKey } from './keyCheck';
+import { KEY_NAMES, createKeyStore } from './keyStore';
 import { allCardShortcuts, parseCapture, wantedShortcuts } from './cardKeys';
 import { MARGIN, clampHeight, maxHeight, placeOverlay, type DisplayInfo } from './placement';
 
@@ -29,7 +33,19 @@ let win: BrowserWindow | undefined;
 let tray: Tray | undefined;
 let listening = false;
 let capture: { picks: number } | null = null;
-const children = startChildren(ROOT, PORTS);
+const keyStore = createKeyStore(path.join(app.getPath('userData'), 'keys.json'), safeStorage);
+const ENV_NAMES = { anthropic: 'ANTHROPIC_API_KEY', deepgram: 'DEEPGRAM_API_KEY' } as const;
+// A saved key wins; in development a key in .env still works when nothing is saved.
+const keyOf = (name: (typeof KEY_NAMES)[number]) =>
+  keyStore.get(name) || process.env[ENV_NAMES[name]] || undefined;
+const savedKeys = () =>
+  Object.fromEntries(
+    KEY_NAMES.flatMap((name) => {
+      const key = keyStore.get(name);
+      return key ? [[ENV_NAMES[name], key]] : [];
+    }),
+  );
+const children = startChildren(ROOT, PORTS, savedKeys);
 
 const displays = (): DisplayInfo[] =>
   screen.getAllDisplays().map((d) => ({ id: d.id, bounds: d.bounds, workArea: d.workArea }));
@@ -141,6 +157,24 @@ function wire() {
     if (event.sender !== win?.webContents || next === undefined) return;
     capture = next;
     syncCardKeys();
+  });
+
+  // Only the overlay page may ask; keys go in, never back out.
+  const fromPage = (event: IpcMainInvokeEvent) => event.sender === win?.webContents;
+  ipcMain.handle('keys:status', (event) => {
+    if (!fromPage(event)) throw new Error('not allowed');
+    return Object.fromEntries(KEY_NAMES.map((n) => [n, keyOf(n) ? 'set' : 'missing']));
+  });
+  ipcMain.handle('keys:save', (event, keys: unknown) => {
+    if (!fromPage(event)) throw new Error('not allowed');
+    if (typeof keys !== 'object' || keys === null) throw new Error('expected an object');
+    keyStore.save(keys);
+    children.restartServer();
+  });
+  ipcMain.handle('keys:test', async (event) => {
+    if (!fromPage(event)) throw new Error('not allowed');
+    const results = await Promise.all(KEY_NAMES.map((n) => checkKey(n, keyOf(n))));
+    return Object.fromEntries(KEY_NAMES.map((n, i) => [n, results[i]]));
   });
 
   globalShortcut.register('CommandOrControl+\\', toggle);

@@ -4,29 +4,44 @@ import http from 'node:http';
 // Runs the server and the Vite dev server as child processes, so the overlay needs only one
 // command. Each child leads its own process group, so killing the group also stops npm's own
 // children (tsx, vite).
-export function startChildren(root: string, ports: { server: number; web: number }) {
-  const env = {
-    ...process.env,
-    PORT: String(ports.server),
-    ALLOWED_ORIGINS: `http://localhost:${ports.web}`,
+export function startChildren(
+  root: string,
+  ports: { server: number; web: number },
+  // Keys the user saved in the app; the server is started with them (and restarted when they change).
+  keys: () => Record<string, string>,
+) {
+  const run = (args: string[], extra: Record<string, string> = {}) =>
+    spawn('npm', args, {
+      cwd: root,
+      env: {
+        ...process.env,
+        PORT: String(ports.server),
+        ALLOWED_ORIGINS: `http://localhost:${ports.web}`,
+        ...extra,
+      },
+      stdio: 'inherit',
+      detached: true,
+    });
+  const kill = (child: ChildProcess | undefined) => {
+    if (child?.pid === undefined) return;
+    try {
+      process.kill(-child.pid, 'SIGTERM');
+    } catch {
+      // Already gone.
+    }
   };
-  const run = (args: string[]) =>
-    spawn('npm', args, { cwd: root, env, stdio: 'inherit', detached: true });
-  const children: ChildProcess[] = [
-    run(['run', 'dev', '-w', 'server']),
-    run(['run', 'dev', '-w', 'web', '--', '--port', String(ports.web), '--strictPort']),
-  ];
+  const startServer = () => run(['run', 'dev', '-w', 'server'], keys());
+  let server = startServer();
+  const web = run(['run', 'dev', '-w', 'web', '--', '--port', String(ports.web), '--strictPort']);
 
   return {
+    restartServer() {
+      kill(server);
+      server = startServer();
+    },
     stop() {
-      for (const child of children) {
-        if (child.pid === undefined) continue;
-        try {
-          process.kill(-child.pid, 'SIGTERM');
-        } catch {
-          // Already gone.
-        }
-      }
+      kill(server);
+      kill(web);
     },
   };
 }
