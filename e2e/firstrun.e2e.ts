@@ -4,7 +4,7 @@ import { failRecognition, installFakeSpeech, instanceCount, say } from './fakeSp
 // Not through open(): that adds ?debug=1, and a first-time user has no such thing.
 async function launch(page: Page) {
   await page.goto('/');
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(page.getByRole('status').first()).toHaveText('Connected');
 }
 
 const pill = (page: Page) => page.getByRole('group', { name: 'Listening controls' });
@@ -17,8 +17,21 @@ test.beforeEach(async ({ page }) => {
   await installFakeSpeech(page);
 });
 
-test('a first-time user is told what to do, and only until they press Start', async ({ page }) => {
+test('a first-time user is asked how to help first; Play and the hint come after the answer', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    // Only the first load: a reload must keep the answer.
+    if (sessionStorage.getItem('fresh')) return;
+    sessionStorage.setItem('fresh', '1');
+    localStorage.removeItem('tott.help');
+  });
   await launch(page);
+  await expect(page.getByRole('group', { name: /How should I help/ })).toBeVisible();
+  await expect(start(page)).toHaveCount(0);
+  await expect(line(page, /Press play and talk/)).toHaveCount(0);
+  await page.getByRole('button', { name: 'Whole word' }).click();
+  await expect(start(page)).toBeVisible();
   await expect(line(page, /Press play and talk/)).toBeVisible();
   await start(page).click();
   await expect(line(page, /Press play and talk/)).toHaveCount(0);
@@ -27,7 +40,7 @@ test('a first-time user is told what to do, and only until they press Start', as
   ).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(page.getByRole('status').first()).toHaveText('Connected');
   await expect(line(page, /Press play and talk/)).toHaveCount(0);
 });
 
@@ -67,7 +80,7 @@ test('the context button invites first, then names the loaded file, with a toolt
   page,
 }) => {
   await launch(page);
-  await expect(contextButton(page)).toHaveText('Add context');
+  await expect(contextButton(page)).toHaveText('Notes');
   await expect(contextButton(page)).toHaveAttribute('title', /so I know your names and terms/);
 
   await contextButton(page).click();
@@ -82,7 +95,7 @@ test('the context button invites first, then names the loaded file, with a toolt
   await expect(contextButton(page)).toContainText(/^Meeting\s\u00b7 a-rather-long/);
   await expect(contextButton(page)).toHaveAttribute('title', /^Meeting\s\u00b7 a-rather-long/);
   await page.getByRole('button', { name: /^Remove / }).click();
-  await expect(contextButton(page)).toHaveText('Add context');
+  await expect(contextButton(page)).toHaveText('Notes');
 });
 
 test('nothing in the pill overlaps: the label, chevron and keycaps stay apart and inside', async ({
@@ -119,8 +132,8 @@ test('nothing in the pill overlaps: the label, chevron and keycaps stay apart an
 test('each keycap says what it does, to a screen reader and as a tooltip', async ({ page }) => {
   await launch(page);
   const caps = pill(page).locator('.keycap');
-  await expect(caps.nth(0)).toHaveAccessibleName(/start or pause listening/);
-  await expect(caps.nth(0)).toHaveAttribute('title', 'Start or pause listening');
+  await expect(caps.nth(0)).toHaveAccessibleName(/show or hide this overlay/);
+  await expect(caps.nth(0)).toHaveAttribute('title', 'Show or hide this overlay');
   await expect(caps.nth(1)).toHaveAccessibleName(/stuck/);
   await expect(caps.nth(1)).toHaveAttribute('title', /stuck/);
 });
@@ -155,7 +168,7 @@ test.describe('at the 420 px overlay width', () => {
       const label = contextButton(page).locator('.pill-mode-text');
       const fits = (el: Locator) => el.evaluate((e) => e.scrollWidth <= e.clientWidth);
       expect((await pill(page).boundingBox())?.width).toBe(420);
-      await expect(label).toHaveText('Add context');
+      await expect(label).toHaveText('Notes');
       expect(await fits(label)).toBe(true);
       for (const el of await pill(page).locator('.pill-timer, .keycap').all()) {
         expect(await fits(el)).toBe(true);

@@ -255,3 +255,18 @@ describe('design tokens', () => {
     expect(css).toMatch(new RegExp(`--card-linger:\\s*${LINGER_MS / 1000}s`));
   });
 });
+
+describe('holding the card', () => {
+  const shown = run([server(stuck), server(offered('a', [['renewal', 0.9]]))]);
+
+  it('gives the waited time back, so the card outlives its linger while read', () => {
+    const held = cardReducer(shown, { type: 'hold', byMs: LINGER_MS });
+    const later = cardReducer(held, { type: 'tick', nowMs: T0 + LINGER_MS });
+    expect(later.view?.kind).toBe('offer');
+    expect(cardReducer(held, { type: 'tick', nowMs: T0 + 2 * LINGER_MS }).view).toBeNull();
+  });
+
+  it('does nothing without a card', () => {
+    expect(cardReducer(emptyCard, { type: 'hold', byMs: 500 })).toBe(emptyCard);
+  });
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { backoffMs, parseServerEvent, SILENT_MS, silentFor } from './protocol';
+import { backoffMs, parseServerEvent, SILENT_MS, silentFor, socketUrl } from './protocol';
 
 describe('parseServerEvent', () => {
   it('parses known events', () => {
@@ -61,5 +61,31 @@ describe('silentFor', () => {
   });
   it('parses the heartbeat', () => {
     expect(parseServerEvent('{"type":"heartbeat"}')).toEqual({ type: 'heartbeat' });
+  });
+});
+
+describe('socketUrl', () => {
+  const page = (search: string, protocol = 'http:') => ({
+    protocol,
+    host: '127.0.0.1:4000',
+    search,
+  });
+
+  it('is the plain /ws address with no token', () => {
+    expect(socketUrl(page(''))).toBe('ws://127.0.0.1:4000/ws');
+    expect(socketUrl(page('?debug=1'))).toBe('ws://127.0.0.1:4000/ws');
+  });
+
+  it('passes the page’s token on, and only the token', () => {
+    expect(socketUrl(page('?token=XYZ&debug=1'))).toBe('ws://127.0.0.1:4000/ws?token=XYZ');
+  });
+
+  it('encodes the token, and ignores an empty one', () => {
+    expect(socketUrl(page('?token=a%26b%3Dc'))).toBe('ws://127.0.0.1:4000/ws?token=a%26b%3Dc');
+    expect(socketUrl(page('?token='))).toBe('ws://127.0.0.1:4000/ws');
+  });
+
+  it('uses wss on https', () => {
+    expect(socketUrl(page('?token=T', 'https:'))).toBe('wss://127.0.0.1:4000/ws?token=T');
   });
 });

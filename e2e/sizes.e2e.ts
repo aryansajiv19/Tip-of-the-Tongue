@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 async function launch(page: Page) {
   const server = await fakeServer(page);
   await page.goto('/');
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(page.getByRole('status').first()).toHaveText('Connected');
   return server;
 }
 

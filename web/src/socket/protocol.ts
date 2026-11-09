@@ -39,3 +39,12 @@ export function backoffMs(attempt: number): number {
 // dead (a closed laptop, a dropped network) even if the browser has not noticed.
 export const SILENT_MS = 40_000;
 export const silentFor = (lastHeardMs: number, nowMs: number) => nowMs - lastHeardMs > SILENT_MS;
+
+// The WebSocket address for a page. The packaged desktop app opens the page with ?token=..., and
+// the server wants the same token on the socket; without one nothing is added.
+export function socketUrl(loc: { protocol: string; host: string; search: string }): string {
+  const scheme = loc.protocol === 'https:' ? 'wss' : 'ws';
+  const token = new URLSearchParams(loc.search).get('token');
+  const query = token ? `?token=${encodeURIComponent(token)}` : '';
+  return `${scheme}://${loc.host}/ws${query}`;
+}

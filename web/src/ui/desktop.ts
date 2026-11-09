@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import type { Check, Presence } from '../settings/keys';
 import { commandForKey, type Command } from './commands';
 
 // What the desktop app's preload script exposes. Absent in a normal browser.
@@ -10,6 +11,13 @@ export interface DesktopBridge {
   // gives them back.
   captureCardKeys(picks: number, cb: (key: 'escape' | 1 | 2 | 3) => void): () => void;
   report(state: { listening: boolean }): void;
+  // The user's own provider keys. Absent before the keys backend exists, and in a browser.
+  keys?: {
+    status(): Promise<{ anthropic: Presence; deepgram: Presence }>;
+    // An omitted field keeps its key, an empty string removes it; the server restarts.
+    save(keys: { anthropic?: string; deepgram?: string }): Promise<void>;
+    test(): Promise<{ anthropic: Check; deepgram: Check }>;
+  };
 }
 
 export const desktop = (window as unknown as { tott?: DesktopBridge }).tott;
@@ -38,7 +46,7 @@ export function useCommands(handler: (command: Command) => void) {
 // The desktop app has no browser speech service of its own (Electron has no Google speech key),
 // so there the only fix is a Deepgram key.
 export const SPEECH_UNREACHABLE = desktop
-  ? 'Add DEEPGRAM_API_KEY to .env to use speech in the desktop app, then restart it.'
+  ? 'Speech needs a Deepgram key in the desktop app. Add one in Settings, then press Start.'
   : 'Speech recognition cannot reach its service. Check your connection; I keep trying.';
 
 // Where the user turns the microphone back on differs between the app and a browser tab.

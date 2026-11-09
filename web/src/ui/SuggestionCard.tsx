@@ -18,6 +18,8 @@ interface Props {
   masked: boolean;
   onReveal: () => void;
   onDismiss: () => void;
+  // The pointer or keyboard focus is on the card (true) or has left it (false).
+  onHold: (held: boolean) => void;
 }
 
 // What is on screen, with a stable identity so the exit animation can hold on to it.
@@ -53,7 +55,15 @@ function useExit(content: Content | null) {
 }
 
 // The live region stays mounted so screen readers announce a suggestion when it appears.
-export function SuggestionCard({ card, problem, onPick, onDismiss, masked, onReveal }: Props) {
+export function SuggestionCard({
+  card,
+  problem,
+  onPick,
+  onDismiss,
+  masked,
+  onReveal,
+  onHold,
+}: Props) {
   const content = useContent(card, problem);
   const { shown, leaving, done } = useExit(content);
 
@@ -101,6 +111,10 @@ export function SuggestionCard({ card, problem, onPick, onDismiss, masked, onRev
         <section
           className={leaving ? 'suggestion glass is-leaving' : 'suggestion glass'}
           onAnimationEnd={done}
+          onMouseEnter={() => onHold(true)}
+          onMouseLeave={() => onHold(false)}
+          onFocus={() => onHold(true)}
+          onBlur={() => onHold(false)}
         >
           <Body content={shown} onPick={onPick} masked={masked} onReveal={onReveal} />
         </section>
@@ -136,14 +150,14 @@ function Body({
       return <p className="card-thinking">Finding the word</p>;
     case 'problem':
       return (
-        <p className="card-problem" role="alert">
+        <p className="card-problem">
           <CircleAlert size={16} strokeWidth={1.5} aria-hidden="true" />
           {content.line}
         </p>
       );
     case 'accepted':
       return (
-        <p className="card-accepted">
+        <p className="card-accepted" dir="auto">
           <Check size={16} strokeWidth={1.5} aria-hidden="true" />
           {content.word}
         </p>
@@ -157,6 +171,7 @@ function Body({
               <button
                 type="button"
                 className="card-primary"
+                dir="auto"
                 aria-keyshortcuts={`${SHORTCUT}+1`}
                 {...(masked
                   ? { 'aria-label': `Show the word that starts ${cue(content.primary.word)}` }
@@ -183,6 +198,7 @@ function Body({
               {content.alternatives.map((c, i) => (
                 <li key={c.word}>
                   <button
+                    dir="auto"
                     type="button"
                     aria-keyshortcuts={`${SHORTCUT}+${i + 2}`}
                     {...(masked

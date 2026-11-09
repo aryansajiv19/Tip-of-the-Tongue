@@ -35,6 +35,6 @@ export function formatClock(ms: number): string {
 
 // The label on the pill's context button: an invitation until something is loaded, then what.
 export function contextLabel(brief: string | null, source?: string): string {
-  if (brief === null || brief.trim() === '') return 'Add context';
+  if (brief === null || brief.trim() === '') return 'Notes';
   return source ? `Meeting \u00b7 ${source}` : 'Meeting';
 }

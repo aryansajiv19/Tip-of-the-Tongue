@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Settings as GearIcon } from 'lucide-react';
 import { HELP_KEYS, HELP_LABELS, helpHint, type HelpLevel } from '../settings/help';
+import { TEXT_SIZES, TEXT_SIZE_LABELS, type TextSize } from '../settings/textSize';
+import { LANGUAGE_OPTIONS, MIXED_HINT, isLanguage } from '../settings/language';
+import type { Language } from '../../../server/src/events';
 import { micOptions, type MicOption } from '../settings/mic';
 import {
   SENSITIVITIES,
@@ -9,6 +12,11 @@ import {
   type Sensitivity,
 } from '../settings/sensitivity';
 import { modifierLabel } from './commands';
+import { Privacy } from './Privacy';
+import { KeysForm } from './KeysForm';
+import type { DesktopBridge } from './desktop';
+import type { Presence, Provider } from '../settings/keys';
+import { useReturnFocus } from './useReturnFocus';
 import './settings.css';
 
 interface Props {
@@ -16,6 +24,10 @@ interface Props {
   onHelp: (value: HelpLevel) => void;
   sensitivity: Sensitivity | null;
   onSensitivity: (value: Sensitivity) => void;
+  language: Language | null;
+  onLanguage: (value: Language) => void;
+  textSize: TextSize;
+  onTextSize: (value: TextSize) => void;
   micId: string | null;
   onMic: (id: string | null) => void;
   // Debug controls exist only on a page opened with ?debug=1.
@@ -24,6 +36,14 @@ interface Props {
   onDebug: (on: boolean) => void;
   onOpenDebugView: () => void;
   onDownloadTrace: () => void;
+  // Forgets everything kept on this device (the page also drops the loaded meeting notes).
+  onForgetAll: () => void;
+  // The desktop app's keys; null in a browser (there the server reads its own environment).
+  keys: {
+    bridge: NonNullable<DesktopBridge['keys']>;
+    status: Record<Provider, Presence>;
+    refresh: () => void;
+  } | null;
 }
 
 const ICON = { size: 16, strokeWidth: 1.5, 'aria-hidden': true } as const;
@@ -50,6 +70,7 @@ export function SettingsGear(p: { open: boolean; onToggle: () => void }) {
 export function SettingsPanel(p: Props & { onClose: () => void }) {
   const [mics, setMics] = useState<MicOption[]>([]);
   const { onClose } = p;
+  const panel = useReturnFocus<HTMLDivElement>();
 
   // Microphone names are only known once the user has allowed the microphone, so look again
   // each time the popover opens.
@@ -80,7 +101,14 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <div id={PANEL_ID} className="settings-panel glass" role="group" aria-label="Settings">
+    <div
+      id={PANEL_ID}
+      ref={panel}
+      tabIndex={-1}
+      className="settings-panel glass"
+      role="group"
+      aria-label="Settings"
+    >
       <fieldset>
         <legend>How I help</legend>
         <div className="settings-segments">
@@ -103,7 +131,7 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
       </fieldset>
 
       <fieldset>
-        <legend>Sensitivity</legend>
+        <legend>How quickly I offer words</legend>
         <div className="settings-segments">
           {SENSITIVITY_KEYS.map((key) => (
             <label key={key}>
@@ -121,6 +149,45 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
         <p className="settings-hint">{sensitivityHint(p.sensitivity ?? 'balanced')}</p>
       </fieldset>
 
+      <fieldset>
+        <legend>Text size</legend>
+        <div className="settings-segments">
+          {TEXT_SIZES.map((key) => (
+            <label key={key}>
+              <input
+                type="radio"
+                name="text-size"
+                value={key}
+                checked={p.textSize === key}
+                onChange={() => p.onTextSize(key)}
+              />
+              <span>{TEXT_SIZE_LABELS[key]}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <div className="settings-field">
+        <label htmlFor="settings-language">Language</label>
+        <select
+          id="settings-language"
+          value={p.language ?? 'en'}
+          aria-describedby={p.language === 'multi' ? 'settings-language-hint' : undefined}
+          onChange={(e) => isLanguage(e.target.value) && p.onLanguage(e.target.value)}
+        >
+          {LANGUAGE_OPTIONS.map((o) => (
+            <option key={o.code} value={o.code} lang={o.code === 'multi' ? undefined : o.code}>
+              {o.name}
+            </option>
+          ))}
+        </select>
+        {p.language === 'multi' && (
+          <p id="settings-language-hint" className="settings-hint">
+            {MIXED_HINT}
+          </p>
+        )}
+      </div>
+
       <label className="settings-field">
         <span>Microphone</span>
         <select value={p.micId ?? ''} onChange={(e) => p.onMic(e.target.value || null)}>
@@ -132,6 +199,15 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
           ))}
         </select>
       </label>
+
+      {p.keys && (
+        <fieldset>
+          <legend>Keys</legend>
+          <KeysForm keys={p.keys.bridge} presence={p.keys.status} onSaved={p.keys.refresh} />
+        </fieldset>
+      )}
+
+      <Privacy onForgetAll={p.onForgetAll} />
 
       {p.showDebug && (
         <>

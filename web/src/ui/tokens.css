@@ -1,6 +1,8 @@
 /* Design tokens for the overlay. Every colour, size, radius, shadow and timing in the UI
    comes from here; components use only these variables. */
 :root {
+  color-scheme: dark;
+
   /* Surfaces: dark translucent glass */
   --surface-bg: rgba(20, 20, 22, 0.92);
   --surface-blur: blur(24px) saturate(140%);
@@ -28,11 +30,11 @@
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
-  --text-xs: 12px; /* smallest text allowed */
-  --text-sm: 14px; /* labels and status lines */
-  --text-md: 16px;
-  --text-alt: 18px; /* alternative words on the card */
-  --text-word: 36px;
+  --text-scale: 1; /* 1.25 under Large text (data-text-size on <html>) */
+  --text-sm: calc(14px * var(--text-scale)); /* smallest text allowed: labels and status lines */
+  --text-md: calc(16px * var(--text-scale));
+  --text-alt: calc(18px * var(--text-scale)); /* alternative words on the card */
+  --text-word: calc(36px * var(--text-scale));
 
   /* Spacing: 4/8 grid */
   --space-1: 4px;
@@ -46,6 +48,7 @@
   --pill-height: 56px;
   --target: 44px; /* the smallest button or hit target, both ways */
   --drawer-max-height: 400px; /* the prep drawer scrolls inside beyond this */
+  --settings-max-height: 520px; /* so does the settings panel */
   --icon: 20px;
   --icon-stroke: 1.5;
   --keycap-height: 24px;
@@ -56,6 +59,28 @@
   --dur: 200ms;
   --shift: 4px;
   --card-linger: 6s; /* a suggestion fades out on its own after this */
+}
+
+:root[data-text-size='large'] {
+  --text-scale: 1.25;
+}
+
+/* Light theme: follows the system. The same roles, light glass and darker inks. */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --surface-bg: rgba(250, 250, 252, 0.94);
+    --surface-border: 1px solid rgba(0, 0, 0, 0.1);
+    --surface-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    --surface-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    --surface-solid: #fafafc;
+    --text: #1d1d1f;
+    --text-muted: #52525b;
+    --text-faint: #8a8a93;
+    --accent: #0369a1;
+    --error: #b91c1c;
+    --hover: rgba(0, 0, 0, 0.06);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -99,7 +124,7 @@
   padding: 0 var(--space-1);
   border: var(--surface-border);
   border-radius: var(--radius-keycap);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }

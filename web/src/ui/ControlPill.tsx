@@ -10,7 +10,7 @@ interface Props {
   // False when this browser can't listen at all: the button is shown but disabled.
   canListen: boolean;
   elapsedMs: number;
-  // The context button's text: "Add context", or "Meeting \u00b7 <file>".
+  // The context button's text: "Notes", or "Meeting \u00b7 <file>".
   contextLabel: string;
   // True once something is loaded.
   hasContext: boolean;
@@ -20,6 +20,8 @@ interface Props {
   modifier: string;
   onToggleListening: () => void;
   onNewConversation: () => void;
+  // True until the user has answered "How should I help?": Play only appears after.
+  askFirst?: boolean;
   // The settings gear, placed just before New conversation.
   gear?: ReactNode;
 }
@@ -38,15 +40,17 @@ export function ControlPill(p: Props) {
 
   return (
     <div className="control-pill glass" role="group" aria-label="Listening controls">
-      <button
-        type="button"
-        className="pill-button"
-        aria-label={toggleLabel}
-        disabled={!p.canListen}
-        onClick={p.onToggleListening}
-      >
-        {p.listening ? <Pause {...ICON} /> : <Play {...ICON} />}
-      </button>
+      {!p.askFirst && (
+        <button
+          type="button"
+          className="pill-button"
+          aria-label={toggleLabel}
+          disabled={!p.canListen}
+          onClick={p.onToggleListening}
+        >
+          {p.listening ? <Pause {...ICON} /> : <Play {...ICON} />}
+        </button>
+      )}
 
       <Waveform listening={p.listening} />
 
@@ -74,8 +78,8 @@ export function ControlPill(p: Props) {
         <kbd
           className="keycap"
           role="img"
-          aria-label={`${p.modifier} backslash: start or pause listening`}
-          title="Start or pause listening"
+          aria-label={`${p.modifier} backslash: show or hide this overlay`}
+          title="Show or hide this overlay"
         >
           {p.modifier}\
         </kbd>

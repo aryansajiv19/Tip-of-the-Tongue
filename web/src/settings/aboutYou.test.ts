@@ -186,3 +186,43 @@ describe('createAboutYou', () => {
     expect(b.snapshot().remembered).toEqual(['y']);
   });
 });
+
+describe('removing what is kept', () => {
+  const seeded = () => {
+    const store = createAboutYou(null);
+    store.setAbout({ name: 'Sam', role: 'CFO', words: 'Northwind' });
+    store.remember('renewal');
+    store.remember('chemist');
+    return store;
+  };
+
+  it('removes one remembered word and keeps the rest and About you', () => {
+    const store = seeded();
+    store.removeRemembered('renewal');
+    expect(store.snapshot().remembered).toEqual(['chemist']);
+    expect(store.snapshot().about.name).toBe('Sam');
+  });
+
+  it('clears About you and keeps the remembered words', () => {
+    const store = seeded();
+    store.clearAbout();
+    expect(store.snapshot().about).toEqual({ name: '', role: '', words: '' });
+    expect(store.snapshot().remembered).toEqual(['renewal', 'chemist']);
+  });
+
+  it('forgets everything, and the saved copy goes too', () => {
+    const data = new Map<string, string>();
+    const storage = {
+      getItem: (k: string) => data.get(k) ?? null,
+      setItem: (k: string, v: string) => void data.set(k, v),
+      removeItem: (k: string) => void data.delete(k),
+    };
+    const store = createAboutYou(storage);
+    store.setAbout({ name: 'Sam' });
+    store.remember('renewal');
+    expect(data.size).toBe(1);
+    store.forgetAll();
+    expect(store.snapshot()).toEqual({ about: { name: '', role: '', words: '' }, remembered: [] });
+    expect(data.size).toBe(0);
+  });
+});

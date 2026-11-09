@@ -9,7 +9,7 @@ const remembered = (page: Page) => drawer(page).getByRole('group', { name: 'Reme
 async function launch(page: Page) {
   const server = await fakeServer(page);
   await page.goto('/');
-  await expect(status(page)).toHaveText('Server: connected');
+  await expect(status(page)).toHaveText('Connected');
   return server;
 }
 const openDrawer = (page: Page) => page.getByRole('button', { name: /^Meeting prep/ }).click();
@@ -43,7 +43,7 @@ test('About you is saved on this device, sent to the server, and sent again afte
   expect(profiles(server).length).toBeLessThanOrEqual(2);
 
   await page.reload();
-  await expect(status(page)).toHaveText('Server: connected');
+  await expect(status(page)).toHaveText('Connected');
   await openDrawer(page);
   await expect(about(page).getByLabel('Name')).toHaveValue('Dana Reyes');
   await expect(about(page).getByLabel('Role')).toHaveValue('product lead');
@@ -71,7 +71,7 @@ test('accepted words are remembered, survive a reload, and Forget clears them', 
 
   const before = profiles(server).length;
   await page.reload();
-  await expect(status(page)).toHaveText('Server: connected');
+  await expect(status(page)).toHaveText('Connected');
   await openDrawer(page);
   await expect(remembered(page)).toContainText('pharmacy');
   // The new connection is sent the saved words before they are forgotten.

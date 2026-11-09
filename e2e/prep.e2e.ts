@@ -51,7 +51,7 @@ test('a text file becomes the brief: its name, key terms and the Meeting mode sh
   page,
 }) => {
   await openDrawer(page);
-  await expect(pill(page)).toContainText('Add context');
+  await expect(pill(page)).toContainText('Notes');
   await fileInput(page).setInputFiles({
     name: 'agenda.md',
     mimeType: 'text/markdown',
@@ -111,7 +111,7 @@ test('removing the document clears the brief, the terms and the mode', async ({ 
   await drawer(page).getByRole('button', { name: 'Remove agenda.md' }).click();
   await expect(drawer(page)).not.toContainText('agenda.md');
   await expect(terms(page)).toHaveCount(0);
-  await expect(pill(page)).toContainText('Add context');
+  await expect(pill(page)).toContainText('Notes');
 });
 
 test('a file of the wrong kind, an empty file and a broken PDF each say what is wrong', async ({
@@ -140,7 +140,7 @@ test('a file of the wrong kind, an empty file and a broken PDF each say what is 
   });
   await expect(alert).toContainText('Could not read');
   // Nothing was loaded, and the page still works.
-  await expect(pill(page)).toContainText('Add context');
+  await expect(pill(page)).toContainText('Notes');
   await expect(drawer(page).getByRole('button', { name: 'Choose file' })).toBeVisible();
 });
 

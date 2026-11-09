@@ -53,7 +53,7 @@ test('the pill is 420 by 56 and shows its parts at the top right', async ({ page
 
   await expect(toggle(page)).toHaveAccessibleName('Start listening');
   await expect(timer(page)).toHaveText('00:00');
-  await expect(pill(page)).toContainText('Add context');
+  await expect(pill(page)).toContainText('Notes');
   await expect(pill(page).getByRole('button', { name: 'New conversation' })).toBeVisible();
   const mod = await page.evaluate(() => (/mac/i.test(navigator.platform) ? '⌘' : 'Ctrl'));
   await expect(pill(page).locator('.keycap')).toHaveText([`${mod}\\`, `${mod}↵`]);
@@ -122,7 +122,7 @@ test('the timer counts while listening, stops on pause and restarts on a new con
 
 test('the mode is Meeting once a brief is loaded', async ({ page }) => {
   await open(page);
-  await expect(pill(page)).toContainText('Add context');
+  await expect(pill(page)).toContainText('Notes');
   await page.getByLabel(/Meeting brief/).fill('Q3 review with Northwind');
   await page.getByRole('button', { name: 'Use this brief' }).click();
   await expect(pill(page)).toContainText('Meeting');

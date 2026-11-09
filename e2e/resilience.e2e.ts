@@ -13,24 +13,24 @@ test('page survives the server going away and reconnects when it returns', async
   });
   down = true;
   await page.goto('/?debug=1');
-  await expect(page.getByRole('status').first()).toHaveText('Server: reconnecting');
+  await expect(page.getByRole('status').first()).toHaveText('Not connected. Reconnecting…');
   await expect(page.getByRole('group', { name: 'Listening controls' })).toBeVisible();
 
   down = false;
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected', {
+  await expect(page.getByRole('status').first()).toHaveText('Connected', {
     timeout: 20_000,
   });
 });
 
 test('a second tab waits and takes over when the first one closes', async ({ context, page }) => {
   await page.goto('/');
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(page.getByRole('status').first()).toHaveText('Connected');
   const second = await context.newPage();
   await second.goto('/');
-  await expect(second.getByRole('status').first()).toHaveText('Server: other-tab');
+  await expect(second.getByRole('status').first()).toHaveText('Waiting for the other tab');
   await expect(second.getByText('Another tab is already listening')).toBeVisible();
   await page.close();
-  await expect(second.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(second.getByRole('status').first()).toHaveText('Connected');
 });
 
 test('shows a calm message when speech recognition is unsupported', async ({ page }) => {

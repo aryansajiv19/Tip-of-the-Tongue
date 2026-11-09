@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import type { ClientEvent, ServerEvent, Word } from '../../server/src/events';
+import type { ClientEvent, Language, ServerEvent, Word } from '../../server/src/events';
 import { HelpQuestion } from './ui/HelpQuestion';
 import { SettingsGear, SettingsPanel } from './ui/Settings';
 import { SuggestionCard } from './ui/SuggestionCard';
@@ -11,6 +11,8 @@ import { useCardClock } from './ui/useCardClock';
 import { saveDebug, savedDebug } from './settings/debug';
 import { isFirstRun, markStarted } from './settings/firstRun';
 import { saveHelp, savedHelp, type HelpLevel } from './settings/help';
+import { applyTextSize, savedTextSize, type TextSize } from './settings/textSize';
+import { saveLanguage, savedLanguage, speechLang } from './settings/language';
 import { saveMicId, savedMicId } from './settings/mic';
 import { useManualKey } from './audio/useManualKey';
 import { useMic } from './audio/useMic';
@@ -24,10 +26,14 @@ import {
   type Sensitivity,
 } from './settings/sensitivity';
 import { aboutYou } from './settings/aboutYou';
+import { demoChosen, needsSetup } from './settings/keys';
+import { useKeys } from './settings/useKeys';
 import { useSendAboutYou } from './settings/useAboutYou';
 import { ControlPill } from './ui/ControlPill';
 import { DevTools } from './ui/DevTools';
+import { recentWords, type RecentWord } from './ui/recentWords';
 import { PrepDrawer } from './ui/PrepDrawer';
+import { DemoBanner, Setup } from './ui/Setup';
 import { desktop, useCommands } from './ui/desktop';
 import { levelStore } from './ui/levelStore';
 import { healthMessage } from './audio/inputHealth';
@@ -39,6 +45,16 @@ import { useSessionClock } from './ui/useSessionClock';
 const MAX_WORDS = 60;
 const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
 
+const CONNECTION_LABEL = {
+  connecting: 'Connecting…',
+  connected: 'Connected',
+  reconnecting: 'Not connected. Reconnecting…',
+  'other-tab': 'Waiting for the other tab',
+} as const;
+
+// Under exactOptionalPropertyTypes an absent language is no property at all.
+const langOption = (lang: string | undefined) => (lang ? { lang } : {});
+
 const text = (words: Word[]) => words.map((w) => w.text).join(' ');
 
 export function App() {
@@ -46,6 +62,8 @@ export function App() {
   const gate = useRef(createResetGate()).current;
   const [micId, setMicId] = useState<string | null>(savedMicId);
   const [debugOn, setDebugOn] = useState(() => DEBUG && savedDebug());
+  const [language, setLanguage] = useState<Language | null>(savedLanguage);
+  const [textSize, setTextSize] = useState<TextSize>(savedTextSize);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [heard, setHeard] = useState<string[]>([]);
   const [visible, setVisible] = useState(true);
@@ -54,9 +72,20 @@ export function App() {
   const [brief, setBrief] = useState<{ text: string; source?: string } | null>(null);
   const [briefTerms, setBriefTerms] = useState<string[]>([]);
   const [prepOpen, setPrepOpen] = useState(false);
+  // Words offered and accepted in this conversation, for the drawer.
+  const [recent, setRecent] = useState<RecentWord[]>([]);
   // The saved choice, or null so the server's own defaults apply until the user picks one.
   const [sensitivity, setSensitivity] = useState<Sensitivity | null>(savedSensitivity);
   const [guesserDown, setGuesserDown] = useState(false);
+  const [guesserReason, setGuesserReason] = useState<'key' | 'busy' | undefined>();
+  // Which guesser the server runs: 'mock' means the suggestions are examples.
+  const [guesser, setGuesser] = useState<'claude' | 'mock' | null>(null);
+  const keys = useKeys();
+  const [demo, setDemo] = useState(demoChosen);
+  // Setup is decided once, when the desktop app first reports its keys, and stays until the user is
+  // done with it (so the check results can be read) or chooses the demo.
+  const [setupOpen, setSetupOpen] = useState<boolean | null>(null);
+  if (setupOpen === null && keys.status) setSetupOpen(needsSetup(keys.status) && !demo);
   const [firstRun, setFirstRun] = useState(isFirstRun);
   // How the user wants to be helped; null until they have been asked (the whole word shows).
   const [help, setHelp] = useState<HelpLevel | null>(savedHelp);
@@ -72,10 +101,15 @@ export function App() {
 
   const onServerEvent = useCallback(
     (e: ServerEvent) => {
-      if (e.type === 'guesser.status') return setGuesserDown(!e.ok);
+      if (e.type === 'guesser.status') {
+        setGuesserDown(!e.ok);
+        return setGuesserReason(e.ok ? undefined : e.reason);
+      }
       if (e.type === 'brief.terms') return setBriefTerms(e.terms);
       if (e.type === 'guess.accepted') aboutYou.remember(e.word);
+      setRecent((r) => recentWords(r, e));
       if (e.type === 'session.ready') {
+        setGuesser(e.guesser);
         // A new connection is a new server session.
         gate.connected();
         dispatchCard({ type: 'clear' });
@@ -107,7 +141,10 @@ export function App() {
   const [prevStatus, setPrevStatus] = useState(status);
   if (status !== prevStatus) {
     setPrevStatus(status);
-    if (status !== 'connected') setGuesserDown(false);
+    if (status !== 'connected') {
+      setGuesserDown(false);
+      setGuesserReason(undefined);
+    }
   }
 
   const sendPartial = useCallback(
@@ -127,7 +164,12 @@ export function App() {
     },
     [send],
   );
-  const speech = useSpeech({ onPartial: sendPartial, onFinal: sendFinal, debug: DEBUG || debugOn });
+  const speech = useSpeech({
+    onPartial: sendPartial,
+    onFinal: sendFinal,
+    debug: DEBUG || debugOn,
+    ...langOption(speechLang(language, navigator.language)),
+  });
   const { trace } = speech;
 
   // One Start/Pause for both ways of listening. `wanted` is what the user asked for.
@@ -206,9 +248,20 @@ export function App() {
     }
   }, [status, sensitivity, send]);
 
+  // The language is its own message, so choosing it never resends (or resets) the sensitivity.
+  useEffect(() => {
+    if (status === 'connected' && language !== null) {
+      send({ type: 'session.settings', language } satisfies ClientEvent);
+    }
+  }, [status, language, send]);
+
   const dismissCard = useCallback(() => dispatchCard({ type: 'dismiss' }), []);
-  useCardClock(card.view !== null, dispatchCard);
-  const problem = statusLine({ connection: status, guesserDown });
+  // Hovering or focusing the card keeps it on screen; leaving gives the timer back.
+  const [held, setHeld] = useState(false);
+  useCardClock(card.view !== null, held, dispatchCard);
+  const cardShown = card.view !== null;
+  if (!cardShown && held) setHeld(false);
+  const problem = statusLine({ connection: status, guesserDown, guesserReason });
 
   const changeHelp = (level: HelpLevel) => {
     setHelp(level);
@@ -224,6 +277,14 @@ export function App() {
   const changeSensitivity = (value: Sensitivity) => {
     setSensitivity(value);
     saveSensitivity(value);
+  };
+  const changeTextSize = (size: TextSize) => {
+    setTextSize(size);
+    applyTextSize(size);
+  };
+  const changeLanguage = (value: Language) => {
+    setLanguage(value);
+    saveLanguage(value);
   };
   const changeMic = (id: string | null) => {
     setMicId(id);
@@ -246,10 +307,20 @@ export function App() {
     gate.reset();
     dispatchCard({ type: 'clear' });
     setHeard([]);
+    setRecent([]);
     setPartial('');
     resetSpeech();
     send({ type: 'session.reset' });
   }, [resetClock, gate, resetSpeech, send]);
+
+  // Everything this device keeps about the user: About you, remembered words, the meeting notes
+  // and this conversation's recent words. Settings stay.
+  const forgetAll = useCallback(() => {
+    aboutYou.forgetAll();
+    setBrief({ text: '' });
+    setBriefTerms([]);
+    setRecent([]);
+  }, []);
 
   useCommands((command) => {
     if (command === 'toggle-visible') setVisible((v) => !v);
@@ -282,12 +353,13 @@ export function App() {
   return (
     <>
       <p role="status" className="sr-only">
-        Server: {status}
+        {CONNECTION_LABEL[status]}
       </p>
 
       {visible && (
         <div className="overlay" ref={overlay}>
           <ControlPill
+            askFirst={help === null}
             listening={listening}
             canListen={canListen}
             elapsedMs={clock.elapsedMs}
@@ -301,12 +373,30 @@ export function App() {
             gear={<SettingsGear open={settingsOpen} onToggle={() => setSettingsOpen((o) => !o)} />}
           />
 
+          {keys.bridge && keys.status && setupOpen && (
+            <Setup
+              keys={keys.bridge}
+              presence={keys.status}
+              onSaved={keys.refresh}
+              onDemo={() => {
+                setDemo(true);
+                setSetupOpen(false);
+              }}
+              onDone={() => setSetupOpen(false)}
+            />
+          )}
+          {guesser === 'mock' && <DemoBanner />}
+
           {settingsOpen && (
             <SettingsPanel
               help={help}
               onHelp={changeHelp}
               sensitivity={sensitivity}
               onSensitivity={changeSensitivity}
+              language={language}
+              onLanguage={changeLanguage}
+              textSize={textSize}
+              onTextSize={changeTextSize}
               micId={micId}
               onMic={changeMic}
               showDebug={DEBUG}
@@ -314,6 +404,12 @@ export function App() {
               onDebug={changeDebug}
               onOpenDebugView={openDebugView}
               onDownloadTrace={downloadTrace}
+              onForgetAll={forgetAll}
+              keys={
+                keys.bridge && keys.status
+                  ? { bridge: keys.bridge, status: keys.status, refresh: keys.refresh }
+                  : null
+              }
               onClose={() => setSettingsOpen(false)}
             />
           )}
@@ -322,6 +418,7 @@ export function App() {
             <PrepDrawer
               docName={brief?.source ?? null}
               terms={briefTerms}
+              recent={recent}
               onLoad={(text, name) => setBrief({ text, source: name })}
               onClear={() => setBrief({ text: '' })}
               onClose={() => setPrepOpen(false)}
@@ -346,7 +443,7 @@ export function App() {
               listening,
               connection: status,
               notice: healthMessage(input.health) || notice,
-              firstRun,
+              firstRun: firstRun && help !== null,
             })}
           </p>
           <p className="overlay-note overlay-heard glass">
@@ -364,6 +461,7 @@ export function App() {
                 send({ type: 'guess.picked', id, word });
               }}
               onDismiss={dismissCard}
+              onHold={setHeld}
               masked={masked}
               onReveal={revealCard}
             />

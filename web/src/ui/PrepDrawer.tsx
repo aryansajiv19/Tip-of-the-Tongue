@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react';
-import { FileText, X } from 'lucide-react';
+import { Check, FileText, X } from 'lucide-react';
 import { MAX_TEXT_CHARS, aboutYou } from '../settings/aboutYou';
 import { useAboutYouState } from '../settings/useAboutYou';
 import { readDocument } from './readDocument';
+import { useReturnFocus } from './useReturnFocus';
+import type { RecentWord } from './recentWords';
 import './prepDrawer.css';
 
 const SHOWN_TERMS = 24;
@@ -13,14 +15,17 @@ interface Props {
   docName: string | null;
   // Key terms of the brief, from the server.
   terms: string[];
+  // Words offered and accepted in this conversation, newest first.
+  recent: RecentWord[];
   onLoad: (text: string, name: string) => void;
   onClear: () => void;
   onClose: () => void;
 }
 
 // A compact drawer under the pill: drop a PDF, .md or .txt file and it becomes the brief.
-export function PrepDrawer({ docName, terms, onLoad, onClear, onClose }: Props) {
+export function PrepDrawer({ docName, terms, recent, onLoad, onClear, onClose }: Props) {
   const input = useRef<HTMLInputElement>(null);
+  const drawer = useReturnFocus<HTMLElement>();
   const { about, remembered } = useAboutYouState();
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -47,6 +52,8 @@ export function PrepDrawer({ docName, terms, onLoad, onClear, onClose }: Props) 
   return (
     <section
       id="prep-drawer"
+      ref={drawer}
+      tabIndex={-1}
       className="prep glass"
       aria-label="Meeting prep"
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
@@ -122,6 +129,22 @@ export function PrepDrawer({ docName, terms, onLoad, onClear, onClose }: Props) 
         </ul>
       )}
 
+      {recent.length > 0 && (
+        <div className="prep-recent" role="group" aria-label="Recent words">
+          <h2 className="prep-heading">Recent words</h2>
+          <p className="prep-why">Offered in this conversation. A tick means you took it.</p>
+          <ul className="prep-terms" aria-label="Recent">
+            {recent.map((r) => (
+              <li key={r.word} className="prep-chip" dir="auto">
+                {r.word}
+                {r.accepted && <span className="sr-only"> (accepted)</span>}
+                {r.accepted && <Check size={14} strokeWidth={1.5} aria-hidden="true" />}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="prep-about" role="group" aria-label="About you">
         <h2 className="prep-heading">About you</h2>
         <label className="prep-field">
@@ -153,6 +176,11 @@ export function PrepDrawer({ docName, terms, onLoad, onClear, onClose }: Props) 
           />
         </label>
         <p className="prep-why">Saved on this device only.</p>
+        {(about.name || about.role || about.words) && (
+          <button type="button" className="prep-choose" onClick={aboutYou.clearAbout}>
+            Clear About you
+          </button>
+        )}
       </div>
 
       {remembered.length > 0 && (
