@@ -10,6 +10,8 @@ Read first: `docs/README.md` (what each doc is for), `docs/CHECKPOINT.md` (statu
 - Pipeline: speech (Deepgram via the server, else browser Web Speech) → stall detector (any pause, cue phrases, sound signals) → Claude guesser (Haiku, starts early, streamed; mock without key) → gate → pop-up. Details: `docs/ARCHITECTURE.md`.
 - Env in `.env.example`. Everything runs with no keys (mock guesser, browser speech).
 
+Code map: `graphify-out/` in the lead's checkout (`~/voice-airlock-hiya`, git-ignored). Ask it before wide reading: `graphify query "<question>"` there; the lead rebuilds it with `/graphify --update` after big merges.
+
 ## Rules
 
 - `npm run lint`, `typecheck`, `test`, `build` pass before any PR (`npm run e2e` for UI/session changes). Unit tests for every pure module; tests are hard and realistic.
