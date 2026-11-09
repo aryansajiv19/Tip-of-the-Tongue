@@ -1,5 +1,5 @@
 import { useSyncExternalStore, type ReactNode } from 'react';
-import { Pause, Play, RotateCcw } from 'lucide-react';
+import { ChevronDown, Pause, Play, RotateCcw } from 'lucide-react';
 import { formatClock, type Mode } from './sessionState';
 import { BAR_COUNT, barHeights } from './levelBars';
 import { levelStore } from './levelStore';
@@ -11,6 +11,8 @@ interface Props {
   canListen: boolean;
   elapsedMs: number;
   mode: Mode;
+  prepOpen: boolean;
+  onTogglePrep: () => void;
   // What to print on the keycaps: "⌘" or "Ctrl".
   modifier: string;
   onToggleListening: () => void;
@@ -45,7 +47,20 @@ export function ControlPill(p: Props) {
       <span className="pill-timer" role="timer" aria-label="Time listening">
         {formatClock(p.elapsedMs)}
       </span>
-      <span className="pill-mode">{p.mode}</span>
+      <button
+        type="button"
+        className="pill-mode"
+        aria-label={`Meeting prep, ${p.mode}`}
+        aria-expanded={p.prepOpen}
+        aria-controls="prep-drawer"
+        onClick={p.onTogglePrep}
+      >
+        {p.mode}
+        <ChevronDown
+          {...ICON}
+          className={p.prepOpen ? 'pill-chevron pill-chevron-open' : 'pill-chevron'}
+        />
+      </button>
 
       <span className="pill-keys" aria-hidden="true">
         <kbd className="keycap">{p.modifier}\</kbd>

@@ -109,7 +109,10 @@ describe('bad input never crashes the server', () => {
     for (const m of junk) ws.send(m);
     ws.send(final('hello there.'));
     await sleep(100);
-    expect(events.filter((e) => e.type !== 'session.ready')).toEqual([]);
+    // The one valid message in the list (a tiny brief) is answered with an empty term list.
+    expect(events.filter((e) => e.type !== 'session.ready')).toEqual([
+      { type: 'brief.terms', terms: [] },
+    ]);
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
     ws.close();
     expect(await health()).toEqual({ ok: true });
