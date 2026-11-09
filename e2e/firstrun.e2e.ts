@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { failRecognition, installFakeSpeech, instanceCount, say } from './fakeSpeech';
 
 // Not through open(): that adds ?debug=1, and a first-time user has no such thing.
@@ -106,9 +106,13 @@ test('nothing in the pill overlaps: the label, chevron and keycaps stay apart an
   const caps = pill(page).locator('.keycap');
   const first = await box(caps.nth(0));
   const gear = await box(pill(page).getByRole('button', { name: 'Settings' }));
+  const second = await box(caps.nth(1));
   expect(label.x + label.width).toBeLessThanOrEqual(first.x);
-  expect(first.x + first.width).toBeLessThanOrEqual((await box(caps.nth(1))).x);
-  expect((await box(caps.nth(1))).x + (await box(caps.nth(1))).width).toBeLessThanOrEqual(gear.x);
+  // The two keycaps are stacked: one above the other, both inside the pill's height.
+  expect(first.y + first.height).toBeLessThanOrEqual(second.y);
+  expect(first.y).toBeGreaterThanOrEqual(pillBox.y);
+  expect(second.y + second.height).toBeLessThanOrEqual(pillBox.y + pillBox.height);
+  expect(Math.max(first.x + first.width, second.x + second.width)).toBeLessThanOrEqual(gear.x);
   expect(gear.x + gear.width).toBeLessThanOrEqual(pillBox.x + pillBox.width);
 });
 
@@ -132,22 +136,40 @@ test('each sensitivity says, in plain words, how long a pause it waits for', asy
   await expect(panel).toContainText('2.5 s pause');
 });
 
-test.describe('at the 340 px overlay width', () => {
+test.describe('at the 420 px overlay width', () => {
   test.use({ viewport: { width: 700, height: 600 } });
 
-  test('the context label and the rest of the pill are shown in full', async ({ page }) => {
-    await launch(page);
-    const label = contextButton(page).locator('.pill-mode-text');
-    const fits = () => label.evaluate((e) => e.scrollWidth <= e.clientWidth);
-    expect((await pill(page).boundingBox())?.width).toBe(340);
-    await expect(label).toHaveText('Add context');
-    expect(await fits()).toBe(true);
+  // CI runs on Linux: its fonts are wider, and its keycaps say "Ctrl" where a Mac's say "⌘".
+  for (const [name, platform] of [
+    ['a Mac', 'MacIntel'],
+    ['Linux', 'Linux x86_64'],
+  ] as const) {
+    test(`the context label and the rest of the pill are shown in full on ${name}`, async ({
+      page,
+    }) => {
+      await page.addInitScript(
+        (p) => Object.defineProperty(navigator, 'platform', { get: () => p }),
+        platform,
+      );
+      await launch(page);
+      const label = contextButton(page).locator('.pill-mode-text');
+      const fits = (el: Locator) => el.evaluate((e) => e.scrollWidth <= e.clientWidth);
+      expect((await pill(page).boundingBox())?.width).toBe(420);
+      await expect(label).toHaveText('Add context');
+      expect(await fits(label)).toBe(true);
+      for (const el of await pill(page).locator('.pill-timer, .keycap').all()) {
+        expect(await fits(el)).toBe(true);
+      }
 
-    // Nothing else in the pill is squeezed out either.
-    for (const el of await pill(page).locator('.pill-timer, .keycap').all()) {
-      expect(await el.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
-    }
-  });
+      // And with the text 10 % wider still.
+      await page.addStyleTag({ content: '.control-pill * { letter-spacing: 0.08em !important; }' });
+      expect(await fits(label)).toBe(true);
+      const pillBox = await pill(page).boundingBox();
+      const lastButton = await pill(page).getByRole('button').last().boundingBox();
+      if (!pillBox || !lastButton) throw new Error('not visible');
+      expect(lastButton.x + lastButton.width).toBeLessThanOrEqual(pillBox.x + pillBox.width);
+    });
+  }
 
   test('Retry sits below the blocked-microphone text, not over it', async ({ page }) => {
     await launch(page);
@@ -206,7 +228,7 @@ test.describe('at the 340 px overlay width', () => {
     await contextButton(page).click();
     const drawer = page.getByRole('region', { name: 'Meeting prep' });
     const box = await drawer.boundingBox();
-    expect(box?.height).toBeLessThanOrEqual(320);
+    expect(box?.height).toBeLessThanOrEqual(400);
     expect(await drawer.evaluate((e) => e.scrollHeight > e.clientHeight)).toBe(true);
 
     const last = drawer.getByRole('list', { name: 'Remembered' }).getByRole('listitem').last();

@@ -40,14 +40,14 @@ test.beforeEach(async ({ page }) => {
   await installFakeMic(page);
 });
 
-test('the pill is 340 by 44 and shows its parts at the top right', async ({ page }) => {
+test('the pill is 420 by 56 and shows its parts at the top right', async ({ page }) => {
   await open(page);
   const box = await pill(page).boundingBox();
   const view = page.viewportSize();
   expect(box && view).toBeTruthy();
   if (!box || !view) return;
-  expect(box.width).toBe(340);
-  expect(box.height).toBe(44);
+  expect(box.width).toBe(420);
+  expect(box.height).toBe(56);
   expect(box.x + box.width).toBeCloseTo(view.width - 16, 0);
   expect(box.y).toBeCloseTo(16, 0);
 
