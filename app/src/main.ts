@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import {
   BrowserWindow,
@@ -24,7 +25,15 @@ import { startServerProcess } from './serverProcess';
 import { checkKey } from './keyCheck';
 import { KEY_NAMES, createKeyStore } from './keyStore';
 import { allCardShortcuts, parseCapture, wantedShortcuts } from './cardKeys';
-import { MARGIN, clampHeight, maxHeight, placeOverlay, type DisplayInfo } from './placement';
+import {
+  MARGIN,
+  clampHeight,
+  fitOnScreen,
+  maxHeight,
+  parseSavedPosition,
+  placeOverlay,
+  type DisplayInfo,
+} from './placement';
 
 const ROOT = path.resolve(__dirname, '../..');
 const PORTS = {
@@ -91,12 +100,53 @@ const children = {
 const displays = (): DisplayInfo[] =>
   screen.getAllDisplays().map((d) => ({ id: d.id, bounds: d.bounds, workArea: d.workArea }));
 
-// Top right of the screen the cursor is on.
+// Where the user dragged the overlay to, kept across launches.
+const POSITION_FILE = path.join(app.getPath('userData'), 'window.json');
+function loadPosition() {
+  try {
+    return parseSavedPosition(JSON.parse(fs.readFileSync(POSITION_FILE, 'utf8')));
+  } catch {
+    return undefined;
+  }
+}
+let savedPosition = loadPosition();
+// The last position we set ourselves, to tell the user's drags from our own moves.
+let placedAt: { x: number; y: number } | undefined;
+
+function moveTo(at: { x: number; y: number }) {
+  if (!win) return;
+  placedAt = at;
+  win.setPosition(at.x, at.y);
+}
+
+// The remembered position if its screen is still there, else the top right of the screen the
+// cursor is on.
 function place() {
   if (!win) return;
   const [width = WIDTH, height = START_HEIGHT] = win.getSize();
-  const at = placeOverlay(displays(), screen.getCursorScreenPoint(), { width, height }, MARGIN);
-  if (at) win.setPosition(at.x, at.y);
+  const size = { width, height };
+  const at =
+    (savedPosition && fitOnScreen(savedPosition, size, displays())) ??
+    placeOverlay(displays(), screen.getCursorScreenPoint(), size, MARGIN);
+  if (at) moveTo(at);
+}
+
+function rememberMove() {
+  if (!win) return;
+  const [x = 0, y = 0] = win.getPosition();
+  if (placedAt && placedAt.x === x && placedAt.y === y) return;
+  savedPosition = { x, y };
+  try {
+    fs.writeFileSync(POSITION_FILE, JSON.stringify(savedPosition));
+  } catch (err) {
+    log('error', `position: not saved (${(err as Error).message})`);
+  }
+}
+
+function resetPosition() {
+  savedPosition = undefined;
+  fs.rmSync(POSITION_FILE, { force: true });
+  show();
 }
 
 function show() {
@@ -128,8 +178,9 @@ function toggle() {
   else show();
 }
 
-const send = (command: 'toggle-listening' | 'manual' | 'new-conversation') =>
-  win?.webContents.send('command', command);
+const send = (
+  command: 'toggle-listening' | 'manual' | 'new-conversation' | 'open-settings' | 'open-recent',
+) => win?.webContents.send('command', command);
 
 const statusItems = (): Electron.MenuItemConstructorOptions[] =>
   status.state === 'ready'
@@ -151,9 +202,31 @@ const menu = () =>
       click: () => send('toggle-listening'),
     },
     { label: 'New conversation', click: () => send('new-conversation') },
+    { label: 'Settings…', enabled: Boolean(win), click: () => showAnd('open-settings') },
+    { label: 'Recent words', enabled: Boolean(win), click: () => showAnd('open-recent') },
+    { type: 'separator' },
+    // Only the installed app: in development this would register the Electron binary itself.
+    ...(PACKAGED
+      ? [
+          {
+            label: 'Start at login',
+            type: 'checkbox' as const,
+            checked: app.getLoginItemSettings().openAtLogin,
+            click: (item: Electron.MenuItem) =>
+              app.setLoginItemSettings({ openAtLogin: item.checked }),
+          },
+        ]
+      : []),
+    { label: 'Reset window position', click: resetPosition },
     { type: 'separator' },
     { label: 'Quit', role: 'quit' },
   ]);
+
+// Brings the overlay up first, so the page it is asked to open is visible.
+function showAnd(command: 'open-settings' | 'open-recent') {
+  show();
+  send(command);
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -187,14 +260,21 @@ function createWindow() {
   });
   win.loadURL(PAGE_URL).catch((err: Error) => log('error', `page: ${err.message}`));
   win.once('ready-to-show', show);
+  win.on('moved', rememberMove);
   win.on('show', syncCardKeys);
   win.on('hide', syncCardKeys);
 }
 
-function createTray() {
-  const icon = nativeImage.createFromPath(path.join(__dirname, '../assets/trayTemplate.png'));
+// A ring with a dot while idle, a solid disc while listening (the "Template" suffix lets macOS tint it).
+function trayIcon(isListening: boolean) {
+  const name = isListening ? 'trayListeningTemplate.png' : 'trayTemplate.png';
+  const icon = nativeImage.createFromPath(path.join(__dirname, '../assets', name));
   icon.setTemplateImage(true);
-  tray = new Tray(icon);
+  return icon;
+}
+
+function createTray() {
+  tray = new Tray(trayIcon(listening));
   tray.setToolTip(trayTip());
   // Until it is ready there is no window to toggle, so a click shows the status instead.
   tray.on('click', () => (status.state === 'ready' ? toggle() : tray?.popUpContextMenu(menu())));
@@ -209,10 +289,13 @@ function wire() {
     const height = clampHeight(px, maxHeight(workArea));
     if (height === undefined) return;
     win.setContentSize(WIDTH, height);
+    // Growing downwards must not push the window off the bottom of the screen.
+    if (savedPosition) place();
   });
   ipcMain.on('overlay:state', (event: IpcMainEvent, state: unknown) => {
     if (event.sender !== win?.webContents) return;
     listening = Boolean((state as { listening?: unknown } | null)?.listening);
+    tray?.setImage(trayIcon(listening));
   });
 
   ipcMain.on('overlay:card-keys', (event: IpcMainEvent, payload: unknown) => {

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-type Command = 'toggle-listening' | 'manual' | 'new-conversation';
+type Command = 'toggle-listening' | 'manual' | 'new-conversation' | 'open-settings' | 'open-recent';
 type Presence = 'set' | 'missing';
 type Check = 'ok' | 'invalid' | 'unreachable' | 'missing';
 

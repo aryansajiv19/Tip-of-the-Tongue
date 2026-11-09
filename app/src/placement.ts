@@ -72,3 +72,32 @@ export function clampHeight(requested: unknown, max: number): number | undefined
   if (typeof requested !== 'number' || !Number.isFinite(requested)) return undefined;
   return Math.min(max, Math.max(MIN_HEIGHT, Math.round(requested)));
 }
+
+// The position the user dragged the overlay to, read back from disk: anything but two finite
+// numbers is ignored.
+export function parseSavedPosition(raw: unknown): { x: number; y: number } | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined;
+  const { x, y } = raw as { x?: unknown; y?: unknown };
+  if (typeof x !== 'number' || typeof y !== 'number') return undefined;
+  return Number.isFinite(x) && Number.isFinite(y)
+    ? { x: Math.round(x), y: Math.round(y) }
+    : undefined;
+}
+
+// Keeps a remembered position usable: moved inside the work area of the screen that holds the
+// window's centre. Returns undefined when that screen is gone (a display was unplugged), so the
+// caller falls back to the default corner.
+export function fitOnScreen(
+  at: { x: number; y: number },
+  size: Size,
+  displays: readonly DisplayInfo[],
+): { x: number; y: number } | undefined {
+  const centre = { x: at.x + size.width / 2, y: at.y + size.height / 2 };
+  const display = displays.find((d) => contains(d.workArea, centre));
+  if (!display) return undefined;
+  const { x, y, width, height } = display.workArea;
+  return {
+    x: Math.max(x, Math.min(at.x, x + width - size.width)),
+    y: Math.max(y, Math.min(at.y, y + height - size.height)),
+  };
+}
