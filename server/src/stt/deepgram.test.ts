@@ -297,7 +297,9 @@ describe('server with Deepgram', () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     ws.send(JSON.stringify({ type: 'session.reset' }));
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // The reset travels on a different socket from Deepgram's results: wait until the server has
+    // handled it, or a slow machine can deliver the late result first.
+    await expect.poll(() => events.some((e) => e.type === 'session.cleared')).toBe(true);
     // A late result for words spoken before the reset, then one for words spoken after it.
     socket?.send(JSON.stringify(results(true, [['old', 0, 0.02]])));
     socket?.send(JSON.stringify(results(true, [['fresh', 30, 30.2]])));

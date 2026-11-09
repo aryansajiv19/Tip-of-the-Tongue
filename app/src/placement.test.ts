@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  MAX_HEIGHT,
   MIN_HEIGHT,
   activeDisplay,
   clampHeight,
+  maxHeight,
   placeOverlay,
   topRight,
   type DisplayInfo,
@@ -94,18 +94,36 @@ describe('placeOverlay', () => {
 
 describe('clampHeight', () => {
   it('keeps a sane height as a whole number', () => {
-    expect(clampHeight(120.4)).toBe(120);
+    expect(clampHeight(120.4, 800)).toBe(120);
   });
 
   it('limits too small and too large heights', () => {
-    expect(clampHeight(0)).toBe(MIN_HEIGHT);
-    expect(clampHeight(-5)).toBe(MIN_HEIGHT);
-    expect(clampHeight(100_000)).toBe(MAX_HEIGHT);
+    expect(clampHeight(0, 800)).toBe(MIN_HEIGHT);
+    expect(clampHeight(-5, 800)).toBe(MIN_HEIGHT);
+    expect(clampHeight(100_000, 800)).toBe(800);
+  });
+
+  it('lets a drawer grow to the screen, not to a fixed 480', () => {
+    expect(clampHeight(760, maxHeight(rect(0, 25, 1440, 875)))).toBe(760);
   });
 
   it('refuses anything that is not a finite number', () => {
     for (const bad of [NaN, Infinity, '120', null, undefined, {}]) {
-      expect(clampHeight(bad)).toBeUndefined();
+      expect(clampHeight(bad, 800)).toBeUndefined();
     }
+  });
+});
+
+describe('maxHeight', () => {
+  it('is the work area minus the margin above and below', () => {
+    expect(maxHeight(rect(0, 25, 1440, 875))).toBe(875 - 32);
+  });
+
+  it('is the work area of that screen, so a small screen gets a shorter window', () => {
+    expect(maxHeight(rect(0, 25, 1280, 600))).toBe(568);
+  });
+
+  it('never goes below the pill, even on an absurdly small screen', () => {
+    expect(maxHeight(rect(0, 0, 400, 20))).toBe(MIN_HEIGHT);
   });
 });
