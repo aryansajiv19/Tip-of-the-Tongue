@@ -14,7 +14,7 @@ import {
 } from 'electron';
 import { startChildren, waitForUrl } from './children';
 import { allCardShortcuts, parseCapture, wantedShortcuts } from './cardKeys';
-import { MARGIN, clampHeight, placeOverlay, type DisplayInfo } from './placement';
+import { MARGIN, clampHeight, maxHeight, placeOverlay, type DisplayInfo } from './placement';
 
 const ROOT = path.resolve(__dirname, '../..');
 const PORTS = {
@@ -22,7 +22,7 @@ const PORTS = {
   web: Number(process.env.TOTT_WEB_PORT ?? 5173),
 };
 const URL = `http://localhost:${PORTS.web}`;
-const WIDTH = 340;
+const WIDTH = 420;
 const START_HEIGHT = 44;
 
 let win: BrowserWindow | undefined;
@@ -125,8 +125,10 @@ function createTray() {
 function wire() {
   // The page tells us how tall it is, and whether the mic is live.
   ipcMain.on('overlay:height', (event: IpcMainEvent, px: unknown) => {
-    const height = clampHeight(px);
-    if (event.sender !== win?.webContents || height === undefined) return;
+    if (event.sender !== win?.webContents) return;
+    const { workArea } = screen.getDisplayMatching(win.getBounds());
+    const height = clampHeight(px, maxHeight(workArea));
+    if (height === undefined) return;
     win.setContentSize(WIDTH, height);
   });
   ipcMain.on('overlay:state', (event: IpcMainEvent, state: unknown) => {

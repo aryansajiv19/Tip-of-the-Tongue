@@ -5,3 +5,4 @@
 - `EDGE-CASES.md`: what happens in awkward cases, and what the evals found.
 - `write-up.md`: the submission write-up with all evidence, intervals and caveats.
 - `CHECKPOINT.md`: current status, who owns what, decisions. `PLAN.md` is the original week plan (history); `MANUAL-TEST.md` is the by-voice test script.
+- `RESEARCH.md`: desk research on how people speak (rate, stuttering, aphasia, dysarthria, accents, code-switching), environment, and what the app does about it, with sources.

@@ -4,6 +4,11 @@ import { findPhrase, normalizePhrase } from './normalize.js';
 
 const MAX_OFFERED = 3;
 
+// Whether `small` appears inside `big` as a run of words.
+function contains(big: readonly string[], small: readonly string[]): boolean {
+  return small.length > 0 && big.some((_, i) => small.every((t, j) => big[i + j] === t));
+}
+
 export interface GateContext {
   // Words the user has said since the stuck point.
   saidSinceStuck: Word[];
@@ -34,13 +39,21 @@ export function decideOffer(
     return { offer: false, reason: 'cooldown' };
   }
 
-  const offeredAt = new Map<string, number>();
-  for (const [word, at] of ctx.recentlyOffered) offeredAt.set(normalizePhrase(word).join(' '), at);
+  const offered = [...ctx.recentlyOffered].map(([word, at]) => ({
+    tokens: normalizePhrase(word),
+    at,
+  }));
 
   const fresh = ranked.filter((c) => {
     if (findPhrase(ctx.saidSinceStuck, c.word) !== -1) return false;
-    const at = offeredAt.get(normalizePhrase(c.word).join(' '));
-    return at === undefined || ctx.nowMs - at >= (opts.repeatMs ?? opts.cooldownMs);
+    const tokens = normalizePhrase(c.word);
+    return offered.every(
+      (o) =>
+        // A longer form of an offered word is the same repeat ("onboarding team" after
+        // "onboarding"). A shorter one is the model correcting itself towards the exact word
+        // ("SOC 2" after "SOC 2 report"), which the user should see.
+        !contains(tokens, o.tokens) || ctx.nowMs - o.at >= (opts.repeatMs ?? opts.cooldownMs),
+    );
   });
   const best = fresh[0];
   if (!best) return { offer: false, reason: 'already-offered' };
