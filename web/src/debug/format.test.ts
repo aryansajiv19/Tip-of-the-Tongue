@@ -60,4 +60,10 @@ describe('formatDebug', () => {
       'you are voice 1 (accepted)',
     );
   });
+
+  it('says when the voice is forgotten', () => {
+    expect(formatDebug({ kind: 'speaker', me: undefined, why: 'new stream' })).toBe(
+      'voice forgotten (new stream); picking again from the next words',
+    );
+  });
 });
