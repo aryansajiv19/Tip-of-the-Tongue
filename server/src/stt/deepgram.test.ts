@@ -400,6 +400,32 @@ describe('server with Deepgram', () => {
     await app.close();
   });
 
+  it('goes back to Deepgram, and tells the page, once Deepgram answers again', async () => {
+    const dg = await fakeDeepgram(() => undefined);
+    servers.push(dg.wss);
+    let up = false;
+    let t = 0;
+    const { app, ws, events } = await connectClient({
+      deepgram: {
+        apiKey: 'k',
+        language: 'en',
+        now: () => (t += 5000),
+        recoverAfterMs: 50,
+        connect: (url, key) => (up ? dg.connect(url, key) : new WebSocket('ws://127.0.0.1:1')),
+      },
+    });
+    const audio = setInterval(() => ws.send(Buffer.alloc(3200)), 40);
+    const modes = () => events.filter((e) => e.type === 'session.ready').map((e) => e.stt);
+    await expect.poll(modes).toEqual(['deepgram', 'browser']);
+    clearInterval(audio);
+    await new Promise((r) => setTimeout(r, 200)); // still down: nothing new is said
+    expect(modes()).toEqual(['deepgram', 'browser']);
+    up = true;
+    await expect.poll(modes).toEqual(['deepgram', 'browser', 'deepgram']);
+    ws.close();
+    await app.close();
+  });
+
   it('ignores audio and says "browser" when Deepgram is not configured', async () => {
     const { app, ws, events } = await connectClient({});
     ws.send(Buffer.alloc(3200));

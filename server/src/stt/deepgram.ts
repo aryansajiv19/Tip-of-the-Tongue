@@ -84,6 +84,12 @@ export interface DeepgramOptions {
   // Deepgram refused a keyterm update (the old terms stay). `code` is Deepgram's, never words.
   onConfigureFailure?: (code: string) => void;
   onError: (err: Error) => void;
+  // After `onError`, Deepgram answers again (checked every `recoverAfterMs`): the stream works
+  // from the next chunk of audio.
+  onRecovered?: () => void;
+  // A stream closed on its own, with Deepgram's close code and how long it had been open.
+  onUnexpectedClose?: (code: number, openMs: number) => void;
+  recoverAfterMs?: number;
   // Injectable for tests.
   connect?: (url: string, apiKey: string) => WebSocket;
   now?: () => number;
@@ -101,6 +107,11 @@ const MAX_PENDING_CHUNKS = 50;
 // after the last one the caller falls back to browser speech recognition. A connection that
 // opens starts the count again.
 const RETRY_WAITS_MS = [1000, 2000, 4000];
+// Once the caller has fallen back to browser speech, Deepgram is tried again this often.
+const RECOVER_AFTER_MS = 60_000;
+// A connection that closes on its own sooner than this after opening counts as a failure, so a
+// server that accepts and hangs up cannot be reconnected to ten times a second.
+const STABLE_AFTER_MS = 10_000;
 // A connection that goes quiet without closing (Wi-Fi gone, laptop slept) never reports an
 // error. Pings every few seconds tell: no reply of any kind for this long and it is dead.
 const PING_EVERY_MS = 4000;
@@ -121,6 +132,34 @@ export function createDeepgramStream(opts: DeepgramOptions) {
   let failed = false;
   let failures = 0;
   let retryAtMs = 0;
+  let recoverTimer: NodeJS.Timeout | undefined;
+
+  // Checks whether Deepgram answers again, without audio: opens a connection and drops it.
+  function scheduleProbe() {
+    recoverTimer = setTimeout(() => {
+      const socket = connect(
+        deepgramUrl(opts.language, opts.keyterms?.() ?? [], opts.diarize),
+        opts.apiKey,
+      );
+      let done = false;
+      const again = () => {
+        if (done) return;
+        done = true;
+        socket.terminate();
+        scheduleProbe();
+      };
+      socket.on('error', again);
+      socket.on('unexpected-response', again);
+      socket.on('open', () => {
+        done = true;
+        socket.close();
+        failed = false;
+        failures = 0;
+        retryAtMs = 0;
+        opts.onRecovered?.();
+      });
+    }, opts.recoverAfterMs ?? RECOVER_AFTER_MS);
+  }
 
   // `fatal`: retrying cannot help (a refused key).
   function fail(socket: WebSocket, err: Error, fatal = false) {
@@ -134,6 +173,8 @@ export function createDeepgramStream(opts: DeepgramOptions) {
     if (fatal || wait === undefined) {
       failed = true;
       opts.onError(err);
+      // A refused key will not come right by itself; anything else might.
+      if (!fatal) scheduleProbe();
     } else {
       retryAtMs = now() + wait;
     }
@@ -145,7 +186,8 @@ export function createDeepgramStream(opts: DeepgramOptions) {
     socket.send(JSON.stringify({ type: 'Configure', keyterms: opts.keyterms?.() ?? [] }));
   }
 
-  function close() {
+  // Drops the current stream; the next chunk of audio opens a new one.
+  function drop() {
     clearTimeout(idleTimer);
     const old = ws;
     ws = undefined;
@@ -162,10 +204,11 @@ export function createDeepgramStream(opts: DeepgramOptions) {
     const socket = connect(deepgramUrl(opts.language, urlTerms, opts.diarize), opts.apiKey);
     ws = socket;
     let heardAtMs = now();
+    let openedAtMs: number | undefined;
     let pingTimer: NodeJS.Timeout | undefined;
     socket.on('open', () => {
-      failures = 0;
-      heardAtMs = now();
+      openedAtMs = now();
+      heardAtMs = openedAtMs;
       // The list changed while we were connecting.
       if (urlTerms.join('\n') !== (opts.keyterms?.() ?? []).join('\n')) configure(socket);
       for (const chunk of pending) socket.send(chunk);
@@ -203,7 +246,11 @@ export function createDeepgramStream(opts: DeepgramOptions) {
       }
       // Results from a stream we already closed still map with that stream's own origin.
       const event = toTranscriptEvent(json, origin);
-      if (event) opts.onEvent(event);
+      if (event) {
+        // Words are coming: this connection works, so earlier failures no longer count.
+        failures = 0;
+        opts.onEvent(event);
+      }
     });
     socket.on('error', (err) => fail(socket, err));
     socket.on('unexpected-response', (_req, res) => {
@@ -213,9 +260,18 @@ export function createDeepgramStream(opts: DeepgramOptions) {
       fail(socket, new Error(`deepgram refused the connection: HTTP ${status}`), fatal);
       socket.terminate();
     });
-    socket.on('close', () => {
+    socket.on('close', (code) => {
       clearInterval(pingTimer);
-      if (ws === socket) ws = undefined;
+      if (ws !== socket) return; // closed by us, or already counted as a failure
+      const openMs = openedAtMs === undefined ? 0 : now() - openedAtMs;
+      opts.onUnexpectedClose?.(code, openMs);
+      if (openMs < STABLE_AFTER_MS) {
+        fail(socket, new Error(`deepgram closed the connection after ${openMs} ms (code ${code})`));
+      } else {
+        // It was working: start again at once, with the count back at zero.
+        ws = undefined;
+        failures = 0;
+      }
     });
   }
 
@@ -228,9 +284,12 @@ export function createDeepgramStream(opts: DeepgramOptions) {
       if (ws?.readyState === WebSocket.OPEN) ws.send(chunk);
       else if (pending.length < MAX_PENDING_CHUNKS) pending.push(chunk);
       clearTimeout(idleTimer);
-      idleTimer = setTimeout(close, IDLE_CLOSE_MS);
+      idleTimer = setTimeout(drop, IDLE_CLOSE_MS);
     },
-    close,
+    close() {
+      clearTimeout(recoverTimer);
+      drop();
+    },
     // The words to teach Deepgram changed. A stream that is still connecting picks them up when
     // it opens; a stream that is not open yet uses them from the start.
     updateKeyterms() {
