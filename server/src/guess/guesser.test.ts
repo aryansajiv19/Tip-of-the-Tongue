@@ -239,6 +239,23 @@ describe('modelOptions', () => {
   });
 });
 
+describe('language in the prompt', () => {
+  const line = (language?: Parameters<typeof buildPrompt>[0]['language']) =>
+    buildPrompt({ ...input, ...(language ? { language } : {}) });
+
+  it('English asks for the English word, never the foreign one', () => {
+    expect(line()).toContain('offer the English word for it, never the foreign word');
+    expect(line('en')).toBe(line());
+  });
+  it('another language asks for words in it', () => {
+    expect(line('es')).toContain('They speak Spanish. Offer words in Spanish, not English.');
+    expect(line('hi')).toContain('Hindi');
+  });
+  it('multi follows the sentence', () => {
+    expect(line('multi')).toContain('in the language of the sentence they are in');
+  });
+});
+
 describe('buildPrompt', () => {
   it('includes brief, profile words and the recent text', () => {
     const profile = ProfileSchema.parse({

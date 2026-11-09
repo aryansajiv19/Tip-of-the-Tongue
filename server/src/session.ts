@@ -298,6 +298,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     opts
       .guess(
         {
+          language,
           conversation: buffer.markedText(CONVERSATION_WORDS),
           stuckPhrase: buffer.markedText(STUCK_WORDS),
           ...(rejected !== undefined ? { rejected: [rejected] } : {}),
@@ -414,7 +415,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     // New words since the early guess started: the speaker went on, so its result is stale.
     if (spec && spec.lastEndMs !== last.endMs) discardSpeculation();
     if (last.endMs <= handledUpToMs) return;
-    if (endsWithAskForWord(words)) return askNow();
+    if (endsWithAskForWord(words, language)) return askNow();
 
     // The other person is the one who paused: not the user's stall, whatever they say next.
     if (
@@ -428,7 +429,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     }
 
     const pause = paceFor(words);
-    const stuck = detectStuck(words, now(), { pauseMs: pause, ...voiceOpt() });
+    const stuck = detectStuck(words, now(), { pauseMs: pause, language, ...voiceOpt() });
     const decision = stuck.stuck ? `${stuck.reason}@${stuck.sinceMs}` : 'no';
     if (decision !== lastDetector) {
       lastDetector = decision;
@@ -457,7 +458,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
       baseEarlyMs > 0 ? Math.max(baseEarlyMs, typicalStepMs(words, isOwnWord) ?? 0) : 0;
     // "Ask only" starts nothing early either.
     if (earlyMs > 0 && !spec && !askOnly && now() >= backoffUntilMs) {
-      const early = detectStuck(words, now(), { pauseMs: pause, earlyMs, ...voiceOpt() });
+      const early = detectStuck(words, now(), { pauseMs: pause, earlyMs, language, ...voiceOpt() });
       if (early.stuck) startGuess(last.endMs, early.sinceMs, false, false, early.rejected);
     }
   }
