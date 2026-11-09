@@ -145,6 +145,137 @@ describe('a connection that closes at once', () => {
   });
 });
 
+// Deepgram counts time in the audio it was given. If audio went missing on the way, its times
+// fall behind the clock, and every later word would look older than it is.
+describe('audio that went missing before Deepgram', () => {
+  const wordAt = (chunk: number) =>
+    JSON.stringify({
+      type: 'Results',
+      is_final: true,
+      channel: {
+        alternatives: [
+          {
+            words: [
+              {
+                word: `w${chunk}`,
+                punctuated_word: `w${chunk}`,
+                start: chunk * 0.1,
+                end: (chunk + 1) * 0.1,
+              },
+            ],
+          },
+        ],
+      },
+    });
+  const START = 10_000;
+
+  async function setup() {
+    const sockets: WebSocket[] = [];
+    const dg = await standIn({}, (ws) => sockets.push(ws));
+    const clock = { t: START };
+    const c = client(dg.url, clock);
+    const ends = () =>
+      c.events.map((e) => (e as unknown as { words: { endMs: number }[] }).words[0]?.endMs);
+    // One chunk of live audio, answered at once, 100 ms after the one before.
+    let sent = 0;
+    const live = async (chunks: number, stepMs = 100) => {
+      for (let i = 0; i < chunks; i++) {
+        c.stream.send(audio);
+        await expect.poll(() => sockets.length).toBe(1);
+        sockets[0]?.send(wordAt(sent++));
+        await expect.poll(() => c.events.length).toBe(sent);
+        clock.t += stepMs;
+      }
+    };
+    return { c, clock, sockets, ends, live, sent: () => sent };
+  }
+
+  it('words after a gap keep the clock, and earlier words are not moved', async () => {
+    const t = await setup();
+    await t.live(5);
+    t.clock.t += 2000; // 20 chunks never arrived
+    // Deepgram answers 0.3 s or more after the audio, so the next chunks are in by then.
+    for (let i = 0; i < 3; i++) {
+      t.c.stream.send(audio);
+      t.clock.t += 100;
+    }
+    for (const i of [5, 6, 7]) t.sockets[0]?.send(wordAt(i));
+    await expect.poll(() => t.c.events.length).toBe(8);
+    // Word i was said when chunk i arrived: START + 100 i; after the gap, the clock.
+    expect(t.ends()).toEqual(
+      [0, 1, 2, 3, 4]
+        .map((i) => START + i * 100)
+        .concat([0, 1, 2].map((i) => START + 2500 + i * 100)),
+    );
+  });
+
+  it('keeps the time of a word from before the gap that is reported after it', async () => {
+    const t = await setup();
+    // Chunks 0 to 4 are sent, but Deepgram has only answered the first three.
+    for (let i = 0; i < 5; i++) {
+      t.c.stream.send(audio);
+      if (i < 3) await expect.poll(() => t.sockets.length).toBe(1);
+      t.sockets[0]?.send(i < 3 ? wordAt(i) : '{}');
+      t.clock.t += 100;
+    }
+    await expect.poll(() => t.c.events.length).toBe(3);
+    t.clock.t += 2000; // the gap, then two chunks (audio positions 500 and 600)
+    t.c.stream.send(audio);
+    t.clock.t += 100;
+    t.c.stream.send(audio);
+    // Now the late answer for chunk 4, then the ones for the chunks after the gap.
+    t.sockets[0]?.send(wordAt(4));
+    t.sockets[0]?.send(wordAt(5));
+    t.sockets[0]?.send(wordAt(6));
+    await expect.poll(() => t.c.events.length).toBe(6);
+    expect(t.ends().slice(3)).toEqual([START + 400, START + 2500, START + 2600]);
+  });
+
+  it('undoes itself when the audio was only late and arrives in a burst', async () => {
+    const t = await setup();
+    await t.live(10); // one second, on time
+    t.clock.t += 1500; // nothing arrives
+    await t.live(15, 0); // the 15 chunks held up arrive at once
+    await t.live(10); // and then on time again
+    // Nothing was lost, so no word moves: each is where it was said.
+    expect(t.ends()).toEqual(Array.from({ length: 35 }, (_, i) => START + i * 100));
+  });
+
+  it('stays right over many gaps, keeping only the corrections that can still matter', async () => {
+    const t = await setup();
+    t.c.stream.send(audio);
+    await expect.poll(() => t.sockets.length).toBe(1);
+    let chunks = 1;
+    let lastSentAt = START;
+    for (let gap = 0; gap < 80; gap++) {
+      t.clock.t += 1000 + 100; // a second of audio never arrives
+      for (let i = 0; i < 3; i++) {
+        lastSentAt = t.clock.t;
+        t.c.stream.send(audio);
+        chunks++;
+        t.clock.t += i < 2 ? 100 : 0;
+      }
+    }
+    // Over 24 s of audio and 80 corrections later, the newest word is still on the clock.
+    t.sockets[0]?.send(wordAt(chunks - 1));
+    await expect.poll(() => t.c.events.length).toBe(1);
+    expect(t.ends()).toEqual([lastSentAt]);
+  });
+
+  it('leaves words alone when audio is only a little early or late', async () => {
+    const t = await setup();
+    let sent = 0;
+    for (const jitter of [0, 150, -150, 200, -200, 0]) {
+      t.c.stream.send(audio);
+      await expect.poll(() => t.sockets.length).toBe(1);
+      t.sockets[0]?.send(wordAt(sent++));
+      await expect.poll(() => t.c.events.length).toBe(sent);
+      t.clock.t += 100 + jitter;
+    }
+    expect(t.ends()).toEqual([0, 1, 2, 3, 4, 5].map((i) => START + i * 100));
+  });
+});
+
 describe('after giving up', () => {
   const giveUp = async (c: ReturnType<typeof client>, clock: { t: number }) => {
     c.stream.send(audio);
@@ -179,16 +310,33 @@ describe('after giving up', () => {
     expect(recovered).toBe(1);
   });
 
-  it('stops asking when the stream is closed', async () => {
+  it('stops asking when the stream is closed, even while a check is under way', async () => {
     const dg = await standIn({ verifyClient: (_i, cb) => cb(false, 503, 'busy') });
     const clock = { t: 0 };
     const c = client(dg.url, clock, { recoverAfterMs: 40 });
     await giveUp(c, clock);
+    const asked = c.attempts();
+    // Wait for a check to start, and close at that moment: it is still connecting.
+    await expect.poll(() => c.attempts()).toBeGreaterThan(asked);
     c.stream.close();
-    await sleep(100);
     const attempts = c.attempts();
-    await sleep(200);
+    await sleep(250); // many times recoverAfterMs: a leftover check would have started others
     expect(c.attempts()).toBe(attempts);
+  });
+
+  it('does not report a recovery that finishes after the stream was closed', async () => {
+    let refuse = true;
+    const dg = await standIn({
+      verifyClient: (_i, cb) => (refuse ? cb(false, 503, 'busy') : cb(true)),
+    });
+    const clock = { t: 0 };
+    let recovered = 0;
+    const c = client(dg.url, clock, { recoverAfterMs: 40, onRecovered: () => recovered++ });
+    await giveUp(c, clock);
+    c.stream.close();
+    refuse = false;
+    await sleep(200);
+    expect(recovered).toBe(0);
   });
 
   it('does not ask again after a refused key', async () => {
