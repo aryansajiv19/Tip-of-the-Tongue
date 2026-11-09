@@ -170,5 +170,48 @@ describe('decideOffer', () => {
       const r = decideOffer(guess(['a', 0.9], ['b', 0.4]), ctx({ recentlyOffered }), opts);
       expect(r).toEqual({ offer: false, reason: 'low-confidence' });
     });
+
+    it('also blocks a longer form of an offered word: "onboarding team" after "onboarding"', () => {
+      const recentlyOffered = new Map([['onboarding', 99_000]]);
+      const r = decideOffer(guess(['onboarding team', 0.6]), ctx({ recentlyOffered }), opts);
+      expect(r).toEqual({ offer: false, reason: 'already-offered' });
+    });
+
+    it('also blocks a shorter form of an offered phrase: "team" after "onboarding team"', () => {
+      const recentlyOffered = new Map([['onboarding team', 99_000]]);
+      const r = decideOffer(guess(['team', 0.9]), ctx({ recentlyOffered }), opts);
+      expect(r).toEqual({ offer: false, reason: 'already-offered' });
+    });
+
+    it('blocks "waiting list" after only "list" was offered, on purpose: it is the same repeat, and a hand ask can still repeat', () => {
+      const recentlyOffered = new Map([['list', 99_000]]);
+      const r = decideOffer(guess(['waiting list', 0.9]), ctx({ recentlyOffered }), opts);
+      expect(r).toEqual({ offer: false, reason: 'already-offered' });
+    });
+
+    it('does not block a different phrase that shares one word, or words that are not in a row', () => {
+      const recentlyOffered = new Map([['onboarding', 99_000]]);
+      expect(
+        decideOffer(guess(['implementation team', 0.9]), ctx({ recentlyOffered }), opts).offer,
+      ).toBe(true);
+      const split = new Map([['team onboarding', 99_000]]);
+      expect(
+        decideOffer(guess(['team the onboarding', 0.9]), ctx({ recentlyOffered: split }), opts)
+          .offer,
+      ).toBe(true);
+    });
+
+    it('lets the longer form back in after the repeat window', () => {
+      const recentlyOffered = new Map([['onboarding', 99_000]]);
+      const r = decideOffer(
+        guess(['onboarding team', 0.9]),
+        ctx({ recentlyOffered, nowMs: 400_000 }),
+        {
+          ...opts,
+          repeatMs: 180_000,
+        },
+      );
+      expect(r.offer).toBe(true);
+    });
   });
 });
