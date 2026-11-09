@@ -10,7 +10,7 @@ interface Props {
   // False when this browser can't listen at all: the button is shown but disabled.
   canListen: boolean;
   elapsedMs: number;
-  // The context button's text: "Meeting notes", or "Meeting \u00b7 <file>".
+  // The context button's text: "Notes", or "Meeting \u00b7 <file>".
   contextLabel: string;
   // True once something is loaded.
   hasContext: boolean;

@@ -80,7 +80,7 @@ test('the context button invites first, then names the loaded file, with a toolt
   page,
 }) => {
   await launch(page);
-  await expect(contextButton(page)).toHaveText('Meeting notes');
+  await expect(contextButton(page)).toHaveText('Notes');
   await expect(contextButton(page)).toHaveAttribute('title', /so I know your names and terms/);
 
   await contextButton(page).click();
@@ -95,7 +95,7 @@ test('the context button invites first, then names the loaded file, with a toolt
   await expect(contextButton(page)).toContainText(/^Meeting\s\u00b7 a-rather-long/);
   await expect(contextButton(page)).toHaveAttribute('title', /^Meeting\s\u00b7 a-rather-long/);
   await page.getByRole('button', { name: /^Remove / }).click();
-  await expect(contextButton(page)).toHaveText('Meeting notes');
+  await expect(contextButton(page)).toHaveText('Notes');
 });
 
 test('nothing in the pill overlaps: the label, chevron and keycaps stay apart and inside', async ({
@@ -168,7 +168,7 @@ test.describe('at the 420 px overlay width', () => {
       const label = contextButton(page).locator('.pill-mode-text');
       const fits = (el: Locator) => el.evaluate((e) => e.scrollWidth <= e.clientWidth);
       expect((await pill(page).boundingBox())?.width).toBe(420);
-      await expect(label).toHaveText('Meeting notes');
+      await expect(label).toHaveText('Notes');
       expect(await fits(label)).toBe(true);
       for (const el of await pill(page).locator('.pill-timer, .keycap').all()) {
         expect(await fits(el)).toBe(true);
