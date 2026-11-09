@@ -288,6 +288,7 @@ export function App() {
       {visible && (
         <div className="overlay" ref={overlay}>
           <ControlPill
+            askFirst={help === null}
             listening={listening}
             canListen={canListen}
             elapsedMs={clock.elapsedMs}
@@ -346,7 +347,7 @@ export function App() {
               listening,
               connection: status,
               notice: healthMessage(input.health) || notice,
-              firstRun,
+              firstRun: firstRun && help !== null,
             })}
           </p>
           <p className="overlay-note overlay-heard glass">
