@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Candidate, ClientEvent, ServerEvent, Word } from './events.js';
+import type { Candidate, ClientEvent, Language, ServerEvent, Word } from './events.js';
 import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck, type VoiceInfo } from './stuck/detect.js';
 import { endsWithAskForWord } from './stuck/manual.js';
@@ -22,6 +22,8 @@ export interface SessionOptions {
   buildGlossary?: GlossaryBuilder;
   // Called when the words worth teaching the speech recogniser change (brief or glossary).
   onKeytermsChange?: () => void;
+  // The user chose another language, so speech-to-text must listen in it.
+  onLanguageChange?: (language: Language) => void;
   // How speech-to-text is running now; reported in the debug stream.
   sttMode?: () => 'deepgram' | 'browser';
   pauseMs: number;
@@ -96,6 +98,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   // Starts from the server default; the user can change it for this connection.
   let pauseMs = opts.pauseMs;
   let minConfidence = opts.minConfidence;
+  let language: Language = 'en';
   let offer: Offer | undefined;
   let lastOfferAtMs: number | undefined;
   let spec: Speculation | undefined;
@@ -518,8 +521,12 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         uiProfile = event;
         refreshKeyterms();
       } else if (event.type === 'session.settings') {
-        pauseMs = event.pauseMs;
+        if (event.pauseMs !== undefined) pauseMs = event.pauseMs;
         if (event.minConfidence !== undefined) minConfidence = event.minConfidence;
+        if (event.language !== undefined && event.language !== language) {
+          language = event.language;
+          opts.onLanguageChange?.(language);
+        }
       } else if (event.type === 'session.debug') {
         debugOn = event.on;
         debug(sttInfo);
@@ -549,6 +556,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     afterReset,
     // The words worth teaching the speech recogniser right now.
     keyterms: () => keyterms,
+    language: () => language,
     // Which voice the session takes to be the user's, if it knows.
     speaker: () => me,
     // Deepgram numbers voices per stream: when a new stream opens (after a pause in listening) the old

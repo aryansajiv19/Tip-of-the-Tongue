@@ -19,7 +19,6 @@ export const config = {
   // Optional: server-side speech-to-text with real word timings. Without it the browser's own
   // speech recognition is used.
   deepgramApiKey: process.env.DEEPGRAM_API_KEY || undefined,
-  deepgramLanguage: process.env.DEEPGRAM_LANGUAGE || 'en',
   // Deepgram tells the voices apart, so only the user's own pauses start a guess. 0 turns it off.
   deepgramDiarize: process.env.DEEPGRAM_DIARIZE !== '0',
   // Browser origins allowed to open the WebSocket (stops other web pages from reading it).

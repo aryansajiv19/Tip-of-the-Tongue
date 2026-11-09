@@ -63,6 +63,14 @@ describe('toTranscriptEvent', () => {
     expect(url.searchParams.get('punctuate')).toBe('false');
   });
 
+  it('listens in the language asked for, and asks for filler words only in English', () => {
+    for (const language of ['en', 'multi', 'es', 'fr', 'de', 'hi']) {
+      const url = new URL(deepgramUrl(language));
+      expect(url.searchParams.get('language')).toBe(language);
+      expect(url.searchParams.get('filler_words')).toBe(language === 'en' ? 'true' : null);
+    }
+  });
+
   it('asks for speaker labels only when told to, and maps them onto the words', () => {
     expect(new URL(deepgramUrl('en')).searchParams.has('diarize')).toBe(false);
     expect(new URL(deepgramUrl('en', [], true)).searchParams.get('diarize')).toBe('true');
@@ -256,6 +264,35 @@ describe('createDeepgramStream', () => {
     stream.close();
   });
 
+  it('opens a new stream in the new language, and leaves the stream alone for the same one', async () => {
+    const dg = await fakeDeepgram(() => undefined);
+    servers.push(dg.wss);
+    const stream = createDeepgramStream({
+      apiKey: 'k',
+      language: 'en',
+      connect: dg.connect,
+      onEvent: () => undefined,
+      onError: (err) => {
+        throw err;
+      },
+    });
+    stream.send(Buffer.alloc(3200));
+    await expect.poll(() => dg.wss.clients.size).toBe(1);
+    stream.setLanguage('en');
+    stream.send(Buffer.alloc(3200));
+    expect(dg.urls).toHaveLength(1);
+
+    stream.setLanguage('es');
+    stream.send(Buffer.alloc(3200));
+    await expect.poll(() => dg.urls.length).toBe(2);
+    expect(new URL(dg.urls[1] ?? '').searchParams.get('language')).toBe('es');
+    stream.setLanguage('hi');
+    stream.send(Buffer.alloc(3200));
+    await expect.poll(() => dg.urls.length).toBe(3);
+    expect(new URL(dg.urls[2] ?? '').searchParams.get('language')).toBe('hi');
+    stream.close();
+  });
+
   it('does nothing when no stream is open', () => {
     let opened = 0;
     const stream = createDeepgramStream({
@@ -379,6 +416,35 @@ describe('server with Deepgram', () => {
     });
     ws.close();
     await app.close();
+  });
+
+  it('listens in the language the page chose, each page on its own', async () => {
+    const dg = await fakeDeepgram(() => undefined);
+    servers.push(dg.wss);
+    const first = await connectClient({
+      deepgram: { apiKey: 'k', language: 'en', connect: dg.connect },
+    });
+    const second = await connectClient({
+      deepgram: { apiKey: 'k', language: 'en', connect: dg.connect },
+    });
+    const languageOf = (url: string | undefined) => new URL(url ?? '').searchParams.get('language');
+
+    first.ws.send(JSON.stringify({ type: 'session.settings', language: 'fr' }));
+    await new Promise((r) => setTimeout(r, 100));
+    first.ws.send(Buffer.alloc(3200));
+    second.ws.send(Buffer.alloc(3200)); // never chose: English
+    await expect.poll(() => dg.urls.length).toBe(2);
+    expect(dg.urls.map(languageOf).sort()).toEqual(['en', 'fr']);
+
+    first.ws.send(JSON.stringify({ type: 'session.settings', language: 'multi' }));
+    await new Promise((r) => setTimeout(r, 100));
+    first.ws.send(Buffer.alloc(3200));
+    await expect.poll(() => dg.urls.length).toBe(3);
+    expect(languageOf(dg.urls[2])).toBe('multi');
+    first.ws.close();
+    second.ws.close();
+    await first.app.close();
+    await second.app.close();
   });
 
   it('falls back to browser speech recognition when Deepgram fails', async () => {
