@@ -36,7 +36,7 @@ Goal: a working MVP with a nice UI. The full loop runs live: Deepgram Nova-3 (ke
 | ⌘1/2/3 pick (one IPC channel with Esc)                                                        | #56                | 4c       | merged                                               |
 | Runtime robustness: Deepgram retry/ping, mic loss, sleep, quiet input; desktop no-key message | #58, #59, #63      | 93       | merged                                               |
 | Adaptive pause, stutter-aware detection, self-corrections, 4 scenarios                        | #64                | c1       | merged                                               |
-| Help level (first sound / word / only when I ask)                                             | #60                | 4c       | rebasing on #64                                      |
+| Help level (first sound / word / only when I ask)                                             | #60                | 4c       | merged                                               |
 | Keyterm updates without reconnecting (Deepgram `Configure`, checked live)                     | local `051babe`    | 75       | waiting on the owner's push approval in 75's session |
 | Live harness `--rate`, `--noise`, `--snr`                                                     | local `d555e8f`    | 75       | waiting on the owner's push approval                 |
 
