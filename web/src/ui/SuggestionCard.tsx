@@ -18,6 +18,8 @@ interface Props {
   masked: boolean;
   onReveal: () => void;
   onDismiss: () => void;
+  // The pointer or keyboard focus is on the card (true) or has left it (false).
+  onHold: (held: boolean) => void;
 }
 
 // What is on screen, with a stable identity so the exit animation can hold on to it.
@@ -53,7 +55,15 @@ function useExit(content: Content | null) {
 }
 
 // The live region stays mounted so screen readers announce a suggestion when it appears.
-export function SuggestionCard({ card, problem, onPick, onDismiss, masked, onReveal }: Props) {
+export function SuggestionCard({
+  card,
+  problem,
+  onPick,
+  onDismiss,
+  masked,
+  onReveal,
+  onHold,
+}: Props) {
   const content = useContent(card, problem);
   const { shown, leaving, done } = useExit(content);
 
@@ -101,6 +111,10 @@ export function SuggestionCard({ card, problem, onPick, onDismiss, masked, onRev
         <section
           className={leaving ? 'suggestion glass is-leaving' : 'suggestion glass'}
           onAnimationEnd={done}
+          onMouseEnter={() => onHold(true)}
+          onMouseLeave={() => onHold(false)}
+          onFocus={() => onHold(true)}
+          onBlur={() => onHold(false)}
         >
           <Body content={shown} onPick={onPick} masked={masked} onReveal={onReveal} />
         </section>

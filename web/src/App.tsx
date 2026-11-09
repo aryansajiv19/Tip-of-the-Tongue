@@ -27,6 +27,7 @@ import { aboutYou } from './settings/aboutYou';
 import { useSendAboutYou } from './settings/useAboutYou';
 import { ControlPill } from './ui/ControlPill';
 import { DevTools } from './ui/DevTools';
+import { recentWords, type RecentWord } from './ui/recentWords';
 import { PrepDrawer } from './ui/PrepDrawer';
 import { desktop, useCommands } from './ui/desktop';
 import { levelStore } from './ui/levelStore';
@@ -54,6 +55,8 @@ export function App() {
   const [brief, setBrief] = useState<{ text: string; source?: string } | null>(null);
   const [briefTerms, setBriefTerms] = useState<string[]>([]);
   const [prepOpen, setPrepOpen] = useState(false);
+  // Words offered and accepted in this conversation, for the drawer.
+  const [recent, setRecent] = useState<RecentWord[]>([]);
   // The saved choice, or null so the server's own defaults apply until the user picks one.
   const [sensitivity, setSensitivity] = useState<Sensitivity | null>(savedSensitivity);
   const [guesserDown, setGuesserDown] = useState(false);
@@ -75,6 +78,7 @@ export function App() {
       if (e.type === 'guesser.status') return setGuesserDown(!e.ok);
       if (e.type === 'brief.terms') return setBriefTerms(e.terms);
       if (e.type === 'guess.accepted') aboutYou.remember(e.word);
+      setRecent((r) => recentWords(r, e));
       if (e.type === 'session.ready') {
         // A new connection is a new server session.
         gate.connected();
@@ -205,7 +209,13 @@ export function App() {
   }, [status, sensitivity, send]);
 
   const dismissCard = useCallback(() => dispatchCard({ type: 'dismiss' }), []);
-  useCardClock(card.view !== null, dispatchCard);
+  // Hovering or focusing the card keeps it on screen; leaving gives the timer back.
+  const [held, setHeld] = useState(false);
+  useCardClock(card.view !== null, held, dispatchCard);
+  const cardShown = card.view !== null;
+  useEffect(() => {
+    if (!cardShown) setHeld(false);
+  }, [cardShown]);
   const problem = statusLine({ connection: status, guesserDown });
 
   const changeHelp = (level: HelpLevel) => {
@@ -244,6 +254,7 @@ export function App() {
     gate.reset();
     dispatchCard({ type: 'clear' });
     setHeard([]);
+    setRecent([]);
     setPartial('');
     resetSpeech();
     send({ type: 'session.reset' });
@@ -321,6 +332,7 @@ export function App() {
             <PrepDrawer
               docName={brief?.source ?? null}
               terms={briefTerms}
+              recent={recent}
               onLoad={(text, name) => setBrief({ text, source: name })}
               onClear={() => setBrief({ text: '' })}
               onClose={() => setPrepOpen(false)}
@@ -363,6 +375,7 @@ export function App() {
                 send({ type: 'guess.picked', id, word });
               }}
               onDismiss={dismissCard}
+              onHold={setHeld}
               masked={masked}
               onReveal={revealCard}
             />

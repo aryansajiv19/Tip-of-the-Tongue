@@ -32,7 +32,9 @@ export type CardAction =
   // New conversation or a new connection.
   | { type: 'clear' }
   // Time passing, for the timeouts.
-  | { type: 'tick'; nowMs: number };
+  | { type: 'tick'; nowMs: number }
+  // The card is being read (hovered or focused): its timeouts wait for `byMs`.
+  | { type: 'hold'; byMs: number };
 
 const show = (view: CardView, nowMs: number): CardState => ({ view, sinceMs: nowMs });
 
@@ -47,6 +49,8 @@ export function cardReducer(state: CardState, action: CardAction): CardState {
       return view?.kind === 'offer'
         ? show({ kind: 'accepted', word: action.word }, action.nowMs)
         : state;
+    case 'hold':
+      return view ? { ...state, sinceMs: state.sinceMs + action.byMs } : state;
     case 'tick': {
       if (!view) return state;
       const age = action.nowMs - state.sinceMs;
