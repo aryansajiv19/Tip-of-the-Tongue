@@ -55,6 +55,10 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
     words: z.array(ProfileWord).max(MAX_PROFILE_WORDS),
     remembered: z.array(ProfileWord).max(MAX_PROFILE_WORDS),
   }),
+  // How the user wants to be helped. 'ask': suggestions only when they ask (Cmd/Ctrl+Enter) or say
+  // a cue such as "what's it called", never after a mere pause. 'sound' and 'word' only differ in
+  // what the page shows (the first sound, or the whole word), so the server treats them alike.
+  z.object({ type: z.literal('session.help'), level: z.enum(['ask', 'sound', 'word']) }),
   // The user clicked a suggested word. Counts like saying it.
   z.object({
     type: z.literal('guess.picked'),
