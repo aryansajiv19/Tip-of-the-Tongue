@@ -53,13 +53,16 @@ export function decideOffer(
     )
       return false;
     const tokens = normalizePhrase(c.word);
-    return offered.every(
-      (o) =>
-        // A longer form of an offered word is the same repeat ("onboarding team" after
-        // "onboarding"). A shorter one is the model correcting itself towards the exact word
-        // ("SOC 2" after "SOC 2 report"), which the user should see.
-        !contains(tokens, o.tokens) || ctx.nowMs - o.at >= (opts.repeatMs ?? opts.cooldownMs),
-    );
+    return offered.every((o) => {
+      const age = ctx.nowMs - o.at;
+      if (age >= (opts.repeatMs ?? opts.cooldownMs)) return true;
+      // A longer form of an offered word is the same repeat ("onboarding team" after
+      // "onboarding"). A shorter one soon after is the model correcting itself towards the exact
+      // word ("SOC 2" after "SOC 2 report"), which the user should see; much later it is a repeat
+      // again ("time-of-use" after a finished sentence, long after "time-of-use tariff").
+      if (contains(tokens, o.tokens)) return false;
+      return !(contains(o.tokens, tokens) && age >= opts.cooldownMs);
+    });
   });
   const best = fresh[0];
   if (!best) return { offer: false, reason: 'already-offered' };

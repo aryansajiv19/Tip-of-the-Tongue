@@ -13,6 +13,8 @@ export function normalizeWord(raw: string): string {
     else if (/(sses|xes|ches|shes)$/.test(w)) w = w.slice(0, -2);
     else if (w.endsWith('s') && !w.endsWith('ss')) w = w.slice(0, -1);
   }
+  // British and American spelling are one word: organiser / organizer.
+  if (w.length > 5) w = w.replace(/iz(?=e$|ed$|er$|es$|ing$|ation$)/, 'is');
   return w;
 }
 
