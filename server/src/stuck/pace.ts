@@ -33,14 +33,11 @@ const MAX_PAUSE_MS = 6000;
 const percentile = (sorted: number[], p: number): number =>
   sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] as number;
 
-// The pause that counts as a stall for this speaker. `words` are the speaker's own, in any order.
-export function effectivePauseMs(
-  basePauseMs: number,
-  words: readonly Word[],
-  // Words of other voices stay in the list, so that two of the user's words with someone else's
-  // between them are not taken for one long gap.
-  isOwn: (w: Word) => boolean = () => true,
-): number {
+// Words of other voices stay in the list, so that two of the user's words with someone else's
+// between them are not taken for one long gap.
+type IsOwn = (w: Word) => boolean;
+
+function measure(words: readonly Word[], isOwn: IsOwn) {
   const w = [...words].sort((a, b) => a.startMs - b.startMs).slice(-WINDOW_WORDS);
   const steps: number[] = [];
   const gaps: number[] = [];
@@ -53,8 +50,28 @@ export function effectivePauseMs(
     const gap = b.startMs - a.endMs;
     if (gap > 0 && gap <= MAX_INTERVAL_MS) gaps.push(gap);
   }
-  if (steps.length < MIN_INTERVALS) return basePauseMs;
   steps.sort((x, y) => x - y);
+  return { steps, gaps, count: w.length };
+}
+
+// The usual time from one word's start to the next's, once the speaker is known. The early guess
+// waits at least this long, so that it does not start in every gap of a slow speaker.
+export function typicalStepMs(
+  words: readonly Word[],
+  isOwn: IsOwn = () => true,
+): number | undefined {
+  const { steps } = measure(words, isOwn);
+  return steps.length < MIN_INTERVALS ? undefined : percentile(steps, 0.5);
+}
+
+// The pause that counts as a stall for this speaker. `words` are the speaker's own, in any order.
+export function effectivePauseMs(
+  basePauseMs: number,
+  words: readonly Word[],
+  isOwn: IsOwn = () => true,
+): number {
+  const { steps, gaps, count } = measure(words, isOwn);
+  if (steps.length < MIN_INTERVALS) return basePauseMs;
   const ratio = percentile(steps, 0.5) / REFERENCE_STEP_MS;
   const raw =
     ratio < NEUTRAL_LOW ? ratio / NEUTRAL_LOW : ratio > NEUTRAL_HIGH ? ratio / NEUTRAL_HIGH : 1;
@@ -66,7 +83,7 @@ export function effectivePauseMs(
   if (
     factor >= 1 &&
     habitual.length >= MIN_HABITUAL_GAPS &&
-    habitual.length * WORDS_PER_HABITUAL_GAP >= w.length
+    habitual.length * WORDS_PER_HABITUAL_GAP >= count
   ) {
     pause = Math.max(pause, HABITUAL_MARGIN * percentile(habitual, 0.5));
   }

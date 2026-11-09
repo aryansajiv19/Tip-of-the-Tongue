@@ -3,7 +3,7 @@ import type { Candidate, ClientEvent, ServerEvent, Word } from './events.js';
 import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck, type VoiceInfo } from './stuck/detect.js';
 import { endsWithAskForWord } from './stuck/manual.js';
-import { effectivePauseMs } from './stuck/pace.js';
+import { effectivePauseMs, typicalStepMs } from './stuck/pace.js';
 import { speakerOfFirstUtterance } from './stuck/speaker.js';
 import { mergeProfiles, type Profile, type UiProfile } from './guess/profile.js';
 import { briefForGuesser, LONG_BRIEF_CHARS, type GlossaryBuilder } from './guess/glossary.js';
@@ -353,9 +353,9 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   // The pause that counts as a stall for how this user talks, from their own words. The setting
   // is the base. Debug shows it when it moves.
   let lastPace = pauseMs;
+  const isOwnWord = (w: Word) => w.speaker === undefined || me === undefined || w.speaker === me;
   function paceFor(words: readonly Word[]): number {
-    const isOwn = (w: Word) => w.speaker === undefined || me === undefined || w.speaker === me;
-    const pause = effectivePauseMs(pauseMs, words, isOwn);
+    const pause = effectivePauseMs(pauseMs, words, isOwnWord);
     if (Math.abs(pause - lastPace) >= lastPace * 0.1) {
       lastPace = pause;
       debug(() => ({ kind: 'pace', pauseMs: pause }));
@@ -408,7 +408,10 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
       return;
     }
 
-    const earlyMs = opts.speculateAfterMs ?? 0;
+    // The early guess waits for more than the gap between this speaker's ordinary words.
+    const baseEarlyMs = opts.speculateAfterMs ?? 0;
+    const earlyMs =
+      baseEarlyMs > 0 ? Math.max(baseEarlyMs, typicalStepMs(words, isOwnWord) ?? 0) : 0;
     if (earlyMs > 0 && !spec) {
       const early = detectStuck(words, now(), { pauseMs: pause, earlyMs, ...voiceOpt() });
       if (early.stuck) startGuess(last.endMs, early.sinceMs, false, false, early.rejected);

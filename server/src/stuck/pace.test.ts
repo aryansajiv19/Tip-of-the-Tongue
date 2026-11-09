@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Word } from '../events.js';
-import { effectivePauseMs } from './pace.js';
+import { effectivePauseMs, typicalStepMs } from './pace.js';
 
 // `n` words, `step` ms between starts, 100 ms long; after every `every`-th word a gap of `gapMs`
 // (instead of the usual one) when given.
@@ -116,5 +116,16 @@ describe('effectivePauseMs', () => {
     expect(effectivePauseMs(BASE, words, own)).toBe(BASE);
     // Handing over only the user's words would make each turn look like a 3 s breath.
     expect(effectivePauseMs(BASE, words.filter(own))).toBeGreaterThan(BASE);
+  });
+});
+
+describe('typicalStepMs', () => {
+  it('is the median start-to-start time once the speaker is known, else nothing', () => {
+    expect(typicalStepMs(speak(20, 700))).toBeUndefined();
+    expect(typicalStepMs(speak(60, 700))).toBe(700);
+    expect(typicalStepMs(speak(60, 150))).toBe(150);
+  });
+  it('ignores stalls: a 2 s gap every 10 words does not move the median', () => {
+    expect(typicalStepMs(speak(100, 300, 10, 2000))).toBe(300);
   });
 });

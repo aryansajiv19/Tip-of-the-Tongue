@@ -94,6 +94,25 @@ describe('pace', () => {
   });
 });
 
+describe('early guesses', () => {
+  it('start in the gaps of a typical speaker but not in every gap of a slow one', async () => {
+    const run = async (step: number) => {
+      const guess = vi.fn(reply);
+      const { session, talk } = setup(guess);
+      talk(filler(60), step);
+      guess.mockClear();
+      // one ordinary gap of 500 ms, then the next word
+      await vi.advanceTimersByTimeAsync(500);
+      session.close();
+      return guess.mock.calls.length;
+    };
+    // 300 ms steps: a 500 ms silence is long enough for an early guess
+    expect(await run(300)).toBe(1);
+    // 700 ms steps: a 500 ms gap is an ordinary gap for them
+    expect(await run(700)).toBe(0);
+  });
+});
+
 describe('stuttering', () => {
   it('no pop-up after blocks on begun words, however long the silence', async () => {
     const { session, talk, stalls, offers } = setup();
