@@ -9,10 +9,12 @@ export async function installFakeSpeech(page: Page) {
       onend?: () => void;
       onerror?: (e: { error: string }) => void;
       stopped: boolean;
+      lang: string;
     }
     const instances: Fake[] = [];
     class FakeRecognition {
       stopped = false;
+      lang = '';
       onstart?: () => void;
       onresult?: ((e: unknown) => void) | null;
       onend?: () => void;
@@ -29,6 +31,7 @@ export async function installFakeSpeech(page: Page) {
     const last = () => instances.filter((i) => !i.stopped).at(-1);
     (window as unknown as Record<string, unknown>).fakeSpeech = {
       count: () => instances.length,
+      lastLang: () => instances.at(-1)?.lang,
       // Like Chrome: `results` is the whole list, one entry per chunk.
       say: (chunks: [string, boolean][]) =>
         last()?.onresult?.({
@@ -59,4 +62,9 @@ export const failRecognition = (page: Page, error: string) =>
   page.evaluate(
     (e) => (window as unknown as { fakeSpeech: { fail(e: string): void } }).fakeSpeech.fail(e),
     error,
+  );
+// The language the newest recognition was started with.
+export const recognitionLang = (page: Page) =>
+  page.evaluate(() =>
+    (window as unknown as { fakeSpeech: { lastLang(): string | undefined } }).fakeSpeech.lastLang(),
   );

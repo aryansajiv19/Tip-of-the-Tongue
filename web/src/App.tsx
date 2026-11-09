@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import type { ClientEvent, ServerEvent, Word } from '../../server/src/events';
+import type { ClientEvent, Language, ServerEvent, Word } from '../../server/src/events';
 import { HelpQuestion } from './ui/HelpQuestion';
 import { SettingsGear, SettingsPanel } from './ui/Settings';
 import { SuggestionCard } from './ui/SuggestionCard';
@@ -12,6 +12,7 @@ import { saveDebug, savedDebug } from './settings/debug';
 import { isFirstRun, markStarted } from './settings/firstRun';
 import { saveHelp, savedHelp, type HelpLevel } from './settings/help';
 import { applyTextSize, savedTextSize, type TextSize } from './settings/textSize';
+import { saveLanguage, savedLanguage, speechLang } from './settings/language';
 import { saveMicId, savedMicId } from './settings/mic';
 import { useManualKey } from './audio/useManualKey';
 import { useMic } from './audio/useMic';
@@ -50,6 +51,9 @@ const CONNECTION_LABEL = {
   reconnecting: 'Not connected. Reconnecting…',
 } as const;
 
+// Under exactOptionalPropertyTypes an absent language is no property at all.
+const langOption = (lang: string | undefined) => (lang ? { lang } : {});
+
 const text = (words: Word[]) => words.map((w) => w.text).join(' ');
 
 export function App() {
@@ -57,6 +61,7 @@ export function App() {
   const gate = useRef(createResetGate()).current;
   const [micId, setMicId] = useState<string | null>(savedMicId);
   const [debugOn, setDebugOn] = useState(() => DEBUG && savedDebug());
+  const [language, setLanguage] = useState<Language | null>(savedLanguage);
   const [textSize, setTextSize] = useState<TextSize>(savedTextSize);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [heard, setHeard] = useState<string[]>([]);
@@ -156,7 +161,12 @@ export function App() {
     },
     [send],
   );
-  const speech = useSpeech({ onPartial: sendPartial, onFinal: sendFinal, debug: DEBUG || debugOn });
+  const speech = useSpeech({
+    onPartial: sendPartial,
+    onFinal: sendFinal,
+    debug: DEBUG || debugOn,
+    ...langOption(speechLang(language, navigator.language)),
+  });
   const { trace } = speech;
 
   // One Start/Pause for both ways of listening. `wanted` is what the user asked for.
@@ -235,6 +245,13 @@ export function App() {
     }
   }, [status, sensitivity, send]);
 
+  // The language is its own message, so choosing it never resends (or resets) the sensitivity.
+  useEffect(() => {
+    if (status === 'connected' && language !== null) {
+      send({ type: 'session.settings', language } satisfies ClientEvent);
+    }
+  }, [status, language, send]);
+
   const dismissCard = useCallback(() => dispatchCard({ type: 'dismiss' }), []);
   // Hovering or focusing the card keeps it on screen; leaving gives the timer back.
   const [held, setHeld] = useState(false);
@@ -261,6 +278,10 @@ export function App() {
   const changeTextSize = (size: TextSize) => {
     setTextSize(size);
     applyTextSize(size);
+  };
+  const changeLanguage = (value: Language) => {
+    setLanguage(value);
+    saveLanguage(value);
   };
   const changeMic = (id: string | null) => {
     setMicId(id);
@@ -369,6 +390,8 @@ export function App() {
               onHelp={changeHelp}
               sensitivity={sensitivity}
               onSensitivity={changeSensitivity}
+              language={language}
+              onLanguage={changeLanguage}
               textSize={textSize}
               onTextSize={changeTextSize}
               micId={micId}

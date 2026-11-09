@@ -36,7 +36,8 @@
 }
 
 .settings-panel legend,
-.settings-field > span {
+.settings-field > span,
+.settings-field > label {
   display: block;
   margin-bottom: var(--space-2);
   padding: 0;

@@ -128,3 +128,9 @@ Results are written to `eval-results/` (gitignored). The `mock` guesser only cov
 - Settings > Privacy lists every remembered word with a remove button, and "Forget everything" (after a confirm) clears About you, remembered words and the meeting notes. "Clear About you" in the drawer clears only that.
 - Text is never under 14 px (`--text-sm` is the smallest). Settings > Text size scales every text token by 1.25 (`data-text-size` on `<html>`); the pill stays fixed. The light theme follows `prefers-color-scheme` through the same tokens (`tokens.css`, checked at 4.5:1 in `contrast.test.ts`).
 - A panel (Settings, drawer) takes focus when it opens and gives it back to its button on close (`useReturnFocus`). Words carry `dir="auto"`. The connection status reads in plain words ("Connected", "Not connected. Reconnecting…").
+
+### Keys, demo mode and language (web)
+
+- In the desktop app, when `window.tott.keys` reports a missing key the page shows a setup panel (`Setup.tsx`, `KeysForm.tsx`): a field per provider with a "Get a key" link, "Save and check" (save, then `keys.test()`, each result shown as a tick or a plain reason from `settings/keys.ts`), and "Try demo mode" (remembered in `tott.demo`). It is decided once at load and stays until Done or demo, so the results can be read. The same form is under Settings > Keys. A saved key is never shown, and an empty field keeps it. In a browser there is no bridge and no keys screen.
+- `session.ready.guesser === 'mock'` shows "Demo: suggestions are examples". `guesser.status.reason` (`key`, `busy`) becomes a plain line on the card.
+- Settings > Language (`settings/language.ts`) sets `session.settings.language`, sent alone on every connect once chosen (nothing before that), and the browser recogniser's `lang` (en-US, es-ES, fr-FR, de-DE, hi-IN; Mixed languages and unset follow the browser).
