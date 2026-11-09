@@ -262,6 +262,15 @@ export function App() {
     send({ type: 'session.reset' });
   }, [resetClock, gate, resetSpeech, send]);
 
+  // Everything this device keeps about the user: About you, remembered words, the meeting notes
+  // and this conversation's recent words. Settings stay.
+  const forgetAll = useCallback(() => {
+    aboutYou.forgetAll();
+    setBrief({ text: '' });
+    setBriefTerms([]);
+    setRecent([]);
+  }, []);
+
   useCommands((command) => {
     if (command === 'toggle-visible') setVisible((v) => !v);
     else if (command === 'toggle-listening') (listening ? pauseListening : startListening)();
@@ -326,6 +335,7 @@ export function App() {
               onDebug={changeDebug}
               onOpenDebugView={openDebugView}
               onDownloadTrace={downloadTrace}
+              onForgetAll={forgetAll}
               onClose={() => setSettingsOpen(false)}
             />
           )}

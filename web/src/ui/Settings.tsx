@@ -9,6 +9,7 @@ import {
   type Sensitivity,
 } from '../settings/sensitivity';
 import { modifierLabel } from './commands';
+import { Privacy } from './Privacy';
 import './settings.css';
 
 interface Props {
@@ -24,6 +25,8 @@ interface Props {
   onDebug: (on: boolean) => void;
   onOpenDebugView: () => void;
   onDownloadTrace: () => void;
+  // Forgets everything kept on this device (the page also drops the loaded meeting notes).
+  onForgetAll: () => void;
 }
 
 const ICON = { size: 16, strokeWidth: 1.5, 'aria-hidden': true } as const;
@@ -132,6 +135,8 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
           ))}
         </select>
       </label>
+
+      <Privacy onForgetAll={p.onForgetAll} />
 
       {p.showDebug && (
         <>

@@ -118,3 +118,71 @@
   color: var(--text-muted);
   font-size: var(--text-sm);
 }
+
+.settings-subhead {
+  margin: var(--space-3) 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.settings-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  max-height: 140px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.settings-words li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-inline-start: var(--space-2);
+  border: var(--surface-border);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+}
+
+.settings-words button,
+.settings-forget,
+.settings-confirm button {
+  min-width: var(--target);
+  min-height: var(--target);
+  padding: 0 var(--space-2);
+  background: var(--hover);
+  border: var(--surface-border);
+  border-radius: var(--space-2);
+  cursor: pointer;
+}
+
+.settings-words button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.settings-forget {
+  margin-top: var(--space-3);
+}
+
+.settings-confirm {
+  margin-top: var(--space-3);
+}
+
+.settings-confirm p {
+  margin: 0 0 var(--space-2);
+}
+
+.settings-confirm div {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.settings-confirm .settings-danger {
+  color: var(--error);
+}
