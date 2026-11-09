@@ -39,7 +39,11 @@
           "s": "me",
           "t": "It does, we connect to most of them. The setup is handled by our... the team that gets new customers started, the first two weeks",
           "w": "onboarding",
-          "a": ["onboarding", "implementation", "setup team"]
+          "a": [
+            "onboarding",
+            "implementation",
+            "setup team"
+          ]
         },
         {
           "s": "other",
@@ -57,7 +61,12 @@
           "s": "me",
           "t": "I'll send you a proper... the document with the prices on it, so you can show your director",
           "w": "quote",
-          "a": ["quote", "quotation", "proposal", "price list"]
+          "a": [
+            "quote",
+            "quotation",
+            "proposal",
+            "price list"
+          ]
         },
         {
           "s": "other",
@@ -75,7 +84,11 @@
           "s": "me",
           "t": "Absolutely. We offer a free... a trial period, thirty days, nothing to sign",
           "w": "trial",
-          "a": ["trial", "free trial", "pilot"],
+          "a": [
+            "trial",
+            "free trial",
+            "pilot"
+          ],
           "gap": 2500
         },
         {
@@ -106,7 +119,11 @@
           "s": "me",
           "t": "Most of our clinics recover about one in four of those. It depends on how many people are on the... the list of people who want an earlier appointment",
           "w": "waiting list",
-          "a": ["waiting list", "waitlist", "wait list"]
+          "a": [
+            "waiting list",
+            "waitlist",
+            "wait list"
+          ]
         },
         {
           "s": "other",
@@ -172,7 +189,11 @@
           "s": "me",
           "t": "We never do that. We send a short... the list of the best three or four people, with notes on each",
           "w": "shortlist",
-          "a": ["shortlist", "short list", "short-list"]
+          "a": [
+            "shortlist",
+            "short list",
+            "short-list"
+          ]
         },
         {
           "s": "other",
@@ -198,7 +219,10 @@
           "s": "me",
           "t": "Some do. We could also agree a... an arrangement where you pay a monthly amount to have us work only for you",
           "w": "retainer",
-          "a": ["retainer", "retained search"]
+          "a": [
+            "retainer",
+            "retained search"
+          ]
         },
         {
           "s": "other",
@@ -269,7 +293,10 @@
           "s": "me",
           "t": "The part where batteries and heat pumps are controlled together, so they act like one big power station. The, um... the virtual power plant is a lovely idea",
           "w": "virtual power plant",
-          "a": ["virtual power plant", "vpp"],
+          "a": [
+            "virtual power plant",
+            "vpp"
+          ],
           "recover": true
         },
         {
@@ -296,7 +323,10 @@
           "s": "me",
           "t": "Honestly the messy input. Sensors dropping out, missing hours. We needed a way to fill gaps without inventing data, so I built a... the system that moves the data along in stages, cleaning each stage",
           "w": "pipeline",
-          "a": ["pipeline", "data pipeline"]
+          "a": [
+            "pipeline",
+            "data pipeline"
+          ]
         },
         {
           "s": "other",
@@ -322,7 +352,9 @@
           "s": "me",
           "t": "Not directly, no. But it sounds like the, um... the programme where you pay people when demand is high",
           "w": "demand response",
-          "a": ["demand response"],
+          "a": [
+            "demand response"
+          ],
           "gap": 2500
         },
         {
@@ -353,7 +385,12 @@
           "s": "me",
           "t": "Only from your site. Customers pay less overnight, so the, uh... the pricing plan that changes with the hour of the day",
           "w": "time-of-use tariff",
-          "a": ["time-of-use tariff", "time of use tariff", "tariff", "time-of-use"]
+          "a": [
+            "time-of-use tariff",
+            "time of use tariff",
+            "tariff",
+            "time-of-use"
+          ]
         },
         {
           "s": "other",
@@ -403,7 +440,12 @@
           "s": "me",
           "t": "Yes, I've been taking the... the tablets for pain and swelling, the white ones from the chemist",
           "w": "ibuprofen",
-          "a": ["ibuprofen", "painkillers", "anti-inflammatory", "nurofen"]
+          "a": [
+            "ibuprofen",
+            "painkillers",
+            "anti-inflammatory",
+            "nurofen"
+          ]
         },
         {
           "s": "other",
@@ -429,7 +471,9 @@
           "s": "me",
           "t": "Okay. My mother has always had high... the number the nurse measures with the cuff on your arm",
           "w": "blood pressure",
-          "a": ["blood pressure"]
+          "a": [
+            "blood pressure"
+          ]
         },
         {
           "s": "other",
@@ -471,7 +515,12 @@
           "s": "me",
           "t": "Oh, I did that last year. I went to a... the person who does exercises and massage to fix muscles",
           "w": "physiotherapist",
-          "a": ["physiotherapist", "physio", "physical therapist", "physiotherapy"]
+          "a": [
+            "physiotherapist",
+            "physio",
+            "physical therapist",
+            "physiotherapy"
+          ]
         },
         {
           "s": "other",
@@ -489,7 +538,10 @@
           "s": "me",
           "t": "Yes, penicillin. It gave me a rash when I was a child. I'm quite... what's the word, I react badly to it",
           "w": "allergic",
-          "a": ["allergic", "allergy"]
+          "a": [
+            "allergic",
+            "allergy"
+          ]
         },
         {
           "s": "other",
@@ -532,7 +584,11 @@
           "s": "me",
           "t": "Only that I need someone to look at it. It's the, um... the request I raised so you can read my changes before they're merged",
           "w": "pull request",
-          "a": ["pull request", "pr", "merge request"]
+          "a": [
+            "pull request",
+            "pr",
+            "merge request"
+          ]
         },
         {
           "s": "other",
@@ -558,7 +614,12 @@
           "s": "me",
           "t": "Yes. And I want to add something to catch it earlier, a... the group of automatic tests that checks that old bugs don't come back",
           "w": "regression suite",
-          "a": ["regression suite", "regression tests", "regression test", "regression"]
+          "a": [
+            "regression suite",
+            "regression tests",
+            "regression test",
+            "regression"
+          ]
         },
         {
           "s": "other",
@@ -580,7 +641,11 @@
           "s": "me",
           "t": "Fine. Then the release candidate will be ready for the... the copy of the live system we use for the last tests before customers see it",
           "w": "staging environment",
-          "a": ["staging environment", "staging", "stage environment"]
+          "a": [
+            "staging environment",
+            "staging",
+            "stage environment"
+          ]
         },
         {
           "s": "other",
@@ -610,7 +675,11 @@
           "s": "me",
           "t": "One more. If production breaks before Wednesday, I'd rather push a small quick repair, a... an urgent fix that skips the normal wait",
           "w": "hotfix",
-          "a": ["hotfix", "hot fix", "quick fix"]
+          "a": [
+            "hotfix",
+            "hot fix",
+            "quick fix"
+          ]
         },
         {
           "s": "other",
@@ -661,7 +730,11 @@
           "s": "me",
           "t": "And for the orders table, the change to the structure goes in tonight, the... the change to the shape of the table, the columns and their types",
           "w": "schema migration",
-          "a": ["schema migration", "migration", "schema change"]
+          "a": [
+            "schema migration",
+            "migration",
+            "schema change"
+          ]
         },
         {
           "s": "other",
@@ -679,7 +752,11 @@
           "s": "me",
           "t": "That's the next part. Once the new columns exist I need to fill them for 2023. Re-loading all the old rows, the... filling in the history",
           "w": "backfill",
-          "a": ["backfill", "back fill", "backfilling"]
+          "a": [
+            "backfill",
+            "back fill",
+            "backfilling"
+          ]
         },
         {
           "s": "other",
@@ -705,7 +782,11 @@
           "s": "me",
           "t": "The dashboard is slow. I think it reads the same big table every time, so I'd like to keep the answers ready, a... storing the results so they don't get calculated each time",
           "w": "caching",
-          "a": ["caching", "cache", "cached"]
+          "a": [
+            "caching",
+            "cache",
+            "cached"
+          ]
         },
         {
           "s": "other",
@@ -757,7 +838,11 @@
           "s": "me",
           "t": "Yes, it ends on the thirty-first of March. I'd like to start the... the process of signing it again for another year, so nothing lapses",
           "w": "renewal",
-          "a": ["renewal", "renew", "renewing"]
+          "a": [
+            "renewal",
+            "renew",
+            "renewing"
+          ]
         },
         {
           "s": "other",
@@ -775,7 +860,11 @@
           "s": "me",
           "t": "That's a good point. We can offer a session for the new people, a... the training where we show them around and answer their questions",
           "w": "onboarding",
-          "a": ["onboarding", "induction", "training"]
+          "a": [
+            "onboarding",
+            "induction",
+            "training"
+          ]
         },
         {
           "s": "other",
@@ -801,7 +890,10 @@
           "s": "me",
           "t": "Let me check with my manager. Maybe we could meet in the middle, three percent, if you commit to two years. It would be a... a reduction in the price if you sign for a longer time",
           "w": "discount",
-          "a": ["discount", "reduction"]
+          "a": [
+            "discount",
+            "reduction"
+          ]
         },
         {
           "s": "other",
@@ -819,7 +911,11 @@
           "s": "me",
           "t": "Of course. I'll send the, uh... the certificate from the independent audit, the two-letter name and a number",
           "w": "SOC 2",
-          "a": ["soc 2", "soc2", "soc two"]
+          "a": [
+            "soc 2",
+            "soc2",
+            "soc two"
+          ]
         },
         {
           "s": "other",
@@ -886,7 +982,9 @@
           "s": "me",
           "t": "Oh, he's not a puppy anymore! He's four. I take him out every morning, he's called... the little brown one, the one who loves chasing balls",
           "w": "Biscuit",
-          "a": ["biscuit"]
+          "a": [
+            "biscuit"
+          ]
         },
         {
           "s": "other",
@@ -904,7 +1002,9 @@
           "s": "me",
           "t": "Usually in the big green... the park near the lake, where the ducks are, we go every Sunday",
           "w": "Victoria Park",
-          "a": ["victoria park"]
+          "a": [
+            "victoria park"
+          ]
         },
         {
           "s": "other",
@@ -922,7 +1022,10 @@
           "s": "me",
           "t": "Every Thursday. I'm getting better, I think. Last week I made a... my highest break ever, forty-three",
           "w": "break",
-          "a": ["break", "break of forty-three"],
+          "a": [
+            "break",
+            "break of forty-three"
+          ],
           "recover": true
         },
         {
@@ -941,7 +1044,9 @@
           "s": "me",
           "t": "I'd love to. I need to pop to the... the shop on the corner for milk first, the one we always use",
           "w": "Corner Mart",
-          "a": ["corner mart"]
+          "a": [
+            "corner mart"
+          ]
         },
         {
           "s": "other",
@@ -992,7 +1097,9 @@
           "s": "me",
           "t": "Mostly. I almost forgot, my... the little book with my photo in it, it expires in July",
           "w": "passport",
-          "a": ["passport"]
+          "a": [
+            "passport"
+          ]
         },
         {
           "s": "other",
@@ -1010,7 +1117,12 @@
           "s": "me",
           "t": "Good idea. I need a check-up and something for my... what's it called, the cream for the sun",
           "w": "sunscreen",
-          "a": ["sunscreen", "sun cream", "suncream", "sun block"]
+          "a": [
+            "sunscreen",
+            "sun cream",
+            "suncream",
+            "sun block"
+          ]
         },
         {
           "s": "other",
@@ -1044,7 +1156,12 @@
           "s": "me",
           "t": "No, he's staying with my sister. He doesn't like... the metal box with a handle you put the clothes in when you travel",
           "w": "suitcase",
-          "a": ["suitcase", "luggage", "bag", "case"]
+          "a": [
+            "suitcase",
+            "luggage",
+            "bag",
+            "case"
+          ]
         },
         {
           "s": "other",
@@ -1098,7 +1215,11 @@
           "s": "me",
           "t": "That is good price. Do I need to pay something now? How you say, the money you give first, before you come",
           "w": "deposit",
-          "a": ["deposit", "advance payment", "down payment"]
+          "a": [
+            "deposit",
+            "advance payment",
+            "down payment"
+          ]
         },
         {
           "s": "other",
@@ -1132,7 +1253,11 @@
           "s": "me",
           "t": "Yes. Last month I bought a lamp in your shop. It was broken when it arrive. I want my money back, I have the... the paper from the shop with the price, in my bag",
           "w": "receipt",
-          "a": ["receipt", "invoice", "proof of purchase"]
+          "a": [
+            "receipt",
+            "invoice",
+            "proof of purchase"
+          ]
         },
         {
           "s": "other",
@@ -1142,7 +1267,10 @@
           "s": "me",
           "t": "Yes, I bring it on Friday. And they give me my money back, yes? The... the return of the money, not another lamp",
           "w": "refund",
-          "a": ["refund", "money back"]
+          "a": [
+            "refund",
+            "money back"
+          ]
         },
         {
           "s": "other",
@@ -1160,7 +1288,12 @@
           "s": "me",
           "t": "Perfect. And is there a place to leave the car? A place where cars stay when people sleep in the hotel",
           "w": "car park",
-          "a": ["car park", "parking", "parking lot", "garage"]
+          "a": [
+            "car park",
+            "parking",
+            "parking lot",
+            "garage"
+          ]
         },
         {
           "s": "other",
@@ -1194,7 +1327,9 @@
           "s": "me",
           "t": "Hello. I'd like to order a... a... a c-... a coffee, please",
           "w": "coffee",
-          "a": ["coffee"],
+          "a": [
+            "coffee"
+          ],
           "recover": true
         },
         {
@@ -1205,7 +1340,10 @@
           "s": "me",
           "t": "A medium, please. And one of those... the... the round sweet thing with a hole in the middle, covered in sugar",
           "w": "doughnut",
-          "a": ["doughnut", "donut"]
+          "a": [
+            "doughnut",
+            "donut"
+          ]
         },
         {
           "s": "other",
@@ -1231,7 +1369,11 @@
           "s": "me",
           "t": "You too. Oh, I almost forgot. Could I have a b-... a b-... the thing to carry it in, made of paper, with handles",
           "w": "bag",
-          "a": ["bag", "paper bag", "carrier bag"]
+          "a": [
+            "bag",
+            "paper bag",
+            "carrier bag"
+          ]
         },
         {
           "s": "other",
@@ -1241,7 +1383,10 @@
           "s": "me",
           "t": "Thank you. I'm going to the... the b-... the place where you post parcels, next door, the one with the red sign",
           "w": "post office",
-          "a": ["post office", "post"]
+          "a": [
+            "post office",
+            "post"
+          ]
         },
         {
           "s": "other",
@@ -1267,7 +1412,12 @@
           "s": "me",
           "t": "Yes, please. And can I get the... the little c-... the paper with the number I can check later, to see where it is",
           "w": "tracking number",
-          "a": ["tracking number", "receipt", "tracking", "reference number"]
+          "a": [
+            "tracking number",
+            "receipt",
+            "tracking",
+            "reference number"
+          ]
         },
         {
           "s": "other",
@@ -1353,7 +1503,12 @@
           "s": "me",
           "t": "Do you want to bounce ideas? I think the main reason was the delay in the new price list, the one that was supposed to be ready in March, the... the list of what every product costs",
           "w": "price list",
-          "a": ["price list", "pricing", "price sheet", "tariff"]
+          "a": [
+            "price list",
+            "pricing",
+            "price sheet",
+            "tariff"
+          ]
         },
         {
           "s": "other",
@@ -1655,7 +1810,11 @@
           "s": "me",
           "t": "I'll send them to you. I need to write to the... the person at the customer side who wants the weekly updates, the scientist we talked about at the start",
           "w": "Dr Nakamura",
-          "a": ["dr nakamura", "nakamura", "doctor nakamura"]
+          "a": [
+            "dr nakamura",
+            "nakamura",
+            "doctor nakamura"
+          ]
         },
         {
           "s": "other",
@@ -1665,7 +1824,10 @@
           "s": "me",
           "t": "Good idea. I'll also confirm the booking of the trucks with the... the company we agreed on, the one that supplies the refrigerated vehicles",
           "w": "Brightstone",
-          "a": ["brightstone", "brightstone logistics"]
+          "a": [
+            "brightstone",
+            "brightstone logistics"
+          ]
         },
         {
           "s": "other",
@@ -1675,7 +1837,9 @@
           "s": "me",
           "t": "I'll ask the lawyers. And the first destination, the... the big port city in the Netherlands, we need to book the warehouse slot there",
           "w": "Rotterdam",
-          "a": ["rotterdam"]
+          "a": [
+            "rotterdam"
+          ]
         },
         {
           "s": "other",
@@ -1738,7 +1902,11 @@
           "s": "me",
           "t": "A few small ones. They want a bigger quote from the CEO, a stronger... the line at the top that summarises the news in one sentence",
           "w": "headline",
-          "a": ["headline", "title", "lead"]
+          "a": [
+            "headline",
+            "title",
+            "lead"
+          ]
         },
         {
           "s": "other",
@@ -1764,7 +1932,12 @@
           "s": "me",
           "t": "The landing page is live in staging. We need someone to check it on phones, the small... the screens people hold, not the computers",
           "w": "mobile",
-          "a": ["mobile", "mobile phones", "smartphones", "phones"]
+          "a": [
+            "mobile",
+            "mobile phones",
+            "smartphones",
+            "phones"
+          ]
         },
         {
           "s": "other",
@@ -1782,7 +1955,11 @@
           "s": "me",
           "t": "Yes, it's one line. I'll also add the tracking, the... the code that counts how many people visit and where they come from",
           "w": "analytics",
-          "a": ["analytics", "tracking", "tracking code"]
+          "a": [
+            "analytics",
+            "tracking",
+            "tracking code"
+          ]
         },
         {
           "s": "other",
@@ -1824,7 +2001,10 @@
           "s": "me",
           "t": "The part inside the cell that... the bit shaped like a bean that makes the energy, you showed it on the second slide",
           "w": "mitochondria",
-          "a": ["mitochondria", "mitochondrion"]
+          "a": [
+            "mitochondria",
+            "mitochondrion"
+          ]
         },
         {
           "s": "other",
@@ -1842,7 +2022,9 @@
           "s": "me",
           "t": "Yes, the... the green stuff in the leaves that catches the sunlight, I forget the name",
           "w": "chlorophyll",
-          "a": ["chlorophyll"]
+          "a": [
+            "chlorophyll"
+          ]
         },
         {
           "s": "other",
@@ -1852,7 +2034,9 @@
           "s": "me",
           "t": "Photo... photosynthesis, sorry, it came back. It happens inside the chloroplast, I think",
           "w": "photosynthesis",
-          "a": ["photosynthesis"],
+          "a": [
+            "photosynthesis"
+          ],
           "recover": true
         },
         {
@@ -1871,7 +2055,9 @@
           "s": "me",
           "t": "So the prediction we have to write down before we start, the educated guess we test, we call it a... the thing that might be true or false",
           "w": "hypothesis",
-          "a": ["hypothesis"]
+          "a": [
+            "hypothesis"
+          ]
         },
         {
           "s": "other",
@@ -1881,7 +2067,11 @@
           "s": "me",
           "t": "The second group that we leave alone so we can compare, the... baseline one that gets nothing special",
           "w": "control group",
-          "a": ["control group", "control", "control sample"]
+          "a": [
+            "control group",
+            "control",
+            "control sample"
+          ]
         },
         {
           "s": "other",
@@ -1927,7 +2117,12 @@
           "s": "me",
           "t": "First, can you check the... the lead from the wall socket into the box, the thin one with the clear plastic end, is it pushed in all the way?",
           "w": "phone cable",
-          "a": ["phone cable", "telephone cable", "dsl cable", "broadband cable"]
+          "a": [
+            "phone cable",
+            "telephone cable",
+            "dsl cable",
+            "broadband cable"
+          ]
         },
         {
           "s": "other",
@@ -1953,7 +2148,11 @@
           "s": "me",
           "t": "Orange means it's updating the... the code that lives inside the box, the program that controls it, please don't unplug it while that happens",
           "w": "firmware",
-          "a": ["firmware", "software", "update"]
+          "a": [
+            "firmware",
+            "software",
+            "update"
+          ]
         },
         {
           "s": "other",
@@ -1997,7 +2196,9 @@
           "s": "me",
           "t": "Then call us back and we reset everything to how it was when it left the factory, the... factory reset, that is, it takes a minute",
           "w": "factory reset",
-          "a": ["factory reset"],
+          "a": [
+            "factory reset"
+          ],
           "recover": true
         },
         {
@@ -2035,9 +2236,11 @@
         },
         {
           "s": "me",
-          "t": "Of course. I'm bringing the cake, and I'll ask... your sister, the one with the long hair who lives in Leeds, to come along",
+          "t": "Of course. I'm bringing the cake, and I'll ask... my daughter, the one with the long hair who lives in Leeds, to come along",
           "w": "Priya",
-          "a": ["priya"]
+          "a": [
+            "priya"
+          ]
         },
         {
           "s": "other",
@@ -2055,7 +2258,11 @@
           "s": "me",
           "t": "It's nothing serious. The... the tall one with the beard at the surgery, you remember him, he looked after your grandfather too",
           "w": "Dr Okafor",
-          "a": ["dr okafor", "okafor", "doctor okafor"]
+          "a": [
+            "dr okafor",
+            "okafor",
+            "doctor okafor"
+          ]
         },
         {
           "s": "other",
@@ -2073,7 +2280,10 @@
           "s": "me",
           "t": "Always. I spent all afternoon out there with my... what's the word, the hobby, growing the vegetables and flowers",
           "w": "gardening",
-          "a": ["gardening", "garden"]
+          "a": [
+            "gardening",
+            "garden"
+          ]
         },
         {
           "s": "other",
@@ -2091,7 +2301,10 @@
           "s": "me",
           "t": "It is. I can never find the... the little thing with buttons you point at the screen to change the channel",
           "w": "remote",
-          "a": ["remote", "remote control"]
+          "a": [
+            "remote",
+            "remote control"
+          ]
         },
         {
           "s": "other",
@@ -2109,7 +2322,9 @@
           "s": "me",
           "t": "That's wonderful. Tell him I'm very proud. I'll put the... the thing you boil water in, I'll put it on while you tell me more",
           "w": "kettle",
-          "a": ["kettle"]
+          "a": [
+            "kettle"
+          ]
         },
         {
           "s": "other",
@@ -2143,7 +2358,10 @@
           "s": "me",
           "t": "Necesito enviar la... la factura, how do you say, the paper that asks the client to pay for the work we did",
           "w": "invoice",
-          "a": ["invoice", "bill"]
+          "a": [
+            "invoice",
+            "bill"
+          ]
         },
         {
           "s": "other",
@@ -2161,7 +2379,10 @@
           "s": "me",
           "t": "Mostly. The only problem is el plazo, the... the last day by which we have to finish everything, the one in the contract",
           "w": "deadline",
-          "a": ["deadline", "due date"]
+          "a": [
+            "deadline",
+            "due date"
+          ]
         },
         {
           "s": "other",
@@ -2179,7 +2400,9 @@
           "s": "me",
           "t": "I made the... el presupuesto, the plan of how much we can spend, I put the numbers in the file yesterday",
           "w": "budget",
-          "a": ["budget"]
+          "a": [
+            "budget"
+          ]
         },
         {
           "s": "other",
@@ -2197,7 +2420,12 @@
           "s": "me",
           "t": "Tomorrow works. In the morning, after the... la reunión del equipo, how do you say, when all of us sit together to talk",
           "w": "team meeting",
-          "a": ["team meeting", "meeting", "staff meeting", "stand-up"]
+          "a": [
+            "team meeting",
+            "meeting",
+            "staff meeting",
+            "stand-up"
+          ]
         },
         {
           "s": "other",
@@ -2215,7 +2443,9 @@
           "s": "me",
           "t": "Ah, no. I need to send them the... la contraseña, the secret word to open it, I wrote it down somewhere",
           "w": "password",
-          "a": ["password"],
+          "a": [
+            "password"
+          ],
           "recover": true
         },
         {
@@ -2263,7 +2493,9 @@
           "s": "me",
           "t": "Mostly freight costs. The measure of profit before we take off interest, tax and the wear on equipment, the one analysts always quote, was 24 million",
           "w": "EBITDA",
-          "a": ["ebitda"]
+          "a": [
+            "ebitda"
+          ]
         },
         {
           "s": "other",
@@ -2281,7 +2513,11 @@
           "s": "me",
           "t": "Yes, the... the promise we made to the bank that debt stays under three times, the clause in the loan agreement",
           "w": "covenant",
-          "a": ["covenant", "financial covenant", "covenant limit"]
+          "a": [
+            "covenant",
+            "financial covenant",
+            "covenant limit"
+          ]
         },
         {
           "s": "other",
@@ -2299,7 +2535,9 @@
           "s": "me",
           "t": "The money tied up day to day, the... what we hold in stock plus what customers owe us, minus what we owe suppliers, rose by 3.2 million",
           "w": "working capital",
-          "a": ["working capital"]
+          "a": [
+            "working capital"
+          ]
         },
         {
           "s": "other",
@@ -2317,7 +2555,11 @@
           "s": "me",
           "t": "It does. It goes up by fifty of the... hundredths of a percent, the small unit lenders use for interest rate moves",
           "w": "basis points",
-          "a": ["basis points", "bps", "basis point"]
+          "a": [
+            "basis points",
+            "bps",
+            "basis point"
+          ]
         },
         {
           "s": "other",
@@ -2335,7 +2577,11 @@
           "s": "me",
           "t": "Only that we spread the cost of the new line over ten years, the... writing off a cost slowly over the life of an asset, over ten years of use",
           "w": "amortisation",
-          "a": ["amortisation", "amortization", "depreciation"]
+          "a": [
+            "amortisation",
+            "amortization",
+            "depreciation"
+          ]
         },
         {
           "s": "other",
@@ -2374,7 +2620,10 @@
           "s": "me",
           "t": "Half picked, we're short on the... the flat wooden platforms the boxes sit on, the forklift moves them, we ran out",
           "w": "pallets",
-          "a": ["pallets", "pallet"]
+          "a": [
+            "pallets",
+            "pallet"
+          ]
         },
         {
           "s": "other",
@@ -2392,7 +2641,11 @@
           "s": "me",
           "t": "Done last night, I printed the... the list of everything on the truck with the weights and values, it's in the cab",
           "w": "manifest",
-          "a": ["manifest", "packing list", "cargo manifest"]
+          "a": [
+            "manifest",
+            "packing list",
+            "cargo manifest"
+          ]
         },
         {
           "s": "other",
@@ -2410,7 +2663,11 @@
           "s": "me",
           "t": "I will. I'll call right after this, the item we can't ship yet... backorder, that's it, I have the number written",
           "w": "backorder",
-          "a": ["backorder", "back order", "back-order"],
+          "a": [
+            "backorder",
+            "back order",
+            "back-order"
+          ],
           "recover": true
         },
         {
@@ -2485,7 +2742,13 @@
           "s": "me",
           "t": "A little. The pharmacist gave me a... a greasy thing you rub in, it comes in a tube, it helped for a day or two",
           "w": "ointment",
-          "a": ["ointment", "cream", "emollient", "moisturiser", "moisturizer"]
+          "a": [
+            "ointment",
+            "cream",
+            "emollient",
+            "moisturiser",
+            "moisturizer"
+          ]
         },
         {
           "s": "other",
@@ -2503,7 +2766,10 @@
           "s": "me",
           "t": "Sometimes, yes. And a bit of pain when I make a... when I close my fingers tight, the thing you do with your hand to hit something",
           "w": "fist",
-          "a": ["fist", "clench"]
+          "a": [
+            "fist",
+            "clench"
+          ]
         },
         {
           "s": "other",
@@ -2521,7 +2787,11 @@
           "s": "me",
           "t": "Do you mean the... the machine where you lie inside a big tube and they take pictures, I had one for my back",
           "w": "MRI",
-          "a": ["mri", "mri scan", "scan"]
+          "a": [
+            "mri",
+            "mri scan",
+            "scan"
+          ]
         },
         {
           "s": "other",
@@ -2539,7 +2809,12 @@
           "s": "me",
           "t": "Is it the same one my neighbour takes? The... the pill for pain and swelling, that you can also buy at the shop, what's it called",
           "w": "ibuprofen",
-          "a": ["ibuprofen", "anti-inflammatory", "nsaid", "naproxen"]
+          "a": [
+            "ibuprofen",
+            "anti-inflammatory",
+            "nsaid",
+            "naproxen"
+          ]
         },
         {
           "s": "other",
@@ -2597,7 +2872,14 @@
           "s": "me",
           "t": "That sounds good. And can you also arrange the... the car that takes us from the airport to the hotel, driven by someone else, booked in advance",
           "w": "transfer",
-          "a": ["transfer", "taxi", "cab", "airport transfer", "car service", "shuttle"]
+          "a": [
+            "transfer",
+            "taxi",
+            "cab",
+            "airport transfer",
+            "car service",
+            "shuttle"
+          ]
         },
         {
           "s": "other",
@@ -2615,7 +2897,12 @@
           "s": "me",
           "t": "Okay, good. And my colleague can't eat certain things, so please write on the booking the... the problem with nuts, that she can't eat anything with them",
           "w": "nut allergy",
-          "a": ["nut allergy", "allergy to nuts", "dietary requirement", "dietary requirements"]
+          "a": [
+            "nut allergy",
+            "allergy to nuts",
+            "dietary requirement",
+            "dietary requirements"
+          ]
         },
         {
           "s": "other",
@@ -2633,7 +2920,9 @@
           "s": "me",
           "t": "I have it here, the little... the booklet with my photo that I show at the border, passport, one moment",
           "w": "passport",
-          "a": ["passport"],
+          "a": [
+            "passport"
+          ],
           "recover": true
         },
         {
@@ -2680,7 +2969,12 @@
           "s": "me",
           "t": "The slides are done but I need the... kya kehte hain, the paper that proves I am allowed to drive, for the rental car, I left it at home",
           "w": "licence",
-          "a": ["licence", "license", "driving licence", "driving license"]
+          "a": [
+            "licence",
+            "license",
+            "driving licence",
+            "driving license"
+          ]
         },
         {
           "s": "other",
@@ -2706,7 +3000,14 @@
           "s": "me",
           "t": "Mostly. There was a bug in the... matlab, the part where you enter your name and secret code to get in, but it's fixed",
           "w": "login",
-          "a": ["login", "log in", "log-in", "sign in", "sign-in", "password"]
+          "a": [
+            "login",
+            "log in",
+            "log-in",
+            "sign in",
+            "sign-in",
+            "password"
+          ]
         },
         {
           "s": "other",
@@ -2724,7 +3025,11 @@
           "s": "me",
           "t": "In the... accha, what is the word, the room with the long table and the big screen, on the second floor",
           "w": "meeting room",
-          "a": ["meeting room", "boardroom", "conference room"]
+          "a": [
+            "meeting room",
+            "boardroom",
+            "conference room"
+          ]
         },
         {
           "s": "other",
@@ -2742,7 +3047,11 @@
           "s": "me",
           "t": "Pending. I have to ask the... the person at the front, kya kehte hain, who answers visitors and phone calls, to print forty copies",
           "w": "receptionist",
-          "a": ["receptionist", "reception", "front desk"]
+          "a": [
+            "receptionist",
+            "reception",
+            "front desk"
+          ]
         },
         {
           "s": "other",
