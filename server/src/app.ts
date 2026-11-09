@@ -23,7 +23,7 @@ export interface AppDeps {
   // Defaults to config.allowedOrigins.
   allowedOrigins?: string[];
   // Server-side speech-to-text; defaults to Deepgram when DEEPGRAM_API_KEY is set.
-  deepgram?: Pick<DeepgramOptions, 'apiKey' | 'language' | 'connect' | 'now'>;
+  deepgram?: Pick<DeepgramOptions, 'apiKey' | 'language' | 'connect' | 'now' | 'recoverAfterMs'>;
   // Lets tests shorten the timings.
   session?: Partial<Omit<SessionOptions, 'guess' | 'profile'>>;
 }
@@ -102,6 +102,13 @@ export async function buildApp(deps: AppDeps = {}) {
             const current = { ...event, words };
             send(current);
             session.handle(current);
+          },
+          onUnexpectedClose: (code, openMs) =>
+            app.log.warn({ code, openMs }, 'deepgram: stream closed on its own'),
+          onRecovered: () => {
+            app.log.info('deepgram: answering again, back from browser speech recognition');
+            sttMode = 'deepgram';
+            send({ type: 'session.ready', stt: 'deepgram', guesser: guesserKind });
           },
           onError: (err) => {
             app.log.error({ err }, 'deepgram: failed, falling back to browser speech recognition');

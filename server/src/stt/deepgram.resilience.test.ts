@@ -34,7 +34,11 @@ async function standIn(
   return { wss, url, connections: () => connections };
 }
 
-function client(url: string, clock: { t: number }) {
+function client(
+  url: string,
+  clock: { t: number },
+  extra: Partial<Parameters<typeof createDeepgramStream>[0]> = {},
+) {
   const events: { type: string; words: { text: string }[] }[] = [];
   const errors: Error[] = [];
   let attempts = 0;
@@ -48,6 +52,7 @@ function client(url: string, clock: { t: number }) {
     },
     onEvent: (e) => events.push(e),
     onError: (e) => errors.push(e),
+    ...extra,
   });
   toClose.push({ close: stream.close });
   return { stream, events, errors, attempts: () => attempts };
@@ -95,6 +100,104 @@ describe('a connection that drops mid-sentence', () => {
     c.stream.send(audio);
     await expect.poll(() => c.events.length).toBe(1);
     expect(c.errors).toEqual([]);
+  });
+});
+
+describe('a connection that closes at once', () => {
+  it('is not opened again ten times a second: it counts as a failure, with waits, then gives up once', async () => {
+    const dg = await standIn({}, (ws) => ws.close(1011, 'internal error'));
+    const clock = { t: 0 };
+    const closes: number[] = [];
+    const c = client(dg.url, clock, { onUnexpectedClose: (code) => closes.push(code) });
+    for (let i = 0; i < 10; i++) {
+      c.stream.send(audio);
+      await sleep(30);
+    }
+    expect(dg.connections()).toBe(1);
+    for (const wait of [1000, 2000, 4000]) {
+      clock.t += wait;
+      c.stream.send(audio);
+      await sleep(100);
+    }
+    await expect.poll(() => c.errors.length).toBe(1);
+    expect(dg.connections()).toBe(4);
+    expect(c.errors[0]?.message).toContain('1011');
+    expect(closes).toEqual([1011, 1011, 1011, 1011]);
+  });
+
+  it('is opened again at once when it had been working for a while', async () => {
+    const sockets: WebSocket[] = [];
+    const dg = await standIn({}, (ws) => sockets.push(ws));
+    const clock = { t: 0 };
+    const closes: [number, number][] = [];
+    const c = client(dg.url, clock, { onUnexpectedClose: (code, ms) => closes.push([code, ms]) });
+    c.stream.send(audio);
+    await expect.poll(() => sockets.length).toBe(1);
+    await sleep(50);
+    clock.t += 20_000;
+    sockets[0]?.close(1011, 'idle');
+    await expect.poll(() => closes.length).toBe(1);
+    expect(closes[0]?.[0]).toBe(1011);
+    expect(closes[0]?.[1]).toBeGreaterThanOrEqual(10_000);
+    c.stream.send(audio); // no wait: it worked
+    await expect.poll(() => sockets.length).toBe(2);
+    expect(c.errors).toEqual([]);
+  });
+});
+
+describe('after giving up', () => {
+  const giveUp = async (c: ReturnType<typeof client>, clock: { t: number }) => {
+    c.stream.send(audio);
+    for (const wait of [1000, 2000, 4000]) {
+      await sleep(100);
+      clock.t += wait;
+      c.stream.send(audio);
+    }
+    await expect.poll(() => c.errors.length).toBe(1);
+  };
+
+  it('asks again by itself, reports the recovery once, and works from the next audio', async () => {
+    let refuse = true;
+    const dg = await standIn(
+      { verifyClient: (_i, cb) => (refuse ? cb(false, 503, 'busy') : cb(true)) },
+      (ws) => ws.on('message', (_d, isBinary) => isBinary && ws.send(result('hello'))),
+    );
+    const clock = { t: 0 };
+    let recovered = 0;
+    const c = client(dg.url, clock, { recoverAfterMs: 60, onRecovered: () => recovered++ });
+    await giveUp(c, clock);
+    const attempts = c.attempts();
+    await expect.poll(() => c.attempts()).toBeGreaterThan(attempts + 1); // still looking
+    expect(recovered).toBe(0);
+    expect(c.errors).toHaveLength(1); // and not reporting it again
+
+    refuse = false;
+    await expect.poll(() => recovered).toBe(1);
+    c.stream.send(audio);
+    await expect.poll(() => c.events.length).toBe(1);
+    await sleep(200);
+    expect(recovered).toBe(1);
+  });
+
+  it('stops asking when the stream is closed', async () => {
+    const dg = await standIn({ verifyClient: (_i, cb) => cb(false, 503, 'busy') });
+    const clock = { t: 0 };
+    const c = client(dg.url, clock, { recoverAfterMs: 40 });
+    await giveUp(c, clock);
+    c.stream.close();
+    await sleep(100);
+    const attempts = c.attempts();
+    await sleep(200);
+    expect(c.attempts()).toBe(attempts);
+  });
+
+  it('does not ask again after a refused key', async () => {
+    const dg = await standIn({ verifyClient: (_i, cb) => cb(false, 401, 'Unauthorized') });
+    const c = client(dg.url, { t: 0 }, { recoverAfterMs: 40 });
+    c.stream.send(audio);
+    await expect.poll(() => c.errors.length).toBe(1);
+    await sleep(250);
+    expect(c.attempts()).toBe(1);
   });
 });
 
