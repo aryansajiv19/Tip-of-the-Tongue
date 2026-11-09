@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { otherVoiceFor, speechText, USER_VOICES } from './say.js';
+import { cacheKey, otherVoiceFor, sayArgs, speechText, USER_VOICES } from './say.js';
 
 describe('speechText', () => {
   it('turns each "..." into silence of the given length', () => {
@@ -21,5 +21,21 @@ describe('otherVoiceFor', () => {
     expect(otherVoiceFor('Rishi')).toBe('Samantha');
     expect(otherVoiceFor('Karen')).toBe('Daniel');
     expect(otherVoiceFor('Samantha')).toBe('Daniel');
+  });
+});
+
+describe('speaking rate', () => {
+  it('passes -r to say only when a rate is given', () => {
+    expect(sayArgs('Daniel', 'a.wav', 'hi')).not.toContain('-r');
+    expect(sayArgs('Daniel', 'a.wav', 'hi', 120).slice(0, 4)).toEqual([
+      '-v',
+      'Daniel',
+      '-r',
+      '120',
+    ]);
+  });
+  it('keeps one cached rendering per rate, and the old key when there is no rate', () => {
+    expect(cacheKey('Daniel', 'hi', 120)).not.toBe(cacheKey('Daniel', 'hi', 240));
+    expect(cacheKey('Daniel', 'hi', 120)).not.toBe(cacheKey('Daniel', 'hi'));
   });
 });

@@ -3,6 +3,7 @@ import {
   BYTES_PER_MS,
   durationMs,
   FRAME_BYTES,
+  mixAtSnr,
   silence,
   toFrames,
   trimSilence,
@@ -92,5 +93,54 @@ describe('toFrames', () => {
   });
   it('gives no frames for no audio', () => {
     expect(toFrames(Buffer.alloc(0))).toEqual([]);
+  });
+});
+
+describe('mixAtSnr', () => {
+  const tone = (n: number, amp: number) =>
+    samples(...Array.from({ length: n }, (_, i) => Math.round(amp * Math.sin(i / 3))));
+  const rms = (pcm: Buffer) => {
+    let e = 0;
+    for (let i = 0; i < pcm.length; i += 2) e += pcm.readInt16LE(i) ** 2;
+    return Math.sqrt(e / (pcm.length / 2));
+  };
+
+  it('puts the noise the asked number of dB below the speech', () => {
+    const speech = tone(16000, 8000);
+    const noise = samples(...Array.from({ length: 16000 }, (_, i) => ((i * 7919) % 2001) - 1000));
+    const mixed = mixAtSnr(speech, noise, 10);
+    const added = Buffer.alloc(speech.length);
+    for (let i = 0; i < speech.length; i += 2) {
+      added.writeInt16LE(mixed.readInt16LE(i) - speech.readInt16LE(i), i);
+    }
+    expect(20 * Math.log10(rms(speech) / rms(added))).toBeCloseTo(10, 0);
+  });
+
+  it('measures the level on the speech, not on the pauses', () => {
+    const speech = Buffer.concat([tone(4000, 8000), silence(2000)]);
+    const noise = samples(...Array.from({ length: 100 }, (_, i) => (i % 2 ? 500 : -500)));
+    const mixed = mixAtSnr(speech, noise, 6);
+    const loud = mixed.subarray(0, 8000);
+    const gap = mixed.subarray(speech.length - 3200);
+    // noise amplitude = speech rms / 10^(6/20), about half; the gap holds that, not a fraction
+    expect(rms(gap)).toBeGreaterThan(rms(tone(4000, 8000)) * 0.45);
+    expect(rms(loud)).toBeGreaterThan(0);
+  });
+
+  it('repeats a short noise to fill the track and keeps the length', () => {
+    const mixed = mixAtSnr(tone(800, 8000), samples(100, -100), 0);
+    expect(mixed.length).toBe(1600);
+  });
+
+  it('clips instead of wrapping when speech is already loud', () => {
+    const loud = samples(...Array(400).fill(32000));
+    const mixed = mixAtSnr(loud, samples(...Array(400).fill(5000)), -6);
+    expect(mixed.readInt16LE(0)).toBe(32767);
+  });
+
+  it('leaves silence and silent noise alone', () => {
+    expect(mixAtSnr(silence(10), samples(900, -900), 5)).toEqual(silence(10));
+    const speech = tone(100, 8000);
+    expect(mixAtSnr(speech, silence(10), 5)).toEqual(speech);
   });
 });

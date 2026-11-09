@@ -50,3 +50,35 @@ export function toFrames(pcm: Buffer): Buffer[] {
   }
   return frames;
 }
+
+// Root-mean-square level of the loud samples only, so a long pause in a track does not lower it.
+function speechRms(pcm: Buffer, threshold = 300): number {
+  let sum = 0;
+  let n = 0;
+  for (let i = 0; i + 1 < pcm.length; i += 2) {
+    const v = pcm.readInt16LE(i);
+    if (Math.abs(v) > threshold) {
+      sum += v * v;
+      n++;
+    }
+  }
+  return n === 0 ? 0 : Math.sqrt(sum / n);
+}
+
+// Adds `noise` (repeated to fill the track) at `snrDb` below the speech level. Sample count and
+// timing are unchanged, so line positions on the track stay valid.
+export function mixAtSnr(speech: Buffer, noise: Buffer, snrDb: number): Buffer {
+  const noiseSamples = noise.length >> 1;
+  let energy = 0;
+  for (let i = 0; i < noiseSamples; i++) energy += noise.readInt16LE(i * 2) ** 2;
+  const noiseRms = Math.sqrt(energy / (noiseSamples || 1));
+  const rms = speechRms(speech);
+  if (noiseRms === 0 || rms === 0) return speech;
+  const gain = rms / (noiseRms * 10 ** (snrDb / 20));
+  const out = Buffer.alloc(speech.length);
+  for (let i = 0; i < speech.length >> 1; i++) {
+    const mixed = speech.readInt16LE(i * 2) + noise.readInt16LE((i % noiseSamples) * 2) * gain;
+    out.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(mixed))), i * 2);
+  }
+  return out;
+}

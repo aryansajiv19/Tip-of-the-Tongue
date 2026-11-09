@@ -25,16 +25,39 @@ export async function installedVoices(): Promise<Set<string>> {
   return new Set(stdout.split('\n').map((l) => l.split(/\s{2,}/)[0]?.trim() ?? ''));
 }
 
+// `rate` is in words per minute (say's default is about 175). Without it the key is what it was
+// before rates existed, so earlier renderings stay valid.
+export const cacheKey = (voice: string, spoken: string, rate?: number): string =>
+  createHash('sha1')
+    .update(`${voice}|${spoken}${rate === undefined ? '' : `|${rate}`}`)
+    .digest('hex');
+
+export const sayArgs = (voice: string, file: string, spoken: string, rate?: number): string[] => [
+  '-v',
+  voice,
+  ...(rate === undefined ? [] : ['-r', String(rate)]),
+  '-o',
+  file,
+  '--data-format=LEI16@16000',
+  '--',
+  spoken,
+];
+
 const CACHE = join(tmpdir(), 'tott-live-scenarios');
 
 // One line of speech as 16 kHz PCM, trimmed of the silence the voice adds at both ends. Cached,
 // so a second run does not speak everything again.
-export async function renderLine(voice: string, text: string, pauseMs: number): Promise<Buffer> {
+export async function renderLine(
+  voice: string,
+  text: string,
+  pauseMs: number,
+  rate?: number,
+): Promise<Buffer> {
   const spoken = speechText(text, pauseMs);
-  const file = join(CACHE, `${createHash('sha1').update(`${voice}|${spoken}`).digest('hex')}.wav`);
+  const file = join(CACHE, `${cacheKey(voice, spoken, rate)}.wav`);
   if (!existsSync(file)) {
     await mkdir(CACHE, { recursive: true });
-    await run('say', ['-v', voice, '-o', file, '--data-format=LEI16@16000', '--', spoken]);
+    await run('say', sayArgs(voice, file, spoken, rate));
   }
   return trimSilence(wavToPcm(await readFile(file)));
 }
