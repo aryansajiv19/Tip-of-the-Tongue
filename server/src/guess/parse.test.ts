@@ -152,3 +152,45 @@ describe('firstObjectEnd', () => {
     expect(firstObjectEnd('{"a":1}{"b":2}')).toBe(7);
   });
 });
+
+describe('a model that rambles or misbehaves', () => {
+  it('drops a "word" that is a paragraph, keeps the real ones', () => {
+    const essay = 'because '.repeat(2000);
+    const reply = JSON.stringify({
+      candidates: [
+        { word: essay, confidence: 0.99 },
+        { word: 'pharmacy', confidence: 0.8 },
+      ],
+    });
+    expect(parseGuess(reply).candidates.map((c) => c.word)).toEqual(['pharmacy']);
+  });
+
+  it('abstains when the only candidate is a paragraph', () => {
+    const reply = JSON.stringify({ candidates: [{ word: 'x'.repeat(5000), confidence: 1 }] });
+    expect(parseGuess(reply).abstain).toBe(true);
+  });
+
+  it('keeps a long multi-word name up to the limit', () => {
+    const name = 'Northwind Analytics Holdings International';
+    expect(
+      parseGuess(JSON.stringify({ candidates: [{ word: name, confidence: 0.9 }] })).candidates,
+    ).toEqual([{ word: name, confidence: 0.9 }]);
+  });
+
+  it.each([
+    ['truncated mid-string', '{"candidates":[{"word":"pharm'],
+    ['truncated mid-object', '{"candidates":[{"word":"pharmacy","confidence":0.9}'],
+    ['two objects', '{"abstain":true}{"candidates":[{"word":"a","confidence":1}]}'],
+    ['a JSON array', '[{"word":"pharmacy","confidence":0.9}]'],
+    ['null candidates', '{"candidates":null}'],
+    ['candidates not a list', '{"candidates":"pharmacy"}'],
+    ['words that are numbers', '{"candidates":[{"word":42,"confidence":0.9}]}'],
+    ['only an apology', "I'm sorry, I can't help with that."],
+    ['empty', ''],
+    ['binary junk', '\u0000\u0001\ufffd{{{{'],
+    ['an enormous number', '{"candidates":[{"word":"a","confidence":1e999}]}'],
+  ])('never throws and offers nothing for %s', (_n, text) => {
+    const result = parseGuess(text);
+    expect(result).toEqual({ candidates: [], abstain: true });
+  });
+});

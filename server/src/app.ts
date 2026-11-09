@@ -9,10 +9,10 @@ import type { Guesser } from './guess/types.js';
 import { createSession, type SessionOptions } from './session.js';
 import { createDeepgramStream, type DeepgramOptions } from './stt/deepgram.js';
 
-// Room for a pasted brief of 50,000 characters, even if every one takes several bytes.
+// Room for a pasted brief of 50,000 characters, even if every one takes six bytes (a JSON-escaped control character).
 // The glossary is built in the background, so it can take longer than a guess.
 const GLOSSARY_TIMEOUT_MS = 20_000;
-const MAX_MESSAGE_BYTES = 256 * 1024;
+const MAX_MESSAGE_BYTES = 512 * 1024;
 
 export interface AppDeps {
   // Receives the server log lines (one JSON object per line); tests use it to check what is logged.

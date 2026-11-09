@@ -231,12 +231,15 @@ describe('createDeepgramStream', () => {
     expect(opened).toBe(0);
   });
 
-  it('reports a refused connection once and then stops trying', async () => {
+  it('tries a dead connection a few times, reports it once and then stops', async () => {
     const errors: Error[] = [];
     let attempts = 0;
+    // Each look at the clock is five seconds later, so waits between tries pass at once.
+    let t = 0;
     const stream = createDeepgramStream({
       apiKey: 'bad',
       language: 'en',
+      now: () => (t += 5000),
       connect: () => {
         attempts++;
         return new WebSocket('ws://127.0.0.1:1');
@@ -244,10 +247,13 @@ describe('createDeepgramStream', () => {
       onEvent: () => undefined,
       onError: (err) => errors.push(err),
     });
-    stream.send(Buffer.alloc(10));
-    await expect.poll(() => errors.length).toBe(1);
+    for (let i = 0; i < 10 && errors.length === 0; i++) {
+      stream.send(Buffer.alloc(10));
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    expect(errors).toHaveLength(1);
     for (let i = 0; i < 20; i++) stream.send(Buffer.alloc(10));
-    expect(attempts).toBe(1);
+    expect(attempts).toBe(4);
     stream.close();
   });
 });
@@ -331,12 +337,19 @@ describe('server with Deepgram', () => {
 
   it('falls back to browser speech recognition when Deepgram fails', async () => {
     const { app, ws, events } = await connectClient({
-      deepgram: { apiKey: 'k', language: 'en', connect: () => new WebSocket('ws://127.0.0.1:1') },
+      deepgram: {
+        apiKey: 'k',
+        language: 'en',
+        now: () => (t += 5000),
+        connect: () => new WebSocket('ws://127.0.0.1:1'),
+      },
     });
-    ws.send(Buffer.alloc(3200));
+    let t = 0;
+    const audio = setInterval(() => ws.send(Buffer.alloc(3200)), 40);
     await expect
       .poll(() => events.filter((e) => e.type === 'session.ready').map((e) => e.stt))
       .toEqual(['deepgram', 'browser']);
+    clearInterval(audio);
     ws.close();
     await app.close();
   });

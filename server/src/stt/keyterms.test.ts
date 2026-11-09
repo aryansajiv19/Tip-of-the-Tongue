@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ProfileSchema } from '../guess/profile.js';
+import { deepgramUrl } from './deepgram.js';
 import { selectKeyterms, termsFromText } from './keyterms.js';
 
 describe('termsFromText', () => {
@@ -100,5 +101,35 @@ describe('selectKeyterms with a long personal list', () => {
     });
     expect(out).not.toContain('Northwind');
     expect(out).toHaveLength(100);
+  });
+});
+
+// A glossary in another script, or with emoji: every character is its own token for Deepgram and
+// takes up to 12 characters of the URL once encoded. Over either limit, Deepgram refuses the whole
+// connection and speech recognition silently drops to the browser.
+describe('keyterms in other scripts', () => {
+  // Under the 40-code-unit limit per term, as long as it can be.
+  const longTerm = (char: string, i: number) => `${char.repeat(char.length === 2 ? 15 : 30)}${i}`;
+  const cases: [string, string][] = [
+    ['Cyrillic', 'ж'],
+    ['Chinese', '会'],
+    ['Arabic', 'ع'],
+    ['emoji', '🚀'],
+  ];
+
+  it.each(cases)("%s terms stay inside Deepgram's token and URL limits", (_name, char) => {
+    const glossary = Array.from({ length: 100 }, (_, i) => longTerm(char, i)).join(', ');
+    const out = selectKeyterms({ glossary });
+    expect(out.length).toBeGreaterThan(0);
+    // Worst case for the token count: one per non-ASCII character.
+    const tokens = out.reduce((n, t) => n + [...t].length, 0);
+    expect(tokens).toBeLessThanOrEqual(450);
+    expect(new URL(deepgramUrl('en', out)).search.length).toBeLessThan(7000);
+    expect(deepgramUrl('en', out).length).toBeLessThan(7500);
+  });
+
+  it('still takes plain English terms up to the old limits', () => {
+    const words = Array.from({ length: 100 }, (_, i) => `word${i}`);
+    expect(selectKeyterms({ glossary: words.join(',') })).toHaveLength(100);
   });
 });
