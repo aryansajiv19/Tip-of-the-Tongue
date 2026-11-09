@@ -58,8 +58,10 @@
 }
 
 .settings-segments span {
-  display: block;
-  padding: var(--space-2);
+  display: grid;
+  place-items: center;
+  min-height: var(--target);
+  padding: 0 var(--space-2);
   border-radius: var(--space-2);
   color: var(--text-muted);
   cursor: pointer;
@@ -77,6 +79,7 @@
 
 .settings-field select {
   width: 100%;
+  min-height: var(--target);
   padding: var(--space-2);
   background: var(--hover);
   border: var(--surface-border);
@@ -84,6 +87,7 @@
 }
 
 .settings-check {
+  min-height: var(--target);
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -95,6 +99,7 @@
 }
 
 .settings-debug button {
+  min-height: var(--target);
   padding: var(--space-1) var(--space-2);
   background: var(--hover);
   border: var(--surface-border);
@@ -111,5 +116,5 @@
 .settings-hint {
   margin: var(--space-2) 0 0;
   color: var(--text-muted);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
 }

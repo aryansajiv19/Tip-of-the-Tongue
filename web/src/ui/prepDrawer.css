@@ -7,9 +7,9 @@
   padding: var(--space-3);
   border-radius: var(--radius-card);
   font-size: var(--text-sm);
-  /* The desktop window is at most 480 px tall (app/src/placement.ts): the pill, this drawer and
-     the two note lines must fit, so what does not is reached by scrolling inside the drawer. */
-  max-height: 320px;
+  /* The desktop window has a maximum height (app/src/placement.ts): the pill, this drawer and the
+     two note lines must fit in it, so what does not is reached by scrolling inside the drawer. */
+  max-height: var(--drawer-max-height);
   overflow-y: auto;
 }
 .prep p {
@@ -35,7 +35,7 @@
 }
 
 .prep-choose {
-  min-height: var(--space-6);
+  min-height: var(--target);
   padding: 0 var(--space-3);
   font: inherit;
   color: var(--text);
@@ -81,8 +81,8 @@
   flex: none;
   display: grid;
   place-items: center;
-  width: var(--space-6);
-  height: var(--space-6);
+  width: var(--target);
+  height: var(--target);
   padding: 0;
   color: var(--text-muted);
   background: transparent;
@@ -108,7 +108,7 @@
 }
 .prep-why {
   margin: 0;
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
 }
 
 .prep-about,
@@ -129,12 +129,13 @@
   gap: var(--space-1);
 }
 .prep-field span {
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   color: var(--text-muted);
 }
 .prep-field input,
 .prep-field textarea {
   box-sizing: border-box;
+  min-height: var(--target);
   width: 100%;
   padding: var(--space-1) var(--space-2);
   font: inherit;
