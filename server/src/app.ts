@@ -90,6 +90,8 @@ export async function buildApp(deps: AppDeps = {}) {
           keyterms: () => session.keyterms(),
           diarize: config.deepgramDiarize,
           onStreamStart: () => session.forgetSpeaker(),
+          onConfigureFailure: (code) =>
+            app.log.warn({ code }, 'deepgram: keyterm update refused, old terms stay'),
           onEvent: (event) => {
             // Words still in flight from before a reset are neither shown nor used.
             const words = session.afterReset(event.words);
@@ -107,8 +109,7 @@ export async function buildApp(deps: AppDeps = {}) {
       : undefined;
     const session = createSession(send, {
       sttMode: () => sttMode,
-      // Keyterms are fixed when a stream opens; restart so the next audio uses the new ones.
-      onKeytermsChange: () => stt?.restart(),
+      onKeytermsChange: () => stt?.updateKeyterms(),
       guess,
       buildGlossary,
       pauseMs: config.stuckPauseMs,

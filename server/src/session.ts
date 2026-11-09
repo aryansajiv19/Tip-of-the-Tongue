@@ -551,8 +551,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     keyterms: () => keyterms,
     // Which voice the session takes to be the user's, if it knows.
     speaker: () => me,
-    // Deepgram numbers voices per stream: when a new stream opens (after a pause in listening, or a
-    // keyterm change) the old numbers mean nothing, so pick again from its first words.
+    // Deepgram numbers voices per stream: when a new stream opens (after a pause in listening) the old
+    // numbers mean nothing, so pick again from its first words.
     forgetSpeaker: () => forgetMe('new stream'),
     close() {
       closed = true;
