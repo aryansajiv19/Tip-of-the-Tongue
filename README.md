@@ -61,7 +61,7 @@ Security notes for running it locally:
 
 - Tested only on our own written examples in the documented style of circumlocution, read as scripted text. **Not tested with people with aphasia**, and no claim of clinical benefit.
 - Speech-to-text may mishear real aphasic speech.
-- One microphone hears both sides of a conversation, and the prototype cannot tell speakers apart. There is no speaker separation, so the other person's pauses and words can affect it.
+- One microphone hears both sides of a conversation. With Deepgram, voices are told apart and only the user's own pauses start a guess; the user is taken to be whoever speaks first after Start, corrected when they accept a word or ask by hand. With browser speech there are no speaker labels, so the other person's pauses can trigger it.
 - The 2023 study that found a model identified the intended word 91.67% of the time used text, not live speech. Measuring the live version is what the eval is for.
 
 See [docs/EDGE-CASES.md](docs/EDGE-CASES.md) for the full list.
