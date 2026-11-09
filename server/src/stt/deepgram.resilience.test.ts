@@ -310,16 +310,33 @@ describe('after giving up', () => {
     expect(recovered).toBe(1);
   });
 
-  it('stops asking when the stream is closed', async () => {
+  it('stops asking when the stream is closed, even while a check is under way', async () => {
     const dg = await standIn({ verifyClient: (_i, cb) => cb(false, 503, 'busy') });
     const clock = { t: 0 };
     const c = client(dg.url, clock, { recoverAfterMs: 40 });
     await giveUp(c, clock);
+    const asked = c.attempts();
+    // Wait for a check to start, and close at that moment: it is still connecting.
+    await expect.poll(() => c.attempts()).toBeGreaterThan(asked);
     c.stream.close();
-    await sleep(100);
     const attempts = c.attempts();
-    await sleep(200);
+    await sleep(250); // many times recoverAfterMs: a leftover check would have started others
     expect(c.attempts()).toBe(attempts);
+  });
+
+  it('does not report a recovery that finishes after the stream was closed', async () => {
+    let refuse = true;
+    const dg = await standIn({
+      verifyClient: (_i, cb) => (refuse ? cb(false, 503, 'busy') : cb(true)),
+    });
+    const clock = { t: 0 };
+    let recovered = 0;
+    const c = client(dg.url, clock, { recoverAfterMs: 40, onRecovered: () => recovered++ });
+    await giveUp(c, clock);
+    c.stream.close();
+    refuse = false;
+    await sleep(200);
+    expect(recovered).toBe(0);
   });
 
   it('does not ask again after a refused key', async () => {

@@ -174,9 +174,12 @@ export function createDeepgramStream(opts: DeepgramOptions) {
   let failures = 0;
   let retryAtMs = 0;
   let recoverTimer: NodeJS.Timeout | undefined;
+  // `close()` is final: nothing may be scheduled or reported after it.
+  let closedForGood = false;
 
   // Checks whether Deepgram answers again, without audio: opens a connection and drops it.
   function scheduleProbe() {
+    if (closedForGood) return;
     recoverTimer = setTimeout(() => {
       const socket = connect(
         deepgramUrl(language, opts.keyterms?.() ?? [], opts.diarize),
@@ -193,6 +196,7 @@ export function createDeepgramStream(opts: DeepgramOptions) {
       socket.on('unexpected-response', again);
       socket.on('open', () => {
         done = true;
+        if (closedForGood) return socket.terminate();
         socket.close();
         failed = false;
         failures = 0;
@@ -359,6 +363,7 @@ export function createDeepgramStream(opts: DeepgramOptions) {
       keepIdleTimer();
     },
     close() {
+      closedForGood = true;
       clearTimeout(recoverTimer);
       drop();
     },
