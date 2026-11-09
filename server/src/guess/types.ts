@@ -4,6 +4,8 @@ import type { Profile } from './profile.js';
 export interface GuessInput {
   conversation: string;
   stuckPhrase: string;
+  // Words they said and took back ("the fork, no, the..."): not to be offered.
+  rejected?: string[];
   brief?: string;
   profile?: Profile;
 }

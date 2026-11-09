@@ -28,4 +28,5 @@ Code map: `graphify-out/` in the lead's checkout (`~/voice-airlock-hiya`, git-ig
 
 - A lead session coordinates; workers use their own worktree and branch and touch only their assigned files.
 - Workers report to the lead and wait for "push" unless it was pre-approved. Only the lead merges.
+- Shared machine: no load generators (CPU burners, `while :` loops); locally run only the e2e specs you touched (CI runs all); stop dev servers when done; remove a worktree once its PR merges. Only the lead runs real-key evals, one at a time.
 - Use subagents for wide reading; keep context lean. Only the lead edits `docs/CHECKPOINT.md`, except in a hygiene PR.

@@ -14,7 +14,7 @@ export interface PlacedLine {
 }
 
 // What a speech recogniser sends: no punctuation and no "..." (the pause is just silence).
-const spoken = (text: string): string => text.replace(/\.\.\./g, '').replace(/[.,?!;:]/g, '');
+const spoken = (text: string): string => text.replace(/\.\.\.|…/g, '').replace(/[.,?!;:]/g, '');
 
 export const isStall = (l: Line): boolean => l.s === 'me' && Boolean(l.w) && !l.recover;
 
@@ -32,6 +32,7 @@ export function layoutScenario(sc: Scenario, speakers = false): PlacedLine[] {
       startMs: at,
       ...(sc.wordMs !== undefined ? { stepMs: sc.wordMs } : {}),
       ...(sc.stallMs !== undefined ? { pauseMs: sc.stallMs } : {}),
+      ...(sc.breathMs !== undefined ? { breathMs: sc.breathMs } : {}),
     });
     const endMs = words.at(-1)?.endMs ?? at;
     const heard = words.flatMap((w) => {

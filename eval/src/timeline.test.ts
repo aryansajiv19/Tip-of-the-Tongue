@@ -18,6 +18,10 @@ describe('toTimedWords', () => {
   it('handles a "..." in the middle of a token and repeated pauses', () => {
     expect(toTimedWords('a... b... c').map((w) => w.startMs)).toEqual([0, 2100, 4200]);
   });
+  it('leaves breathMs after a word ending in a single "…", and a stall after "..."', () => {
+    const w = toTimedWords('one… two three... four', { breathMs: 1700, pauseMs: 3000 });
+    expect(w.map((x) => x.startMs)).toEqual([0, 1800, 2100, 5200]);
+  });
   it('returns nothing for empty text', () => {
     expect(toTimedWords('  ')).toEqual([]);
   });
