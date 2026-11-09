@@ -162,3 +162,10 @@
     -webkit-text-fill-color: currentcolor;
   }
 }
+
+.card-word,
+.card-alts li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}

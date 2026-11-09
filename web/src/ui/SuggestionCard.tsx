@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, CircleAlert } from 'lucide-react';
 import type { Candidate } from '../../../server/src/events';
 import { confidenceDots } from './cardView';
 import type { CardState } from './cardState';
+import { modifierLabel, pickForKey } from './commands';
 import { desktop } from './desktop';
 import './card.css';
 
@@ -52,19 +53,37 @@ export function SuggestionCard({ card, problem, onPick, onDismiss }: Props) {
   const content = useContent(card, problem);
   const { shown, leaving, done } = useExit(content);
 
+  // The page's handler changes every render; the key listeners must not be re-registered each time.
+  const latest = useRef({ onPick, onDismiss });
+  useEffect(() => {
+    latest.current = { onPick, onDismiss };
+  });
+
   useEffect(() => {
     if (!content || content.kind === 'accepted') return;
+    const words =
+      content.kind === 'offer' ? [content.primary, ...content.alternatives].map((c) => c.word) : [];
+    const pick = (index: number) => {
+      const word = words[index];
+      if (content.kind === 'offer' && word !== undefined) latest.current.onPick(content.id, word);
+    };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onDismiss();
+      if (e.key === 'Escape') return latest.current.onDismiss();
+      const index = pickForKey(e);
+      if (index === null || words[index] === undefined) return;
+      e.preventDefault();
+      pick(index);
     };
     window.addEventListener('keydown', onKey);
-    // The desktop overlay never takes focus, so Esc has to come from a global shortcut.
-    const releaseEscape = desktop?.captureEscape(onDismiss);
+    // The desktop overlay never takes focus, so Esc and Cmd/Ctrl+1..3 come from global shortcuts.
+    const release = desktop?.captureCardKeys(words.length, (key) =>
+      key === 'escape' ? latest.current.onDismiss() : pick(key - 1),
+    );
     return () => {
       window.removeEventListener('keydown', onKey);
-      releaseEscape?.();
+      release?.();
     };
-  }, [content, onDismiss]);
+  }, [content]);
 
   return (
     <aside aria-live="polite" aria-label="Word suggestions" className="card-area">
@@ -79,6 +98,17 @@ export function SuggestionCard({ card, problem, onPick, onDismiss }: Props) {
     </aside>
   );
 }
+
+const MODIFIER = modifierLabel(navigator.platform);
+const SHORTCUT = MODIFIER === '\u2318' ? 'Meta' : 'Control';
+
+// The key that picks a suggestion, shown beside it.
+const Hint = ({ n }: { n: 1 | 2 | 3 }) => (
+  <kbd className="keycap" aria-hidden="true">
+    {MODIFIER}
+    {n}
+  </kbd>
+);
 
 function Body({ content, onPick }: { content: Content; onPick: Props['onPick'] }) {
   switch (content.kind) {
@@ -103,13 +133,17 @@ function Body({ content, onPick }: { content: Content; onPick: Props['onPick'] }
       return (
         <>
           <div className="card-main">
-            <button
-              type="button"
-              className="card-primary"
-              onClick={() => onPick(content.id, content.primary.word)}
-            >
-              {content.primary.word}
-            </button>
+            <span className="card-word">
+              <button
+                type="button"
+                className="card-primary"
+                aria-keyshortcuts={`${SHORTCUT}+1`}
+                onClick={() => onPick(content.id, content.primary.word)}
+              >
+                {content.primary.word}
+              </button>
+              <Hint n={1} />
+            </span>
             <span
               className="card-dots"
               role="img"
@@ -123,11 +157,16 @@ function Body({ content, onPick }: { content: Content; onPick: Props['onPick'] }
           </div>
           {content.alternatives.length > 0 && (
             <ul className="card-alts">
-              {content.alternatives.map((c) => (
+              {content.alternatives.map((c, i) => (
                 <li key={c.word}>
-                  <button type="button" onClick={() => onPick(content.id, c.word)}>
+                  <button
+                    type="button"
+                    aria-keyshortcuts={`${SHORTCUT}+${i + 2}`}
+                    onClick={() => onPick(content.id, c.word)}
+                  >
                     {c.word}
                   </button>
+                  <Hint n={(i + 2) as 2 | 3} />
                 </li>
               ))}
             </ul>

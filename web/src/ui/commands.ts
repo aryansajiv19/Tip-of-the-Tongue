@@ -18,6 +18,15 @@ export function commandForKey(e: {
   return null;
 }
 
+type KeyInfo = Parameters<typeof commandForKey>[0];
+
+// Cmd (Mac) or Ctrl plus 1, 2 or 3 picks that suggestion: its place in the list (0, 1 or 2).
+export function pickForKey(e: KeyInfo): 0 | 1 | 2 | null {
+  if (e.repeat || e.altKey || e.shiftKey || e.metaKey === e.ctrlKey) return null;
+  const n = /^(?:Digit|Numpad)([123])$/.exec(e.code)?.[1];
+  return n === undefined ? null : ((Number(n) - 1) as 0 | 1 | 2);
+}
+
 // What to print on the keycaps.
 export function modifierLabel(platform: string): string {
   return /mac|iphone|ipad/i.test(platform) ? '⌘' : 'Ctrl';

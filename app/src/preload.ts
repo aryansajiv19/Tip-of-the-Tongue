@@ -13,15 +13,15 @@ contextBridge.exposeInMainWorld('tott', {
   setHeight(px: number) {
     ipcRenderer.send('overlay:height', px);
   },
-  // Asks the main process to hand over Esc while a suggestion is on screen, and to stop when
-  // the returned function is called.
-  captureEscape(cb: () => void) {
-    const listener = () => cb();
-    ipcRenderer.on('escape', listener);
-    ipcRenderer.send('overlay:escape', true);
+  // Asks the main process to hand over Esc, and Cmd/Ctrl+1..picks, while a suggestion is on
+  // screen, and to stop when the returned function is called.
+  captureCardKeys(picks: number, cb: (key: 'escape' | 1 | 2 | 3) => void) {
+    const listener = (_event: unknown, key: 'escape' | 1 | 2 | 3) => cb(key);
+    ipcRenderer.on('card-key', listener);
+    ipcRenderer.send('overlay:card-keys', { picks });
     return () => {
-      ipcRenderer.removeListener('escape', listener);
-      ipcRenderer.send('overlay:escape', false);
+      ipcRenderer.removeListener('card-key', listener);
+      ipcRenderer.send('overlay:card-keys', null);
     };
   },
   report(state: { listening: boolean }) {
