@@ -1,5 +1,5 @@
 electronVersion: 45.2.3
-appId: com.hiya.tipofthetongue
+appId: com.aryansajiv.tipofthetongue
 productName: Tip of the Tongue
 directories:
   output: ../release
