@@ -24,13 +24,13 @@ test('page survives the server going away and reconnects when it returns', async
 
 test('a second tab waits and takes over when the first one closes', async ({ context, page }) => {
   await page.goto('/');
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(page.getByRole('status').first()).toHaveText('Connected');
   const second = await context.newPage();
   await second.goto('/');
-  await expect(second.getByRole('status').first()).toHaveText('Server: other-tab');
+  await expect(second.getByRole('status').first()).toHaveText('Another tab is already listening');
   await expect(second.getByText('Another tab is already listening')).toBeVisible();
   await page.close();
-  await expect(second.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(second.getByRole('status').first()).toHaveText('Connected');
 });
 
 test('shows a calm message when speech recognition is unsupported', async ({ page }) => {
