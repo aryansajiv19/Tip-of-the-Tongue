@@ -14,6 +14,13 @@ const primary = (page: Page) => offer(page).locator('.card-primary');
 
 async function launch(page: Page, level?: string) {
   if (level) await page.addInitScript((l) => localStorage.setItem('tott.help', l), level);
+  else
+    await page.addInitScript(() => {
+      // Only the first load: a reload must keep the answer.
+      if (sessionStorage.getItem('fresh')) return;
+      sessionStorage.setItem('fresh', '1');
+      localStorage.removeItem('tott.help');
+    });
   const server = await fakeServer(page);
   await page.goto('/');
   await expect(status(page)).toHaveText('Server: connected');

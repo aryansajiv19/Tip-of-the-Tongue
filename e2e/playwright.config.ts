@@ -26,7 +26,15 @@ export default defineConfig({
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
-  use: { baseURL: WEB, browserName: 'chromium' },
+  // Everyone has answered "How should I help?" unless a test removes the answer: Play only shows after.
+  use: {
+    baseURL: WEB,
+    browserName: 'chromium',
+    storageState: {
+      cookies: [],
+      origins: [{ origin: WEB, localStorage: [{ name: 'tott.help', value: 'word' }] }],
+    },
+  },
   webServer: {
     command: `npx concurrently -k -n server,web "npm run dev -w server" "npm run dev -w web -- --port ${process.env.E2E_WEB_PORT} --strictPort"`,
     cwd: '..',

@@ -67,9 +67,9 @@ describe('formatClock', () => {
 
 describe('contextLabel', () => {
   it('invites the user to add context while nothing is loaded', () => {
-    expect(contextLabel(null)).toBe('Add context');
-    expect(contextLabel('')).toBe('Add context');
-    expect(contextLabel('  \n ', 'notes.txt')).toBe('Add context');
+    expect(contextLabel(null)).toBe('Meeting notes');
+    expect(contextLabel('')).toBe('Meeting notes');
+    expect(contextLabel('  \n ', 'notes.txt')).toBe('Meeting notes');
   });
 
   it('names the loaded file', () => {

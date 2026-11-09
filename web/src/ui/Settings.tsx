@@ -103,7 +103,7 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
       </fieldset>
 
       <fieldset>
-        <legend>Sensitivity</legend>
+        <legend>How quickly I offer words</legend>
         <div className="settings-segments">
           {SENSITIVITY_KEYS.map((key) => (
             <label key={key}>
