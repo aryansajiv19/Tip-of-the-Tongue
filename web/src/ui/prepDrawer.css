@@ -100,6 +100,9 @@
   list-style: none;
 }
 .prep-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
   padding: var(--space-1) var(--space-2);
   font-size: var(--text-xs);
   color: var(--text-muted);
@@ -112,6 +115,7 @@
 }
 
 .prep-about,
+.prep-recent,
 .prep-remembered {
   display: grid;
   gap: var(--space-2);
