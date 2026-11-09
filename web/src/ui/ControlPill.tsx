@@ -1,5 +1,5 @@
 import { useSyncExternalStore, type ReactNode } from 'react';
-import { ChevronDown, Pause, Play, RotateCcw } from 'lucide-react';
+import { Pause, Play, RotateCcw } from 'lucide-react';
 import { formatClock } from './sessionState';
 import { BAR_COUNT, barHeights } from './levelBars';
 import { levelStore } from './levelStore';
@@ -27,6 +27,9 @@ interface Props {
 const ICON = { size: 16, strokeWidth: 1.5, 'aria-hidden': true } as const;
 
 export function ControlPill(p: Props) {
+  // "Meeting \u00b7 agenda.pdf": the file name gives way first, never the first word.
+  const [lead = '', ...rest] = p.contextLabel.split(' \u00b7 ');
+  const file = rest.join(' \u00b7 ');
   const toggleLabel = !p.canListen
     ? 'Listening unavailable'
     : p.listening
@@ -61,11 +64,10 @@ export function ControlPill(p: Props) {
         aria-controls="prep-drawer"
         onClick={p.onTogglePrep}
       >
-        <span className="pill-mode-text">{p.contextLabel}</span>
-        <ChevronDown
-          {...ICON}
-          className={p.prepOpen ? 'pill-chevron pill-chevron-open' : 'pill-chevron'}
-        />
+        <span className="pill-mode-text">
+          <span className="pill-mode-lead">{lead}</span>
+          {file && <span className="pill-mode-file">{`\u00a0\u00b7 ${file}`}</span>}
+        </span>
       </button>
 
       <span className="pill-keys">
