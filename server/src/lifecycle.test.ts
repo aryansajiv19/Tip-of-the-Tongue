@@ -26,7 +26,8 @@ async function start(guess: Guesser = slow) {
     const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
     const events: ServerEvent[] = [];
     ws.on('message', (m) => events.push(JSON.parse(m.toString()) as ServerEvent));
-    await new Promise((r) => ws.once('open', r));
+    // The socket opens before the server's first message (session.ready) has arrived.
+    await new Promise((r) => ws.once('message', r));
     return { ws, events };
   };
   return { app, open, logs };
@@ -52,9 +53,8 @@ describe('two tabs or windows at once', () => {
     a.ws.send(stall());
     await sleep(100);
     b.ws.send(JSON.stringify({ type: 'session.reset' }));
-    await sleep(700);
+    await expect.poll(() => a.events.some((e) => e.type === 'guess.offered')).toBe(true);
 
-    expect(a.events.some((e) => e.type === 'guess.offered')).toBe(true);
     expect(a.events.some((e) => e.type === 'session.cleared')).toBe(false);
     expect(b.events.some((e) => e.type === 'guess.offered')).toBe(false);
     a.ws.close();
