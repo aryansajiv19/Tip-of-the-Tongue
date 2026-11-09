@@ -2,6 +2,7 @@ import path from 'node:path';
 import {
   BrowserWindow,
   Menu,
+  dialog,
   Tray,
   app,
   globalShortcut,
@@ -17,6 +18,8 @@ import {
 } from 'electron';
 import crypto from 'node:crypto';
 import { startChildren, waitForUrl } from './children';
+import { createLog } from './log';
+import { portFree } from './port';
 import { startServerProcess } from './serverProcess';
 import { checkKey } from './keyCheck';
 import { KEY_NAMES, createKeyStore } from './keyStore';
@@ -55,18 +58,35 @@ const savedKeys = () =>
       return key ? [[ENV_NAMES[name], key]] : [];
     }),
   );
-const children = PACKAGED
-  ? startServerProcess({
-      script: path.join(process.resourcesPath, 'server/index.mjs'),
-      env: () => ({
-        PORT: String(PACKAGED_PORT),
-        WEB_DIST: path.join(process.resourcesPath, 'web'),
-        TOTT_TOKEN: TOKEN,
-        LOG_FILE: path.join(app.getPath('userData'), 'logs', 'server.log'),
-        ...savedKeys(),
-      }),
-    })
-  : startChildren(ROOT, PORTS, savedKeys);
+const log = createLog(path.join(app.getPath('userData'), 'logs', 'app.log'));
+// One server at a time; the tray shows how it is doing from the first moment.
+type ServerStatus =
+  { state: 'starting' } | { state: 'ready' } | { state: 'failed'; reason: string };
+let status: ServerStatus = { state: 'starting' };
+const setStatus = (next: ServerStatus) => {
+  status = next;
+  log(next.state === 'failed' ? 'error' : 'info', `server: ${next.state}`);
+  tray?.setToolTip(trayTip());
+};
+const trayTip = () =>
+  status.state === 'ready'
+    ? 'Tip of the Tongue'
+    : status.state === 'starting'
+      ? 'Tip of the Tongue: starting…'
+      : `Tip of the Tongue: couldn't start (${status.reason})`;
+
+const serverEnv = () => ({
+  PORT: String(PACKAGED_PORT),
+  WEB_DIST: path.join(process.resourcesPath, 'web'),
+  TOTT_TOKEN: TOKEN,
+  LOG_FILE: path.join(app.getPath('userData'), 'logs', 'server.log'),
+  ...savedKeys(),
+});
+let server: { restartServer(): void; stop(): void } | undefined;
+const children = {
+  restartServer: () => server?.restartServer(),
+  stop: () => server?.stop(),
+};
 
 const displays = (): DisplayInfo[] =>
   screen.getAllDisplays().map((d) => ({ id: d.id, bounds: d.bounds, workArea: d.workArea }));
@@ -111,8 +131,20 @@ function toggle() {
 const send = (command: 'toggle-listening' | 'manual' | 'new-conversation') =>
   win?.webContents.send('command', command);
 
+const statusItems = (): Electron.MenuItemConstructorOptions[] =>
+  status.state === 'ready'
+    ? []
+    : status.state === 'starting'
+      ? [{ label: 'Starting…', enabled: false }, { type: 'separator' }]
+      : [
+          { label: `Couldn't start: ${status.reason}`, enabled: false },
+          { label: 'Retry', click: () => void boot() },
+          { type: 'separator' },
+        ];
+
 const menu = () =>
   Menu.buildFromTemplate([
+    ...statusItems(),
     { label: win?.isVisible() ? 'Hide' : 'Show', click: toggle },
     {
       label: listening ? 'Pause listening' : 'Start listening',
@@ -163,8 +195,9 @@ function createTray() {
   const icon = nativeImage.createFromPath(path.join(__dirname, '../assets/trayTemplate.png'));
   icon.setTemplateImage(true);
   tray = new Tray(icon);
-  tray.setToolTip('Tip of the Tongue');
-  tray.on('click', toggle);
+  tray.setToolTip(trayTip());
+  // Until it is ready there is no window to toggle, so a click shows the status instead.
+  tray.on('click', () => (status.state === 'ready' ? toggle() : tray?.popUpContextMenu(menu())));
   tray.on('right-click', () => tray?.popUpContextMenu(menu()));
 }
 
@@ -216,18 +249,89 @@ function wire() {
   screen.on('display-metrics-changed', place);
 }
 
-void app.whenReady().then(async () => {
-  app.dock?.hide();
-  // The page may use the microphone; nothing else.
-  session.defaultSession.setPermissionRequestHandler((_wc, permission, allow) =>
-    allow(permission === 'media'),
-  );
-  if (process.platform === 'darwin') await systemPreferences.askForMediaAccess('microphone');
-  await waitForUrl(PAGE_URL, 60_000);
-  createWindow();
-  createTray();
-  wire();
-});
+const MIC_HELP = {
+  type: 'warning' as const,
+  message: 'Tip of the Tongue cannot use the microphone',
+  detail:
+    'Microphone access is switched off for this app. Open System Settings › Privacy & Security › Microphone, switch Tip of the Tongue on, then start listening again.',
+  buttons: ['Open System Settings', 'Not now'],
+  defaultId: 0,
+};
+
+async function askForMicrophone() {
+  if (process.platform !== 'darwin') return;
+  if (await systemPreferences.askForMediaAccess('microphone')) return;
+  log('info', 'microphone: access denied');
+  const { response } = await dialog.showMessageBox(MIC_HELP);
+  if (response === 0) {
+    void shell.openExternal(
+      'x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone',
+    );
+  }
+}
+
+// Starts (or restarts) the server and opens the overlay once it answers. The page, which carries
+// the token in its address, is only loaded after our own server is known to be up, never from a
+// port someone else holds.
+async function boot() {
+  setStatus({ state: 'starting' });
+  server?.stop();
+  let failed: string | undefined;
+  const fail = (reason: string) => {
+    failed = reason;
+    setStatus({ state: 'failed', reason });
+  };
+  if (PACKAGED) {
+    if (!(await portFree(PACKAGED_PORT))) {
+      fail(`port ${PACKAGED_PORT} is in use by another app`);
+      return;
+    }
+    server = startServerProcess({
+      script: path.join(process.resourcesPath, 'server/index.mjs'),
+      env: serverEnv,
+      onFail: fail,
+    });
+  } else {
+    server = startChildren(ROOT, PORTS, savedKeys);
+  }
+  const health = PACKAGED
+    ? `http://127.0.0.1:${PACKAGED_PORT}/health`
+    : `http://localhost:${PORTS.web}`;
+  try {
+    await waitForUrl(health, 60_000, () => failed !== undefined);
+  } catch (err) {
+    if (failed === undefined) fail((err as Error).message.replace(/\.$/, ''));
+    return;
+  }
+  if (failed !== undefined) return;
+  setStatus({ state: 'ready' });
+  if (win) void win.loadURL(PAGE_URL);
+  else createWindow();
+}
+
+// A second launch brings the running app forward instead of starting another server.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (status.state === 'ready') show();
+    else tray?.popUpContextMenu(menu());
+  });
+  process.on('uncaughtException', (err) => log('error', `main: uncaught ${err.stack ?? err}`));
+  process.on('unhandledRejection', (reason) => log('error', `main: unhandled rejection ${reason}`));
+
+  void app.whenReady().then(async () => {
+    app.dock?.hide();
+    // The page may use the microphone; nothing else.
+    session.defaultSession.setPermissionRequestHandler((_wc, permission, allow) =>
+      allow(permission === 'media'),
+    );
+    createTray();
+    wire();
+    void askForMicrophone();
+    await boot();
+  });
+}
 
 // A menu-bar app: closing the window is not quitting.
 app.on('window-all-closed', () => undefined);
