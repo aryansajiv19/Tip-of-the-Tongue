@@ -3,6 +3,10 @@ import { z } from 'zod';
 
 // Caps keep one message small; the socket also has a byte limit (see app.ts).
 export const MAX_WORDS_PER_EVENT = 300;
+
+// The languages the user can speak in (Deepgram's codes; "multi" follows a mix of languages).
+export const LANGUAGES = ['en', 'multi', 'es', 'fr', 'de', 'hi'] as const;
+export type Language = (typeof LANGUAGES)[number];
 // "About you": how many words, and how long a word or a name can be. The page keeps to the same.
 export const MAX_PROFILE_WORDS = 100;
 export const MAX_PROFILE_WORD_CHARS = 40;
@@ -69,10 +73,13 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('session.debug'), on: z.boolean() }),
   // How long the user pauses before we look for a word (slower speakers need longer), in ms.
   // minConfidence: how sure a guess must be before it is offered (0.3 to 0.9).
+  // language: what the user speaks; "multi" is for switching between languages mid-sentence.
+  // Every field is optional: the page sends only what it has.
   z.object({
     type: z.literal('session.settings'),
-    pauseMs: z.number().min(800).max(5000),
+    pauseMs: z.number().min(800).max(5000).optional(),
     minConfidence: z.number().min(0.3).max(0.9).optional(),
+    language: z.enum(LANGUAGES).optional(),
   }),
   // The microphone level crossed into (voiced) or out of (silent) speech-like sound. Sent only
   // on changes; atMs is when the change began. Lets the server tell a real silence from an

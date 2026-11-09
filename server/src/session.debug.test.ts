@@ -153,3 +153,26 @@ describe('keyterms', () => {
     session.close();
   });
 });
+
+describe('language', () => {
+  it('starts in English and tells speech-to-text once for each change', () => {
+    const onLanguageChange = vi.fn();
+    const { session } = setup({ onLanguageChange });
+    expect(session.language()).toBe('en');
+    session.handle({ type: 'session.settings', language: 'es' });
+    session.handle({ type: 'session.settings', language: 'es' });
+    expect(session.language()).toBe('es');
+    expect(onLanguageChange.mock.calls).toEqual([['es']]);
+    session.handle({ type: 'session.settings', language: 'en' });
+    expect(onLanguageChange.mock.calls).toEqual([['es'], ['en']]);
+  });
+
+  it('keeps the language when the settings carry only the pause', () => {
+    const onLanguageChange = vi.fn();
+    const { session } = setup({ onLanguageChange });
+    session.handle({ type: 'session.settings', language: 'de' });
+    session.handle({ type: 'session.settings', pauseMs: 2000 });
+    expect(session.language()).toBe('de');
+    expect(onLanguageChange).toHaveBeenCalledTimes(1);
+  });
+});

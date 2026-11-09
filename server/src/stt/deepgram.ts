@@ -58,13 +58,13 @@ export function deepgramUrl(
     sample_rate: String(AUDIO_SAMPLE_RATE),
     channels: '1',
     interim_results: 'true',
-    // Keep "um"/"uh": they are stall cues for the detector.
-    filler_words: 'true',
     // Off on purpose: Deepgram puts a full stop at long pauses ("the place."), which would make
     // a real stall look like a finished sentence. The guesser judges completeness instead.
     punctuate: 'false',
     endpointing: '300',
   });
+  // Keep "um"/"uh": they are stall cues for the detector. Deepgram has them in English only.
+  if (language === 'en') params.set('filler_words', 'true');
   // Adds a speaker number to each word.
   if (diarize) params.set('diarize', 'true');
   for (const term of keyterms) params.append('keyterm', term);
@@ -113,6 +113,7 @@ export function createDeepgramStream(opts: DeepgramOptions) {
     ((url: string, apiKey: string) =>
       new WebSocket(url, { headers: { Authorization: `Token ${apiKey}` } }));
   let ws: WebSocket | undefined;
+  let language = opts.language;
   let streamStartMs = 0;
   let pending: Buffer[] = [];
   let idleTimer: NodeJS.Timeout | undefined;
@@ -159,7 +160,7 @@ export function createDeepgramStream(opts: DeepgramOptions) {
     streamStartMs = now() - CHUNK_MS;
     const origin = streamStartMs;
     const urlTerms = opts.keyterms?.() ?? [];
-    const socket = connect(deepgramUrl(opts.language, urlTerms, opts.diarize), opts.apiKey);
+    const socket = connect(deepgramUrl(language, urlTerms, opts.diarize), opts.apiKey);
     ws = socket;
     let heardAtMs = now();
     let pingTimer: NodeJS.Timeout | undefined;
@@ -231,6 +232,13 @@ export function createDeepgramStream(opts: DeepgramOptions) {
       idleTimer = setTimeout(close, IDLE_CLOSE_MS);
     },
     close,
+    // A stream listens in one language, so a change closes it; the next chunk of audio opens a new
+    // one (audio sent while it closes may be lost, and speaker numbers start again).
+    setLanguage(next: string) {
+      if (next === language) return;
+      language = next;
+      if (ws) close();
+    },
     // The words to teach Deepgram changed. A stream that is still connecting picks them up when
     // it opens; a stream that is not open yet uses them from the start.
     updateKeyterms() {
