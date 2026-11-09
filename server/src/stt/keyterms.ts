@@ -1,11 +1,19 @@
 import { profileTermList, type Profile } from '../guess/profile.js';
 
 // Deepgram allows 100 keyterms and 500 tokens per request, and rejects the whole connection when
-// over. Tokens are estimated high (one per 3 characters, plus one) and we stop well short of 500.
+// over; so do web servers when the URL is too long (the terms are in the query string). Tokens are
+// estimated high (one per 3 ASCII characters, one per other character, plus one per term) and we
+// stop well short of 500. Non-ASCII text also takes up to 12 characters of URL per character.
 const MAX_TERMS = 100;
 const TOKEN_BUDGET = 400;
+const MAX_URL_CHARS = 6000;
 const MAX_TERM_CHARS = 40;
-const tokensOf = (term: string): number => Math.ceil(term.length / 3) + 1;
+const tokensOf = (term: string): number => {
+  const ascii = term.replace(/\P{ASCII}/gu, '').length;
+  return Math.ceil(ascii / 3) + ([...term].length - ascii) + 1;
+};
+// `keyterm=` plus the encoded term plus `&`.
+const urlCharsOf = (term: string): number => encodeURIComponent(term).length + 9;
 
 // Names and jargon in a short brief: capitalised words and runs of them ("Henley Health"),
 // acronyms, and anything with a digit ("SOC 2", "Q3"). A word capitalised only because it starts
@@ -64,13 +72,20 @@ export function selectKeyterms(input: {
   const seen = new Set<string>();
   const terms: string[] = [];
   let tokens = 0;
+  let urlChars = 0;
   for (const raw of candidates) {
     const term = raw.trim();
     const key = term.toLowerCase();
     if (!term || term.length > MAX_TERM_CHARS || seen.has(key)) continue;
-    if (terms.length >= MAX_TERMS || tokens + tokensOf(term) > TOKEN_BUDGET) break;
+    if (
+      terms.length >= MAX_TERMS ||
+      tokens + tokensOf(term) > TOKEN_BUDGET ||
+      urlChars + urlCharsOf(term) > MAX_URL_CHARS
+    )
+      break;
     seen.add(key);
     tokens += tokensOf(term);
+    urlChars += urlCharsOf(term);
     terms.push(term);
   }
   return terms;

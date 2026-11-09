@@ -148,9 +148,23 @@ describe('bad input never crashes the server', () => {
     expect(events.filter((e) => e.type !== 'session.ready')).toEqual([]);
 
     const done = closed(ws);
-    ws.send('x'.repeat(300 * 1024));
+    ws.send('x'.repeat(600 * 1024));
     await done;
     expect(await health()).toEqual({ ok: true });
+  });
+
+  it('takes a 50,000-character brief even when JSON escaping makes it 300 KB', async () => {
+    const { ws, events } = await connect();
+    // Control characters travel as six bytes each (\u0001). The page already shows this brief is
+    // legal, so the socket must not be closed for it: it would reconnect and send it again forever.
+    ws.send(JSON.stringify({ type: 'session.brief', text: '\u0001'.repeat(50_000) }));
+    await sleep(200);
+    expect(ws.readyState).toBe(WebSocket.OPEN);
+    ws.send(final('hello there'));
+    await sleep(50);
+    expect(ws.readyState).toBe(WebSocket.OPEN);
+    expect(events.some((e) => e.type === 'brief.terms')).toBe(true);
+    ws.close();
   });
 
   it('drops a malicious or oversized profile, and a good one is accepted silently', async () => {

@@ -2,6 +2,8 @@ import { z } from 'zod';
 import type { Candidate } from '../events.js';
 
 const MAX_CANDIDATES = 3;
+// A word or a short name. Anything longer is the model rambling, and would not fit the pop-up.
+const MAX_WORD_CHARS = 60;
 const abstain = (): { candidates: Candidate[]; abstain: boolean } => ({
   candidates: [],
   abstain: true,
@@ -9,7 +11,7 @@ const abstain = (): { candidates: Candidate[]; abstain: boolean } => ({
 
 // Models sometimes send confidence as a string ("0.8"); accept that, reject anything non-numeric.
 const CandidateSchema = z.object({
-  word: z.string().trim().min(1),
+  word: z.string().trim().min(1).max(MAX_WORD_CHARS),
   confidence: z.union([z.number(), z.string().trim().min(1).pipe(z.coerce.number())]),
 });
 const ReplySchema = z.object({
