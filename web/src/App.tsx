@@ -79,7 +79,9 @@ export function App() {
         // A new connection is a new server session.
         gate.connected();
         dispatchCard({ type: 'clear' });
-        if (sttRef.current === 'deepgram' && e.stt === 'browser') {
+        // Only claim the browser's recognition when there is one (Firefox has none; the problem
+        // line below says so).
+        if (sttRef.current === 'deepgram' && e.stt === 'browser' && speechSupported) {
           setNotice('Switched to this browser\u2019s speech recognition.');
         }
         sttRef.current = e.stt;
