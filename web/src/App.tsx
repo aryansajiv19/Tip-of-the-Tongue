@@ -21,6 +21,8 @@ import {
   savedSensitivity,
   type Sensitivity,
 } from './settings/sensitivity';
+import { aboutYou } from './settings/aboutYou';
+import { useSendAboutYou } from './settings/useAboutYou';
 import { ControlPill } from './ui/ControlPill';
 import { DevTools } from './ui/DevTools';
 import { PrepDrawer } from './ui/PrepDrawer';
@@ -62,6 +64,7 @@ export function App() {
     (e: ServerEvent) => {
       if (e.type === 'guesser.status') return setGuesserDown(!e.ok);
       if (e.type === 'brief.terms') return setBriefTerms(e.terms);
+      if (e.type === 'guess.accepted') aboutYou.remember(e.word);
       if (e.type === 'session.ready') {
         // A new connection is a new server session.
         gate.connected();
@@ -85,6 +88,7 @@ export function App() {
   );
   const { status, send, sendBinary } = useSocket(onServerEvent, debugOn);
   const mic = useMic(sendBinary, micId);
+  useSendAboutYou(status, send);
 
   // A dropped connection ends the server session, so its guesser problem is forgotten too.
   const [prevStatus, setPrevStatus] = useState(status);

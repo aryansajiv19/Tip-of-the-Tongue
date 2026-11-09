@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import { FileText, X } from 'lucide-react';
+import { MAX_TEXT_CHARS, aboutYou } from '../settings/aboutYou';
+import { useAboutYouState } from '../settings/useAboutYou';
 import { readDocument } from './readDocument';
 import './prepDrawer.css';
 
@@ -19,6 +21,7 @@ interface Props {
 // A compact drawer under the pill: drop a PDF, .md or .txt file and it becomes the brief.
 export function PrepDrawer({ docName, terms, onLoad, onClear, onClose }: Props) {
   const input = useRef<HTMLInputElement>(null);
+  const { about, remembered } = useAboutYouState();
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
@@ -117,6 +120,62 @@ export function PrepDrawer({ docName, terms, onLoad, onClear, onClose }: Props) 
             <li className="prep-chip">+{terms.length - SHOWN_TERMS} more</li>
           )}
         </ul>
+      )}
+
+      <div className="prep-about" role="group" aria-label="About you">
+        <h2 className="prep-heading">About you</h2>
+        <label className="prep-field">
+          <span>Name</span>
+          <input
+            type="text"
+            maxLength={MAX_TEXT_CHARS}
+            value={about.name}
+            onChange={(e) => aboutYou.setAbout({ name: e.target.value })}
+          />
+        </label>
+        <label className="prep-field">
+          <span>Role</span>
+          <input
+            type="text"
+            maxLength={MAX_TEXT_CHARS}
+            value={about.role}
+            onChange={(e) => aboutYou.setAbout({ role: e.target.value })}
+          />
+        </label>
+        <label className="prep-field">
+          <span>Words you often need</span>
+          <textarea
+            rows={3}
+            maxLength={5000}
+            placeholder="Names, products, terms. One per line or separated by commas."
+            value={about.words}
+            onChange={(e) => aboutYou.setAbout({ words: e.target.value })}
+          />
+        </label>
+        <p className="prep-why">Saved on this device only.</p>
+      </div>
+
+      {remembered.length > 0 && (
+        <div className="prep-remembered" role="group" aria-label="Remembered words">
+          <h2 className="prep-heading">Remembered words</h2>
+          <p className="prep-why">
+            Words you accepted before, so the next meeting knows them. Only the words, kept on this
+            device.
+          </p>
+          <ul className="prep-terms" aria-label="Remembered">
+            {remembered.slice(-SHOWN_TERMS).map((w) => (
+              <li key={w} className="prep-chip">
+                {w}
+              </li>
+            ))}
+            {remembered.length > SHOWN_TERMS && (
+              <li className="prep-chip">+{remembered.length - SHOWN_TERMS} more</li>
+            )}
+          </ul>
+          <button type="button" className="prep-choose" onClick={aboutYou.forget}>
+            Forget
+          </button>
+        </div>
       )}
     </section>
   );
