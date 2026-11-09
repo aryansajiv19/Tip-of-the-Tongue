@@ -8,3 +8,6 @@ eval-results/
 .playwright-mcp/
 test-results/
 playwright-report/
+
+# Local knowledge graph (graphify), rebuilt on demand
+graphify-out/
