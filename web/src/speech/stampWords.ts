@@ -8,7 +8,24 @@ const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}']/gu, '');
 // beyond the previous length get `nowMs`. If the browser rewrites a word
 // (e.g. a final result fixing "knead" to "need"), the new text keeps the
 // time of the word it replaced, so a rewrite never resets the pause clock.
-export const tokenize = (text: string): string[] => text.split(/\s+/).filter((t) => norm(t) !== '');
+// Scripts written without spaces between words: a whole sentence would be one "word", too long for
+// the server to accept and useless for timing.
+const NO_SPACES =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
+const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+// The server refuses a word longer than this (and the whole event with it).
+const MAX_WORD_CHARS = 100;
+
+export const tokenize = (text: string): string[] =>
+  text
+    .split(/\s+/)
+    .flatMap((t) =>
+      NO_SPACES.test(t)
+        ? Array.from(segmenter.segment(t), (seg) => (seg.isWordLike ? seg.segment : ''))
+        : [t],
+    )
+    .filter((t) => norm(t) !== '')
+    .map((t) => Array.from(t).slice(0, MAX_WORD_CHARS).join(''));
 
 export function stampWords(prev: Word[], transcript: string, nowMs: number): Word[] {
   return tokenize(transcript).map((token, i) => {

@@ -173,3 +173,22 @@ describe('resetSpeech', () => {
     expect(resetSpeech(emptySpeech)).toEqual(emptySpeech);
   });
 });
+
+describe('applyResults in a language without spaces', () => {
+  it('sends the finished result as words and keeps the rest as interim', () => {
+    const update = applyResults(
+      emptySpeech,
+      [
+        { isFinal: true, transcript: '我想要' },
+        { isFinal: false, transcript: '一杯咖啡' },
+      ],
+      100,
+    );
+    const finals = update.final?.map((w) => w.text) ?? [];
+    const interim = update.partial?.map((w) => w.text) ?? [];
+    expect(finals.join('')).toBe('我想要');
+    expect(interim.join('')).toBe('一杯咖啡');
+    expect(finals.length + interim.length).toBeGreaterThan(2);
+    expect(update.state.words.every((w) => w.text.length <= 100)).toBe(true);
+  });
+});

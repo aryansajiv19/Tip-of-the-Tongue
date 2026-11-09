@@ -3,6 +3,7 @@ import type { Word } from '../../../server/src/events';
 import { applyResults, emptySpeech, flushSpeech, resetSpeech, type SpeechState } from './results';
 import { isStale } from './stampWords';
 import { MIC_BLOCKED, SPEECH_UNREACHABLE } from '../ui/desktop';
+import { pushTrace } from './trace';
 
 // The Web Speech API is not in TypeScript's DOM types, so declare the little we use.
 interface Alternative {
@@ -81,7 +82,7 @@ export function useSpeech({ onPartial, onFinal, debug = false, lang }: Handlers)
   const trace = useRef<TraceEntry[]>([]);
   const record = useCallback(
     (entry: Omit<TraceEntry, 't'>) => {
-      if (debug) trace.current.push({ t: Date.now(), ...entry });
+      if (debug) pushTrace(trace.current, { t: Date.now(), ...entry });
     },
     [debug],
   );
