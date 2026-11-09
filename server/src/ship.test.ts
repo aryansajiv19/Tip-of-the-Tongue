@@ -12,7 +12,13 @@ process.env.LOG_LEVEL = 'info';
 type App = Awaited<ReturnType<typeof buildApp>>;
 const apps: App[] = [];
 afterEach(async () => {
-  await Promise.all(apps.splice(0).map((a) => a.close()));
+  // fetch keeps connections open, which would make close() wait.
+  await Promise.all(
+    apps.splice(0).map((a) => {
+      a.server.closeAllConnections();
+      return a.close();
+    }),
+  );
 });
 
 async function start(deps: Parameters<typeof buildApp>[0] = {}) {
