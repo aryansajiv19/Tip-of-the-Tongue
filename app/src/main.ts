@@ -13,6 +13,7 @@ import {
   type IpcMainEvent,
 } from 'electron';
 import { startChildren, waitForUrl } from './children';
+import { allCardShortcuts, parseCapture, wantedShortcuts } from './cardKeys';
 import { MARGIN, clampHeight, maxHeight, placeOverlay, type DisplayInfo } from './placement';
 
 const ROOT = path.resolve(__dirname, '../..');
@@ -27,7 +28,7 @@ const START_HEIGHT = 44;
 let win: BrowserWindow | undefined;
 let tray: Tray | undefined;
 let listening = false;
-let wantEscape = false;
+let capture: { picks: number } | null = null;
 const children = startChildren(ROOT, PORTS);
 
 const displays = (): DisplayInfo[] =>
@@ -48,13 +49,21 @@ function show() {
   win.showInactive();
 }
 
-// Esc is a global shortcut only while a suggestion is showing and the overlay is visible, so it
-// is never taken from other apps otherwise.
-function syncEscape() {
-  const on = wantEscape && Boolean(win?.isVisible());
-  if (on === globalShortcut.isRegistered('Escape')) return;
-  if (on) globalShortcut.register('Escape', () => win?.webContents.send('escape'));
-  else globalShortcut.unregister('Escape');
+// Esc and Cmd/Ctrl+1..3 are global shortcuts only while a suggestion is showing and the overlay is
+// visible (see cardKeys.ts), so they are never taken from other apps otherwise.
+function syncCardKeys() {
+  const wanted = wantedShortcuts(capture, Boolean(win?.isVisible()));
+  const keep = new Set(wanted.map(([accelerator]) => accelerator));
+  for (const accelerator of allCardShortcuts()) {
+    if (!keep.has(accelerator) && globalShortcut.isRegistered(accelerator)) {
+      globalShortcut.unregister(accelerator);
+    }
+  }
+  for (const [accelerator, key] of wanted) {
+    if (!globalShortcut.isRegistered(accelerator)) {
+      globalShortcut.register(accelerator, () => win?.webContents.send('card-key', key));
+    }
+  }
 }
 
 function toggle() {
@@ -100,8 +109,8 @@ function createWindow() {
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   void win.loadURL(URL);
   win.once('ready-to-show', show);
-  win.on('show', syncEscape);
-  win.on('hide', syncEscape);
+  win.on('show', syncCardKeys);
+  win.on('hide', syncCardKeys);
 }
 
 function createTray() {
@@ -127,10 +136,11 @@ function wire() {
     listening = Boolean((state as { listening?: unknown } | null)?.listening);
   });
 
-  ipcMain.on('overlay:escape', (event: IpcMainEvent, on: unknown) => {
-    if (event.sender !== win?.webContents) return;
-    wantEscape = on === true;
-    syncEscape();
+  ipcMain.on('overlay:card-keys', (event: IpcMainEvent, payload: unknown) => {
+    const next = parseCapture(payload);
+    if (event.sender !== win?.webContents || next === undefined) return;
+    capture = next;
+    syncCardKeys();
   });
 
   globalShortcut.register('CommandOrControl+\\', toggle);

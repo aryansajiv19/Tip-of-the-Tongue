@@ -18,10 +18,25 @@ async function launch(page: Page) {
   return server;
 }
 
+// Panels slide in with a transform, which makes a box a hair under its real size (43.99998 px)
+// until it stops. Wait for the entry animations on the element and everything around it to end.
+const settle = (el: Locator) =>
+  el.evaluate(async (node) => {
+    const running: Animation[] = [];
+    for (let n: Element | null = node; n; n = n.parentElement) {
+      for (const a of n.getAnimations()) {
+        // A shimmer that loops forever never ends and is not an entry.
+        if (a.effect?.getComputedTiming().iterations !== Infinity) running.push(a);
+      }
+    }
+    await Promise.all(running.map((a) => a.finished));
+  });
+
 async function expectTargets(list: Locator) {
   const all = await list.all();
   expect(all.length).toBeGreaterThan(0);
   for (const el of all) {
+    await settle(el);
     const box = await el.boundingBox();
     const name = await el.evaluate(
       (e) => e.getAttribute('aria-label') ?? e.textContent ?? e.tagName,

@@ -5,7 +5,10 @@ import { commandForKey, type Command } from './commands';
 export interface DesktopBridge {
   onCommand(cb: (command: Exclude<Command, 'toggle-visible'>) => void): () => void;
   setHeight(px: number): void;
-  captureEscape(cb: () => void): () => void;
+  // While a suggestion is on screen the main process hands over Esc, and Cmd/Ctrl+1..`picks` (the
+  // overlay never takes focus, so these have to be global shortcuts). Returns a function that
+  // gives them back.
+  captureCardKeys(picks: number, cb: (key: 'escape' | 1 | 2 | 3) => void): () => void;
   report(state: { listening: boolean }): void;
 }
 
