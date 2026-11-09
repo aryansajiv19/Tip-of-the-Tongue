@@ -127,6 +127,8 @@ export type ServerEvent =
   // Sent on connect, and again with 'browser' if server-side speech-to-text fails.
   // 'deepgram': the browser streams raw audio as binary frames (16 kHz mono 16-bit PCM).
   // 'browser': the browser runs its own speech recognition and sends transcript events.
+  // Every 15 s, so the page can tell a dead connection from a quiet one.
+  | { type: 'heartbeat' }
   | { type: 'session.ready'; stt: 'deepgram' | 'browser'; guesser: 'claude' | 'mock' }
   // Server-side transcript (Deepgram only), so the page can show what was heard.
   | { type: 'transcript.partial' | 'transcript.final'; words: Word[] }

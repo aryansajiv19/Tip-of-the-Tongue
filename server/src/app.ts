@@ -12,12 +12,15 @@ import { createDeepgramStream, type DeepgramOptions } from './stt/deepgram.js';
 // Room for a pasted brief of 50,000 characters, even if every one takes six bytes (a JSON-escaped control character).
 // The glossary is built in the background, so it can take longer than a guess.
 const GLOSSARY_TIMEOUT_MS = 20_000;
+const HEARTBEAT_MS = 15_000;
 const MAX_MESSAGE_BYTES = 512 * 1024;
 
 export interface AppDeps {
   // Receives the server log lines (one JSON object per line); tests use it to check what is logged.
   logStream?: { write(line: string): void };
   guess?: Guesser;
+  // Ping interval; tests shorten it.
+  heartbeatMs?: number;
   profile?: Profile;
   buildGlossary?: GlossaryBuilder;
   // Defaults to config.allowedOrigins.
@@ -130,7 +133,24 @@ export async function buildApp(deps: AppDeps = {}) {
     });
     send({ type: 'session.ready', stt: stt ? 'deepgram' : 'browser', guesser: guesserKind });
 
+    // A protocol ping every beat: a socket that has not answered the last one is dead (a sleeping
+    // laptop, a dropped network), so close it and end the session. The text event lets the page
+    // tell the same, since a browser does not show it pings.
+    let alive = true;
+    socket.on('pong', () => (alive = true));
+    const beat = setInterval(() => {
+      if (!alive) {
+        app.log.info('ws: no answer to ping, closing');
+        socket.terminate();
+        return;
+      }
+      alive = false;
+      socket.ping();
+      if (socket.readyState === socket.OPEN) socket.send(JSON.stringify({ type: 'heartbeat' }));
+    }, deps.heartbeatMs ?? HEARTBEAT_MS);
+
     socket.on('close', () => {
+      clearInterval(beat);
       stt?.close();
       session.close();
     });

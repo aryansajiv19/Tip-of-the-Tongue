@@ -22,6 +22,17 @@ test('page survives the server going away and reconnects when it returns', async
   });
 });
 
+test('a second tab waits and takes over when the first one closes', async ({ context, page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  const second = await context.newPage();
+  await second.goto('/');
+  await expect(second.getByRole('status').first()).toHaveText('Server: other-tab');
+  await expect(second.getByText('Another tab is already listening')).toBeVisible();
+  await page.close();
+  await expect(second.getByRole('status').first()).toHaveText('Server: connected');
+});
+
 test('shows a calm message when speech recognition is unsupported', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window, 'SpeechRecognition', { value: undefined });

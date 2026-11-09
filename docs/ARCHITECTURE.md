@@ -16,27 +16,28 @@ Browser mic
 
 Defined once in `server/src/events.ts`. Times are epoch ms.
 
-| Event                                     | Direction    | Payload                                                                                             |
-| ----------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------- |
-| `transcript.partial` / `transcript.final` | web → server | words with start/end ms (browser STT)                                                               |
-| `session.brief`                           | web → server | optional meeting brief text, and the file name it came from                                         |
-| `session.profile`                         | web → server | "About you": name, role, the words the user often needs, and remembered words                       |
-| `session.help`                            | web → server | "ask", "sound" or "word": how the user wants to be helped                                           |
-| `session.settings`                        | web → server | pause wait in ms (800–5000), optional minConfidence                                                 |
-| `session.debug`                           | web → server | turns the debug stream on or off for this connection                                                |
-| `guess.picked`                            | web → server | the user clicked an offered word (offer id, word)                                                   |
-| `voice.activity`                          | web → server | `voiced`, `atMs`; sound started or stopped (changes only)                                           |
-| `stuck.manual`                            | web → server | the user pressed Space: suggest a word now                                                          |
-| `session.reset`                           | web → server | new conversation: forget transcript, offer and guess; keep brief and settings                       |
-| `stuck.detected`                          | server → web | reason (pause, filler, describing), context                                                         |
-| `guess.offered`                           | server → web | offer id, up to 3 candidates with confidence, latency                                               |
-| `guess.withdrawn`                         | server → web | offer id, reason (self-recovered, timeout)                                                          |
-| `guess.accepted` / `guess.expired`        | server → web | offer id; accepted word and time to accept                                                          |
-| `guesser.status`                          | server → web | `ok`, `reason?` (`key`: 401/403, `busy`: 429/529); sent only when the guesser goes down or recovers |
-| `brief.terms`                             | server → web | key terms of the loaded brief (at most 60), shown as chips                                          |
-| `guess.idle`                              | server → web | a confirmed stall ended with no offer (stop "finding the word")                                     |
-| `session.cleared`                         | server → web | answers `session.reset`; everything sent before it is from the old conversation                     |
-| `debug`                                   | server → web | only after `session.debug`: transcript, detector, guess, gate, stt                                  |
+| Event                                     | Direction    | Payload                                                                                                                                                                                                                      |
+| ----------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `transcript.partial` / `transcript.final` | web → server | words with start/end ms (browser STT)                                                                                                                                                                                        |
+| `session.brief`                           | web → server | optional meeting brief text, and the file name it came from                                                                                                                                                                  |
+| `session.profile`                         | web → server | "About you": name, role, the words the user often needs, and remembered words                                                                                                                                                |
+| `session.help`                            | web → server | "ask", "sound" or "word": how the user wants to be helped                                                                                                                                                                    |
+| `session.settings`                        | web → server | pause wait in ms (800–5000), optional minConfidence                                                                                                                                                                          |
+| `session.debug`                           | web → server | turns the debug stream on or off for this connection                                                                                                                                                                         |
+| `guess.picked`                            | web → server | the user clicked an offered word (offer id, word)                                                                                                                                                                            |
+| `voice.activity`                          | web → server | `voiced`, `atMs`; sound started or stopped (changes only)                                                                                                                                                                    |
+| `stuck.manual`                            | web → server | the user pressed Space: suggest a word now                                                                                                                                                                                   |
+| `session.reset`                           | web → server | new conversation: forget transcript, offer and guess; keep brief and settings                                                                                                                                                |
+| `stuck.detected`                          | server → web | reason (pause, filler, describing), context                                                                                                                                                                                  |
+| `guess.offered`                           | server → web | offer id, up to 3 candidates with confidence, latency                                                                                                                                                                        |
+| `guess.withdrawn`                         | server → web | offer id, reason (self-recovered, timeout)                                                                                                                                                                                   |
+| `guess.accepted` / `guess.expired`        | server → web | offer id; accepted word and time to accept                                                                                                                                                                                   |
+| `heartbeat`                               | server → web | every 15 s with a protocol ping; the server closes a socket that does not answer, the page reconnects after 40 s of silence. One tab listens at a time (`navigator.locks`); another shows "Another tab is already listening" |
+| `guesser.status`                          | server → web | `ok`, `reason?` (`key`: 401/403, `busy`: 429/529); sent only when the guesser goes down or recovers                                                                                                                          |
+| `brief.terms`                             | server → web | key terms of the loaded brief (at most 60), shown as chips                                                                                                                                                                   |
+| `guess.idle`                              | server → web | a confirmed stall ended with no offer (stop "finding the word")                                                                                                                                                              |
+| `session.cleared`                         | server → web | answers `session.reset`; everything sent before it is from the old conversation                                                                                                                                              |
+| `debug`                                   | server → web | only after `session.debug`: transcript, detector, guess, gate, stt                                                                                                                                                           |
 
 ## Speech-to-text
 
