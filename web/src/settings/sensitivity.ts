@@ -32,3 +32,11 @@ export function saveSensitivity(value: Sensitivity): void {
     // Private mode: the choice still works for this visit.
   }
 }
+
+// One plain sentence for each choice, with the real pause it waits for.
+export function sensitivityHint(key: Sensitivity): string {
+  const secs = `${SENSITIVITIES[key].pauseMs / 1000} s`;
+  if (key === 'calm') return `Speaks up after a ${secs} pause, and only when quite sure.`;
+  if (key === 'eager') return `Speaks up after a ${secs} pause, even when less sure.`;
+  return `Speaks up after a ${secs} pause. A good place to start.`;
+}

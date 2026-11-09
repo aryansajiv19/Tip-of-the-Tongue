@@ -243,7 +243,10 @@ test.describe('problems show as one short line, in red, never a dialog', () => {
     const server = await start(page);
     server.send({ type: 'session.ready', stt: 'deepgram' });
     await page.getByRole('button', { name: 'Start listening' }).click();
-    await expect(offer(page).getByRole('alert')).toContainText('Microphone access was blocked');
+    const alert = page.getByRole('alert').filter({ hasText: 'Microphone access was blocked' });
+    await expect(alert).toBeVisible();
+    await expect(alert.getByRole('button', { name: 'Retry' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Start listening' })).toBeVisible();
   });
 
   test('a problem does not hide a suggestion that is showing', async ({ page }) => {

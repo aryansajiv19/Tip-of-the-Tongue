@@ -62,6 +62,7 @@ export function PrepDrawer({ docName, terms, onLoad, onClear, onClose }: Props) 
         }}
       >
         <p>Drop a PDF, .md or .txt file</p>
+        <p className="prep-why">so I know your names and terms. Stays on this device.</p>
         <button type="button" className="prep-choose" onClick={() => input.current?.click()}>
           Choose file
         </button>

@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Settings as GearIcon } from 'lucide-react';
 import { micOptions, type MicOption } from '../settings/mic';
-import { SENSITIVITIES, SENSITIVITY_KEYS, type Sensitivity } from '../settings/sensitivity';
+import {
+  SENSITIVITIES,
+  SENSITIVITY_KEYS,
+  sensitivityHint,
+  type Sensitivity,
+} from '../settings/sensitivity';
 import './settings.css';
 
 interface Props {
@@ -9,6 +14,8 @@ interface Props {
   onSensitivity: (value: Sensitivity) => void;
   micId: string | null;
   onMic: (id: string | null) => void;
+  // Debug controls exist only on a page opened with ?debug=1.
+  showDebug: boolean;
   debugOn: boolean;
   onDebug: (on: boolean) => void;
   onOpenDebugView: () => void;
@@ -86,6 +93,7 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
             </label>
           ))}
         </div>
+        <p className="settings-hint">{sensitivityHint(p.sensitivity ?? 'balanced')}</p>
       </fieldset>
 
       <label className="settings-field">
@@ -100,19 +108,27 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
         </select>
       </label>
 
-      <label className="settings-check">
-        <input type="checkbox" checked={p.debugOn} onChange={(e) => p.onDebug(e.target.checked)} />
-        <span>Debug</span>
-      </label>
-      {p.debugOn && (
-        <div className="settings-debug">
-          <button type="button" onClick={p.onOpenDebugView}>
-            Open debug view
-          </button>
-          <button type="button" onClick={p.onDownloadTrace}>
-            Download speech trace
-          </button>
-        </div>
+      {p.showDebug && (
+        <>
+          <label className="settings-check">
+            <input
+              type="checkbox"
+              checked={p.debugOn}
+              onChange={(e) => p.onDebug(e.target.checked)}
+            />
+            <span>Debug</span>
+          </label>
+          {p.debugOn && (
+            <div className="settings-debug">
+              <button type="button" onClick={p.onOpenDebugView}>
+                Open debug view
+              </button>
+              <button type="button" onClick={p.onDownloadTrace}>
+                Download speech trace
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

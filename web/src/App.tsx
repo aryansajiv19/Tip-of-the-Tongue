@@ -4,9 +4,11 @@ import { SettingsGear, SettingsPanel } from './ui/Settings';
 import { SuggestionCard } from './ui/SuggestionCard';
 import { cardReducer, emptyCard } from './ui/cardState';
 import { statusLine } from './ui/cardView';
+import { heardLine, overlayLine } from './ui/overlayLine';
 import { createResetGate } from './ui/resetGate';
 import { useCardClock } from './ui/useCardClock';
 import { saveDebug, savedDebug } from './settings/debug';
+import { isFirstRun, markStarted } from './settings/firstRun';
 import { saveMicId, savedMicId } from './settings/mic';
 import { useManualKey } from './audio/useManualKey';
 import { useMic } from './audio/useMic';
@@ -24,7 +26,7 @@ import { DevTools } from './ui/DevTools';
 import { PrepDrawer } from './ui/PrepDrawer';
 import { desktop, useCommands } from './ui/desktop';
 import { levelStore } from './ui/levelStore';
-import { sessionMode } from './ui/sessionState';
+import { contextLabel } from './ui/sessionState';
 import { modifierLabel } from './ui/commands';
 import { useSessionClock } from './ui/useSessionClock';
 
@@ -37,7 +39,7 @@ export function App() {
   const [card, dispatchCard] = useReducer(cardReducer, emptyCard);
   const gate = useRef(createResetGate()).current;
   const [micId, setMicId] = useState<string | null>(savedMicId);
-  const [debugOn, setDebugOn] = useState(savedDebug);
+  const [debugOn, setDebugOn] = useState(() => DEBUG && savedDebug());
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [heard, setHeard] = useState<string[]>([]);
   const [visible, setVisible] = useState(true);
@@ -49,6 +51,7 @@ export function App() {
   // The saved choice, or null so the server's own defaults apply until the user picks one.
   const [sensitivity, setSensitivity] = useState<Sensitivity | null>(savedSensitivity);
   const [guesserDown, setGuesserDown] = useState(false);
+  const [firstRun, setFirstRun] = useState(isFirstRun);
 
   // Who recognises speech: the server (Deepgram, audio streamed from here) or this browser.
   const [stt, setStt] = useState<'deepgram' | 'browser'>('browser');
@@ -126,6 +129,8 @@ export function App() {
   const startListening = () => {
     wanted.current = true;
     setNotice('');
+    markStarted();
+    setFirstRun(false);
     if (stt === 'deepgram') void startMic();
     else startSpeech();
   };
@@ -177,7 +182,7 @@ export function App() {
 
   const dismissCard = useCallback(() => dispatchCard({ type: 'dismiss' }), []);
   useCardClock(card.view !== null, dispatchCard);
-  const problem = statusLine({ micError: error, connection: status, guesserDown });
+  const problem = statusLine({ connection: status, guesserDown });
 
   const changeSensitivity = (value: Sensitivity) => {
     setSensitivity(value);
@@ -230,6 +235,7 @@ export function App() {
     return () => observer.disconnect();
   }, [visible]);
 
+  const partialWords = partial ? partial.split(' ') : [];
   const noteState = [
     !canListen && 'This browser has no speech recognition. Use Chrome or Edge.',
   ].filter((m): m is string => Boolean(m));
@@ -246,7 +252,8 @@ export function App() {
             listening={listening}
             canListen={canListen}
             elapsedMs={clock.elapsedMs}
-            mode={sessionMode(brief?.text ?? null)}
+            contextLabel={contextLabel(brief?.text ?? null, brief?.source)}
+            hasContext={(brief?.text ?? '').trim() !== ''}
             prepOpen={prepOpen}
             onTogglePrep={() => setPrepOpen((o) => !o)}
             modifier={modifierLabel(navigator.platform)}
@@ -261,6 +268,7 @@ export function App() {
               onSensitivity={changeSensitivity}
               micId={micId}
               onMic={changeMic}
+              showDebug={DEBUG}
               debugOn={debugOn}
               onDebug={changeDebug}
               onOpenDebugView={openDebugView}
@@ -284,10 +292,19 @@ export function App() {
               {m}
             </p>
           ))}
+          {error && (
+            <p role="alert" className="overlay-note overlay-note-error glass">
+              {error}
+              <button type="button" className="overlay-retry" onClick={startListening}>
+                Retry
+              </button>
+            </p>
+          )}
           <p role="status" className="overlay-note glass">
-            {listening && status !== 'connected'
-              ? 'Listening paused: not connected to the server, so no word suggestions'
-              : notice}
+            {overlayLine({ listening, connection: status, notice, firstRun })}
+          </p>
+          <p className="overlay-note overlay-heard glass">
+            {heardLine([...heard, ...partialWords])}
           </p>
 
           <div className="card-slot">

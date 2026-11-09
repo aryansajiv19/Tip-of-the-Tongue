@@ -84,6 +84,11 @@
   outline: none;
   box-shadow: var(--focus-ring);
 }
+.pill-mode-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .pill-chevron {
   flex: none;
   transition: transform var(--dur-fast) var(--ease);
@@ -95,6 +100,7 @@
   flex: none;
   display: flex;
   gap: var(--space-1);
+  margin-left: var(--space-1);
 }
 
 /* The desktop window and the browser both place the overlay; the card slot sits under the pill. */
@@ -147,4 +153,25 @@ html:not(.desktop) body {
   margin: 0;
   min-height: 100vh;
   background: var(--surface-solid);
+}
+
+.overlay-heard {
+  font-size: var(--text-xs);
+}
+.overlay-retry {
+  margin-left: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  font: inherit;
+  color: var(--text);
+  background: transparent;
+  border: var(--surface-border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.overlay-retry:hover {
+  background: var(--hover);
+}
+.overlay-retry:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
