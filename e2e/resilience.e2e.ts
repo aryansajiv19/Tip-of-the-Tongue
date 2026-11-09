@@ -27,7 +27,7 @@ test('a second tab waits and takes over when the first one closes', async ({ con
   await expect(page.getByRole('status').first()).toHaveText('Connected');
   const second = await context.newPage();
   await second.goto('/');
-  await expect(second.getByRole('status').first()).toHaveText('Another tab is already listening');
+  await expect(second.getByRole('status').first()).toHaveText('Waiting for the other tab');
   await expect(second.getByText('Another tab is already listening')).toBeVisible();
   await page.close();
   await expect(second.getByRole('status').first()).toHaveText('Connected');

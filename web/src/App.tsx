@@ -49,7 +49,7 @@ const CONNECTION_LABEL = {
   connecting: 'Connecting…',
   connected: 'Connected',
   reconnecting: 'Not connected. Reconnecting…',
-  'other-tab': 'Another tab is already listening',
+  'other-tab': 'Waiting for the other tab',
 } as const;
 
 // Under exactOptionalPropertyTypes an absent language is no property at all.
