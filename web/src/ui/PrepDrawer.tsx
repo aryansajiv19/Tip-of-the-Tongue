@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, FileText, X } from 'lucide-react';
 import { MAX_TEXT_CHARS, aboutYou } from '../settings/aboutYou';
 import { useAboutYouState } from '../settings/useAboutYou';
@@ -17,15 +17,23 @@ interface Props {
   terms: string[];
   // Words offered and accepted in this conversation, newest first.
   recent: RecentWord[];
+  // Open with this section scrolled to and focused (the tray's "Recent words").
+  focus: 'recent' | null;
   onLoad: (text: string, name: string) => void;
   onClear: () => void;
   onClose: () => void;
 }
 
 // A compact drawer under the pill: drop a PDF, .md or .txt file and it becomes the brief.
-export function PrepDrawer({ docName, terms, recent, onLoad, onClear, onClose }: Props) {
+export function PrepDrawer({ docName, terms, recent, focus, onLoad, onClear, onClose }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const drawer = useReturnFocus<HTMLElement>();
+  const recentSection = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (focus !== 'recent') return;
+    recentSection.current?.scrollIntoView?.({ block: 'start' });
+    recentSection.current?.focus({ preventScroll: true });
+  }, [focus]);
   const { about, remembered } = useAboutYouState();
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -129,10 +137,18 @@ export function PrepDrawer({ docName, terms, recent, onLoad, onClear, onClose }:
         </ul>
       )}
 
-      {recent.length > 0 && (
-        <div className="prep-recent" role="group" aria-label="Recent words">
-          <h2 className="prep-heading">Recent words</h2>
-          <p className="prep-why">Offered in this conversation. A tick means you took it.</p>
+      <div
+        ref={recentSection}
+        tabIndex={-1}
+        className="prep-recent"
+        role="group"
+        aria-label="Recent words"
+      >
+        <h2 className="prep-heading">Recent words</h2>
+        <p className="prep-why">Offered in this conversation. A tick means you took it.</p>
+        {recent.length === 0 ? (
+          <p className="prep-why">No words offered yet.</p>
+        ) : (
           <ul className="prep-terms" aria-label="Recent">
             {recent.map((r) => (
               <li key={r.word} className="prep-chip" dir="auto">
@@ -142,8 +158,8 @@ export function PrepDrawer({ docName, terms, recent, onLoad, onClear, onClose }:
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="prep-about" role="group" aria-label="About you">
         <h2 className="prep-heading">About you</h2>

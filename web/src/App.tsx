@@ -65,6 +65,9 @@ export function App() {
   const [language, setLanguage] = useState<Language | null>(savedLanguage);
   const [textSize, setTextSize] = useState<TextSize>(savedTextSize);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Bumped by a tray command so an already open panel is opened afresh, and takes focus again.
+  const [panelKey, setPanelKey] = useState(0);
+  const [drawerFocus, setDrawerFocus] = useState<'recent' | null>(null);
   const [heard, setHeard] = useState<string[]>([]);
   const [visible, setVisible] = useState(true);
   const [partial, setPartial] = useState('');
@@ -329,6 +332,17 @@ export function App() {
       // Under "first sound" help the key shows the whole word before it asks for another.
       if (masked) revealCard();
       else if (listening) send({ type: 'stuck.manual' });
+    } else if (command === 'open-settings') {
+      setVisible(true);
+      setPrepOpen(false);
+      setSettingsOpen(true);
+      setPanelKey((k) => k + 1);
+    } else if (command === 'open-recent') {
+      setVisible(true);
+      setSettingsOpen(false);
+      setDrawerFocus('recent');
+      setPrepOpen(true);
+      setPanelKey((k) => k + 1);
     } else newConversation();
   });
 
@@ -366,7 +380,10 @@ export function App() {
             contextLabel={contextLabel(brief?.text ?? null, brief?.source)}
             hasContext={(brief?.text ?? '').trim() !== ''}
             prepOpen={prepOpen}
-            onTogglePrep={() => setPrepOpen((o) => !o)}
+            onTogglePrep={() => {
+              setDrawerFocus(null);
+              setPrepOpen((o) => !o);
+            }}
             modifier={modifierLabel(navigator.platform)}
             onToggleListening={listening ? pauseListening : startListening}
             onNewConversation={newConversation}
@@ -389,6 +406,7 @@ export function App() {
 
           {settingsOpen && (
             <SettingsPanel
+              key={panelKey}
               help={help}
               onHelp={changeHelp}
               sensitivity={sensitivity}
@@ -416,6 +434,8 @@ export function App() {
 
           {prepOpen && (
             <PrepDrawer
+              key={panelKey}
+              focus={drawerFocus}
               docName={brief?.source ?? null}
               terms={briefTerms}
               recent={recent}

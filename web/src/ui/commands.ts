@@ -1,6 +1,13 @@
 // What the user can ask for from the keyboard or, in the desktop app, from the tray and the
 // global shortcuts. The desktop main process sends these names over IPC.
-export type Command = 'toggle-visible' | 'toggle-listening' | 'manual' | 'new-conversation';
+export type Command =
+  | 'toggle-visible'
+  | 'toggle-listening'
+  | 'manual'
+  | 'new-conversation'
+  // From the tray: show the overlay with Settings open, or the drawer at Recent words.
+  | 'open-settings'
+  | 'open-recent';
 
 // Cmd (Mac) or Ctrl (elsewhere) plus \ or Enter, or plus Shift and N for a new conversation.
 export function commandForKey(e: {
