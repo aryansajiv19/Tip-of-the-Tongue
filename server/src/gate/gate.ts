@@ -4,8 +4,7 @@ import { findPhrase, normalizePhrase } from './normalize.js';
 
 const MAX_OFFERED = 3;
 
-// Whether `small` appears inside `big` as a run of words. A word offered before blocks its
-// longer and shorter forms too ("onboarding" and "onboarding team"), which are the same repeat.
+// Whether `small` appears inside `big` as a run of words.
 function contains(big: readonly string[], small: readonly string[]): boolean {
   return small.length > 0 && big.some((_, i) => small.every((t, j) => big[i + j] === t));
 }
@@ -50,8 +49,10 @@ export function decideOffer(
     const tokens = normalizePhrase(c.word);
     return offered.every(
       (o) =>
-        !(contains(o.tokens, tokens) || contains(tokens, o.tokens)) ||
-        ctx.nowMs - o.at >= (opts.repeatMs ?? opts.cooldownMs),
+        // A longer form of an offered word is the same repeat ("onboarding team" after
+        // "onboarding"). A shorter one is the model correcting itself towards the exact word
+        // ("SOC 2" after "SOC 2 report"), which the user should see.
+        !contains(tokens, o.tokens) || ctx.nowMs - o.at >= (opts.repeatMs ?? opts.cooldownMs),
     );
   });
   const best = fresh[0];

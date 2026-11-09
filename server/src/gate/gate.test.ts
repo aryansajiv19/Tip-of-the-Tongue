@@ -171,16 +171,16 @@ describe('decideOffer', () => {
       expect(r).toEqual({ offer: false, reason: 'low-confidence' });
     });
 
-    it('also blocks a longer form of an offered word: "onboarding team" after "onboarding"', () => {
+    it('blocks a longer form of an offered word: "onboarding team" after "onboarding"', () => {
       const recentlyOffered = new Map([['onboarding', 99_000]]);
       const r = decideOffer(guess(['onboarding team', 0.6]), ctx({ recentlyOffered }), opts);
       expect(r).toEqual({ offer: false, reason: 'already-offered' });
     });
 
-    it('also blocks a shorter form of an offered phrase: "team" after "onboarding team"', () => {
-      const recentlyOffered = new Map([['onboarding team', 99_000]]);
-      const r = decideOffer(guess(['team', 0.9]), ctx({ recentlyOffered }), opts);
-      expect(r).toEqual({ offer: false, reason: 'already-offered' });
+    it('lets a shorter, more exact form through: "SOC 2" after "SOC 2 report" is a correction', () => {
+      const recentlyOffered = new Map([['SOC 2 report', 99_000]]);
+      const r = decideOffer(guess(['SOC 2', 0.93]), ctx({ recentlyOffered }), opts);
+      expect(r.offer).toBe(true);
     });
 
     it('blocks "waiting list" after only "list" was offered, on purpose: it is the same repeat, and a hand ask can still repeat', () => {
