@@ -1,6 +1,7 @@
 import type { ServerEvent } from '../../../server/src/events';
 
 const TYPES = new Set([
+  'heartbeat',
   'session.ready',
   'transcript.partial',
   'transcript.final',
@@ -33,3 +34,8 @@ export function parseServerEvent(data: unknown): ServerEvent | null {
 export function backoffMs(attempt: number): number {
   return Math.min(1000 * 2 ** Math.max(0, attempt), 15000);
 }
+
+// The server sends something at least every 15 s; after this long with nothing the connection is
+// dead (a closed laptop, a dropped network) even if the browser has not noticed.
+export const SILENT_MS = 40_000;
+export const silentFor = (lastHeardMs: number, nowMs: number) => nowMs - lastHeardMs > SILENT_MS;

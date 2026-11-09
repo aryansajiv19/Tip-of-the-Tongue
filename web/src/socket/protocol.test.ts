@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { backoffMs, parseServerEvent } from './protocol';
+import { backoffMs, parseServerEvent, SILENT_MS, silentFor } from './protocol';
 
 describe('parseServerEvent', () => {
   it('parses known events', () => {
@@ -51,5 +51,15 @@ describe('parseServerEvent: debug', () => {
       info: { kind: 'gate', offered: false, reason: 'cooldown' },
     };
     expect(parseServerEvent(JSON.stringify(e))).toEqual(e);
+  });
+});
+
+describe('silentFor', () => {
+  it('is false while the server is heard within 40 s, true after', () => {
+    expect(silentFor(1000, 1000 + SILENT_MS)).toBe(false);
+    expect(silentFor(1000, 1001 + SILENT_MS)).toBe(true);
+  });
+  it('parses the heartbeat', () => {
+    expect(parseServerEvent('{"type":"heartbeat"}')).toEqual({ type: 'heartbeat' });
   });
 });

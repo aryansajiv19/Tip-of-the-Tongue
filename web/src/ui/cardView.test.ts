@@ -32,6 +32,10 @@ describe('statusLine', () => {
     expect(statusLine({ ...all, connection: 'connected' })).toMatch(/unavailable/);
   });
 
+  it('says another tab is listening', () => {
+    expect(statusLine({ ...ok, connection: 'other-tab' })).toMatch(/Another tab/);
+  });
+
   it('says nothing while the first connection is still being made', () => {
     expect(statusLine({ ...ok, connection: 'connecting' })).toBeNull();
   });
