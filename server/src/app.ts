@@ -89,6 +89,7 @@ export async function buildApp(deps: AppDeps = {}) {
           ...deepgramOpts,
           keyterms: () => session.keyterms(),
           diarize: config.deepgramDiarize,
+          onStreamStart: () => session.forgetSpeaker(),
           onEvent: (event) => {
             // Words still in flight from before a reset are neither shown nor used.
             const words = session.afterReset(event.words);

@@ -21,6 +21,7 @@ import {
 } from './settings/sensitivity';
 import { ControlPill } from './ui/ControlPill';
 import { DevTools } from './ui/DevTools';
+import { PrepDrawer } from './ui/PrepDrawer';
 import { desktop, useCommands } from './ui/desktop';
 import { levelStore } from './ui/levelStore';
 import { sessionMode } from './ui/sessionState';
@@ -41,7 +42,10 @@ export function App() {
   const [heard, setHeard] = useState<string[]>([]);
   const [visible, setVisible] = useState(true);
   const [partial, setPartial] = useState('');
-  const [briefSent, setBriefSent] = useState<string | null>(null);
+  // The meeting brief: pasted (developer tools) or read from a dropped file (`source`).
+  const [brief, setBrief] = useState<{ text: string; source?: string } | null>(null);
+  const [briefTerms, setBriefTerms] = useState<string[]>([]);
+  const [prepOpen, setPrepOpen] = useState(false);
   // The saved choice, or null so the server's own defaults apply until the user picks one.
   const [sensitivity, setSensitivity] = useState<Sensitivity | null>(savedSensitivity);
   const [guesserDown, setGuesserDown] = useState(false);
@@ -54,6 +58,7 @@ export function App() {
   const onServerEvent = useCallback(
     (e: ServerEvent) => {
       if (e.type === 'guesser.status') return setGuesserDown(!e.ok);
+      if (e.type === 'brief.terms') return setBriefTerms(e.terms);
       if (e.type === 'session.ready') {
         // A new connection is a new server session.
         gate.connected();
@@ -154,10 +159,14 @@ export function App() {
 
   // The brief is session state on the server: send it again after a reconnect.
   useEffect(() => {
-    if (status === 'connected' && briefSent !== null) {
-      send({ type: 'session.brief', text: briefSent } satisfies ClientEvent);
+    if (status === 'connected' && brief !== null) {
+      send({
+        type: 'session.brief',
+        text: brief.text,
+        ...(brief.source ? { source: brief.source } : {}),
+      } satisfies ClientEvent);
     }
-  }, [status, briefSent, send]);
+  }, [status, brief, send]);
 
   useEffect(() => {
     if (status === 'connected' && sensitivity !== null) {
@@ -237,7 +246,9 @@ export function App() {
             listening={listening}
             canListen={canListen}
             elapsedMs={clock.elapsedMs}
-            mode={sessionMode(briefSent)}
+            mode={sessionMode(brief?.text ?? null)}
+            prepOpen={prepOpen}
+            onTogglePrep={() => setPrepOpen((o) => !o)}
             modifier={modifierLabel(navigator.platform)}
             onToggleListening={listening ? pauseListening : startListening}
             onNewConversation={newConversation}
@@ -255,6 +266,16 @@ export function App() {
               onOpenDebugView={openDebugView}
               onDownloadTrace={downloadTrace}
               onClose={() => setSettingsOpen(false)}
+            />
+          )}
+
+          {prepOpen && (
+            <PrepDrawer
+              docName={brief?.source ?? null}
+              terms={briefTerms}
+              onLoad={(text, name) => setBrief({ text, source: name })}
+              onClear={() => setBrief({ text: '' })}
+              onClose={() => setPrepOpen(false)}
             />
           )}
 
@@ -287,7 +308,7 @@ export function App() {
         <DevTools
           heard={heard.join(' ')}
           partial={partial}
-          onBrief={setBriefSent}
+          onBrief={(text) => setBrief({ text })}
           sendPartial={sendPartial}
           sendFinal={sendFinal}
           onDownloadTrace={downloadTrace}

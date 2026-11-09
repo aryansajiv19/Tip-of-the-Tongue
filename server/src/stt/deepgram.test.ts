@@ -191,6 +191,30 @@ describe('createDeepgramStream', () => {
     stream.close();
   });
 
+  it('says when a stream opens: the first one, and again after a restart', async () => {
+    const dg = await fakeDeepgram(() => undefined);
+    servers.push(dg.wss);
+    let starts = 0;
+    const stream = createDeepgramStream({
+      apiKey: 'k',
+      language: 'en',
+      connect: dg.connect,
+      onStreamStart: () => starts++,
+      onEvent: () => undefined,
+      onError: (err) => {
+        throw err;
+      },
+    });
+    stream.send(Buffer.alloc(3200));
+    stream.send(Buffer.alloc(3200));
+    expect(starts).toBe(1); // same stream
+    await expect.poll(() => dg.wss.clients.size).toBe(1);
+    stream.restart();
+    stream.send(Buffer.alloc(3200));
+    expect(starts).toBe(2);
+    stream.close();
+  });
+
   it('does nothing on restart when no stream is open', () => {
     let opened = 0;
     const stream = createDeepgramStream({

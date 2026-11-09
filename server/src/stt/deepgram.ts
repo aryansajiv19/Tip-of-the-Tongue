@@ -77,6 +77,8 @@ export interface DeepgramOptions {
   keyterms?: () => readonly string[];
   // Ask Deepgram to label who said each word.
   diarize?: boolean;
+  // A new stream has opened. Its speaker numbers start again, so earlier ones no longer apply.
+  onStreamStart?: () => void;
   onEvent: (event: TranscriptEvent) => void;
   onError: (err: Error) => void;
   // Injectable for tests.
@@ -128,6 +130,7 @@ export function createDeepgramStream(opts: DeepgramOptions) {
   }
 
   function open() {
+    opts.onStreamStart?.();
     streamStartMs = now() - CHUNK_MS;
     const origin = streamStartMs;
     const socket = connect(

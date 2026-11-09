@@ -27,7 +27,12 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
     words: z.array(WordSchema).max(MAX_WORDS_PER_EVENT),
   }),
   // Optional meeting brief: agenda, names, terms. Plain text.
-  z.object({ type: z.literal('session.brief'), text: z.string().max(50_000) }),
+  // `source` is the file the text came from, when it came from one.
+  z.object({
+    type: z.literal('session.brief'),
+    text: z.string().max(50_000),
+    source: z.string().max(200).optional(),
+  }),
   // The user clicked a suggested word. Counts like saying it.
   z.object({
     type: z.literal('guess.picked'),
@@ -60,7 +65,7 @@ export type StuckReason = 'pause' | 'filler' | 'describing' | 'hum' | 'manual';
 export interface Candidate {
   word: string;
   confidence: number;
-  // Where the word came from (for example a file name from the brief), when known.
+  // The name of the loaded document the word appears in, when it does.
   source?: string;
 }
 
@@ -83,7 +88,11 @@ export type DebugInfo =
   | { kind: 'gate'; offered: boolean; reason?: string; words?: string[] }
   | { kind: 'stt'; mode: 'deepgram' | 'browser'; keyterms: string[] }
   // Which voice is taken to be the user's, and why it changed.
-  | { kind: 'speaker'; me: number; why: 'first words' | 'accepted' | 'manual' };
+  | {
+      kind: 'speaker';
+      me: number | undefined;
+      why: 'first words' | 'accepted' | 'manual' | 'new stream' | 'new conversation';
+    };
 
 // Sent by the server. `id` ties an offer to its later withdrawn/accepted/expired event.
 export type ServerEvent =
@@ -106,5 +115,8 @@ export type ServerEvent =
   | { type: 'session.cleared' }
   // The guesser is failing (ok: false) or working again (ok: true). Sent only on a change.
   | { type: 'guesser.status'; ok: boolean }
+  // The key terms of the loaded brief (at most 60), sent when they are ready and again if the
+  // list changes. Empty when the brief is cleared.
+  | { type: 'brief.terms'; terms: string[] }
   // Only while the client has turned debug on.
   | { type: 'debug'; atMs: number; info: DebugInfo };

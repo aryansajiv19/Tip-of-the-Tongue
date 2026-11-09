@@ -11,6 +11,7 @@ import { decideOffer } from './gate/gate.js';
 import { checkAcceptance } from './accept/accept.js';
 import { normalizePhrase } from './gate/normalize.js';
 import { selectKeyterms } from './stt/keyterms.js';
+import { appearsIn } from './guess/source.js';
 import type { DebugInfo } from './events.js';
 
 export interface SessionOptions {
@@ -76,6 +77,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   const recentlyOffered = new Map<string, number>();
   let brief: string | undefined;
   let glossary: string | undefined;
+  // The file the brief came from, when it came from one.
+  let briefSource: string | undefined;
   let keyterms: string[] = opts.profile ? selectKeyterms({ profile: opts.profile }) : [];
   let debugOn = false;
   // Which voice is the user's, once speech-to-text labels voices. Undefined: treat every voice as theirs.
@@ -104,6 +107,14 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
 
   // Who the user is: the voice of their first words, then corrected by evidence (a pop-up they
   // accepted, or a word they asked for by hand).
+  // Whose voice is the user's is learned again: after a new Deepgram stream (it numbers voices from
+  // 0 again) and after a new conversation.
+  function forgetMe(why: 'new stream' | 'new conversation') {
+    if (me === undefined) return;
+    me = undefined;
+    debug(() => ({ kind: 'speaker', me: undefined, why }));
+  }
+
   function setMe(speaker: number, why: 'first words' | 'accepted' | 'manual') {
     if (speaker === me) return;
     me = speaker;
@@ -271,19 +282,23 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     }
 
     const offeredAtMs = now();
+    // Words that come from the loaded document say which one.
+    const candidates = decision.candidates.map((c) =>
+      brief && briefSource && appearsIn(brief, c.word) ? { ...c, source: briefSource } : c,
+    );
     const stallSpeaker = buffer.words().find((w) => w.endMs === current.lastEndMs)?.speaker;
     offer = {
       id: randomUUID(),
-      candidates: decision.candidates,
+      candidates,
       offeredAtMs,
       ...(stallSpeaker !== undefined ? { speaker: stallSpeaker } : {}),
     };
     lastOfferAtMs = offeredAtMs;
-    for (const c of decision.candidates) recentlyOffered.set(c.word, offeredAtMs);
+    for (const c of candidates) recentlyOffered.set(c.word, offeredAtMs);
     send({
       type: 'guess.offered',
       id: offer.id,
-      candidates: decision.candidates,
+      candidates,
       latencyMs: result.latencyMs,
     });
     opts.log?.({
@@ -349,8 +364,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     offer = undefined;
     lastOfferAtMs = undefined;
     recentlyOffered.clear();
-    // Whose voice is "me" is learned again in the new conversation.
-    me = undefined;
+    forgetMe('new conversation');
     buffer.clear();
     handledUpToMs = -Infinity;
     voice = undefined;
@@ -392,10 +406,22 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
 
   // Pauses are silence, so no event arrives when one passes; poll for them.
   // A long brief is used from its start straight away; the glossary joins in when it is ready.
-  function setBrief(next: string | undefined) {
+  function sendBriefTerms() {
+    const terms = selectKeyterms({
+      ...(brief ? { brief } : {}),
+      ...(glossary ? { glossary } : {}),
+    });
+    // Single characters and bare numbers (pieces of "4.2M") are noise on a chip.
+    const shown = terms.filter((t) => t.length > 1 && !/^\d+$/.test(t));
+    send({ type: 'brief.terms', terms: shown.slice(0, 60) });
+  }
+
+  function setBrief(next: string | undefined, source?: string) {
     brief = next;
+    briefSource = next ? source : undefined;
     glossary = undefined;
     refreshKeyterms();
+    sendBriefTerms();
     if (!next || next.length <= LONG_BRIEF_CHARS || !opts.buildGlossary) return;
     opts
       .buildGlossary(next)
@@ -403,6 +429,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         if (closed || brief !== next) return;
         glossary = terms;
         refreshKeyterms();
+        sendBriefTerms();
       })
       .catch((err: unknown) => opts.onError?.(err));
   }
@@ -417,7 +444,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
 
   return {
     handle(event: ClientEvent) {
-      if (event.type === 'session.brief') setBrief(event.text.trim() || undefined);
+      if (event.type === 'session.brief') setBrief(event.text.trim() || undefined, event.source);
       else if (event.type === 'session.settings') {
         pauseMs = event.pauseMs;
         if (event.minConfidence !== undefined) minConfidence = event.minConfidence;
@@ -452,6 +479,9 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     keyterms: () => keyterms,
     // Which voice the session takes to be the user's, if it knows.
     speaker: () => me,
+    // Deepgram numbers voices per stream: when a new stream opens (after a pause in listening, or a
+    // keyterm change) the old numbers mean nothing, so pick again from its first words.
+    forgetSpeaker: () => forgetMe('new stream'),
     close() {
       closed = true;
       spec?.abort.abort();

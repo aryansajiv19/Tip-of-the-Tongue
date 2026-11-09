@@ -586,7 +586,8 @@ describe('session pipeline', () => {
       session.handle({ type: 'session.reset' });
       say('we need to talk about the');
       await vi.advanceTimersByTimeAsync(2500); // longer than the default pause, shorter than 4 s
-      expect(events.map((e) => e.type)).toEqual(['session.cleared']);
+      // The brief's terms were sent when it was loaded; nothing else but the reset's answer.
+      expect(events.map((e) => e.type)).toEqual(['brief.terms', 'session.cleared']);
       await vi.advanceTimersByTimeAsync(2000);
       expect(events.map((e) => e.type)).toContain('stuck.detected');
       expect(asked[0]?.brief).toContain('Northwind');
@@ -705,6 +706,121 @@ describe('session pipeline', () => {
       await stall(say, 1);
       await stall(say, 2);
       expect(statuses(events)).toEqual([false]);
+      session.close();
+    });
+  });
+
+  describe('meeting prep', () => {
+    const stall = 'I need to go to the the place where you get medicine';
+    const terms = (events: ServerEvent[]) =>
+      events.flatMap((e) => (e.type === 'brief.terms' ? [e.terms] : []));
+    const offeredWords = (events: ServerEvent[]) =>
+      events.flatMap((e) => (e.type === 'guess.offered' ? e.candidates : []));
+
+    it('sends the key terms of a short brief right away', () => {
+      const { session, events } = setup();
+      session.handle({
+        type: 'session.brief',
+        text: 'Q3 review with Northwind Analytics. Renewal of the SOC 2 licence.',
+      });
+      expect(terms(events)).toHaveLength(1);
+      expect(terms(events)[0]).toEqual(
+        expect.arrayContaining(['Q3', 'Northwind Analytics', 'SOC 2']),
+      );
+      session.close();
+    });
+
+    it('leaves out single characters and bare numbers', () => {
+      const { session, events } = setup();
+      session.handle({ type: 'session.brief', text: 'Northwind pilot. ARR target: 4.2M in 2026.' });
+      const sent = terms(events)[0] ?? [];
+      expect(sent).toContain('ARR');
+      expect(sent.filter((t) => t.length < 2 || /^\d+$/.test(t))).toEqual([]);
+      session.close();
+    });
+
+    it('sends an empty list when the brief is cleared', () => {
+      const { session, events } = setup();
+      session.handle({ type: 'session.brief', text: 'Northwind Analytics' });
+      session.handle({ type: 'session.brief', text: '   ' });
+      expect(terms(events).at(-1)).toEqual([]);
+      session.close();
+    });
+
+    it('sends at most 60 terms', () => {
+      const { session, events } = setup();
+      const many = Array.from({ length: 150 }, (_, i) => `Client${i}X`).join(', ');
+      session.handle({ type: 'session.brief', text: many });
+      expect(terms(events)[0]?.length).toBeLessThanOrEqual(60);
+      session.close();
+    });
+
+    it('sends the glossary terms again when the glossary of a long brief is ready', async () => {
+      const long = `Lumenfield overview. ${'x'.repeat(3500)} The churn rate is rising.`;
+      const events: ServerEvent[] = [];
+      const session = createSession((e) => events.push(e), {
+        guess: mockGuesser,
+        buildGlossary: () => Promise.resolve('churn rate, Lumenfield'),
+        pauseMs: 1500,
+        minConfidence: 0.6,
+        cooldownMs: 8000,
+        acceptWindowMs: 10_000,
+        moveOnWords: 6,
+        now: () => Date.now(),
+      });
+      session.handle({ type: 'session.brief', text: long, source: 'overview.pdf' });
+      expect(terms(events)).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(10);
+      expect(terms(events)).toHaveLength(2);
+      expect(terms(events)[1]).toEqual(['churn rate', 'Lumenfield']);
+      session.close();
+    });
+
+    it('names the document on a candidate whose word appears in it, and only that one', async () => {
+      const { session, events, say } = setup();
+      session.handle({
+        type: 'session.brief',
+        text: 'Errands: the pharmacy opens at nine.',
+        source: 'errands.pdf',
+      });
+      say(stall);
+      await vi.advanceTimersByTimeAsync(2000);
+      const words = offeredWords(events);
+      expect(words.find((c) => c.word === 'pharmacy')).toMatchObject({ source: 'errands.pdf' });
+      expect(words.find((c) => c.word === 'chemist')).not.toHaveProperty('source');
+      session.close();
+    });
+
+    it('does not name a document for a pasted brief without a file name', async () => {
+      const { session, events, say } = setup();
+      session.handle({ type: 'session.brief', text: 'Errands: the pharmacy opens at nine.' });
+      say(stall);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(offeredWords(events).length).toBeGreaterThan(0);
+      expect(offeredWords(events).some((c) => 'source' in c)).toBe(false);
+      session.close();
+    });
+
+    it('forgets the document when the brief is replaced or cleared', async () => {
+      const { session, events, say } = setup();
+      session.handle({ type: 'session.brief', text: 'the pharmacy opens', source: 'a.pdf' });
+      session.handle({ type: 'session.brief', text: 'the pharmacy opens' });
+      say(stall);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(offeredWords(events).some((c) => 'source' in c)).toBe(false);
+      session.close();
+    });
+
+    it('does not match a word that only appears inside a longer word', async () => {
+      const { session, events, say } = setup();
+      session.handle({
+        type: 'session.brief',
+        text: 'Pharmacies and chemists nearby',
+        source: 'list.md',
+      });
+      say(stall);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(offeredWords(events).some((c) => 'source' in c)).toBe(false);
       session.close();
     });
   });
