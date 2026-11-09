@@ -4,13 +4,14 @@ This project was built with heavy AI assistance. This file says plainly which to
 
 ## Tools
 
-| Tool                                               | Used for                                                                                                                                                                              |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude (claude.ai)                                 | Researching the challenge brief and Hiya's products, generating and stress-testing ideas, checking prior art                                                                          |
-| Claude Code, one lead session (Claude Opus)        | Planning, splitting work, writing the scaffold, the pipeline and the Deepgram server adapter, reviewing and merging every pull request, running evaluations with the owner's API keys |
-| Claude Code, three worker sessions (Claude Sonnet) | Building modules in parallel, each in its own git worktree: speech handling, stall detection, guesser and gate, evaluation sets and runners, hardening, UI                            |
-| Claude Haiku (inside the product)                  | Guessing the word the speaker is reaching for, with confidence scores, and extracting key terms from long documents                                                                   |
-| Deepgram Nova-3 (inside the product)               | Streaming speech-to-text with word timings and filler words                                                                                                                           |
+| Tool                                              | Used for                                                                                                                                                                              |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude (claude.ai)                                | Researching the challenge brief and Hiya's products, generating and stress-testing ideas, checking prior art                                                                          |
+| Claude Code, one lead session (Claude Opus)       | Planning, splitting work, writing the scaffold, the pipeline and the Deepgram server adapter, reviewing and merging every pull request, running evaluations with the owner's API keys |
+| Claude Code, four worker sessions (Claude Sonnet) | Building modules in parallel, each in its own git worktree: speech handling, stall detection, guesser and gate, evaluation sets and runners, hardening, UI, runtime robustness        |
+| Claude Code subagents                             | Wide code reading, a desk review of research on speech diversity (`docs/RESEARCH.md`), a feature audit, and the local code map (graphify)                                             |
+| Claude Haiku (inside the product)                 | Guessing the word the speaker is reaching for, with confidence scores, and extracting key terms from long documents                                                                   |
+| Deepgram Nova-3 (inside the product)              | Streaming speech-to-text with word timings and filler words                                                                                                                           |
 
 ## What the owner decided and did
 
@@ -28,6 +29,7 @@ This project was built with heavy AI assistance. This file says plainly which to
   - **Model:** kept Claude Haiku for speed after the model comparison.
   - **Licence:** chose MIT.
   - **UI:** the overlay specification (a floating control pill and a suggestion card), the macOS menu-bar icon, and the visual system.
+- **Priorities.** Asked that the product work for every way people speak (slow, fast, stuttering, voice breaks, accents, mixed languages) and in any environment, and that the lead add whatever the product needs without waiting to be asked. Asked for a bigger, easier overlay and for ⌘1/2/3 to pick a word. Added a fourth worker session.
 - **Reviews.** Reviewed progress and approved each phase before work started.
 
 ## How the AI work was checked
@@ -38,14 +40,19 @@ This project was built with heavy AI assistance. This file says plainly which to
   - a pipeline gap where an answer said just before a pause still popped up;
   - an origin-check bypass;
   - a Deepgram reconnect race;
-  - a prompt example that leaked an evaluation answer.
+  - a prompt example that leaked an evaluation answer;
+  - a merge made while one CI job was failing (the merge step now stops on any failed check);
+  - orphaned load-test processes that slowed the owner's machine (now a written team rule).
+
+  Two prompt changes were measured against bars set before the runs, failed them, and were dropped.
 
   These are recorded in the PR history and in `docs/EDGE-CASES.md`.
 
 ## Log
 
-| Date          | Tool                                    | What for                                                          | Owner's role                                             |
-| ------------- | --------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------- |
-| 2026-11-05/06 | Claude                                  | Ideation, research, project brief                                 | Directed, chose, critiqued                               |
-| 2026-11-06    | Claude Code (Opus lead, Sonnet workers) | Scaffold, core pipeline, evaluation, hardening, Deepgram          | Set direction and rules, tested live, approved phases    |
-| 2026-11-07/08 | Claude Code (Opus lead, Sonnet workers) | Realistic conversation tests and accuracy fixes, overlay redesign | Specified the overlay UI, tested live, approved the plan |
+| Date          | Tool                                         | What for                                                                                                                  | Owner's role                                                |
+| ------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 2026-11-05/06 | Claude                                       | Ideation, research, project brief                                                                                         | Directed, chose, critiqued                                  |
+| 2026-11-06    | Claude Code (Opus lead, Sonnet workers)      | Scaffold, core pipeline, evaluation, hardening, Deepgram                                                                  | Set direction and rules, tested live, approved phases       |
+| 2026-11-07/08 | Claude Code (Opus lead, Sonnet workers)      | Realistic conversation tests and accuracy fixes, overlay redesign                                                         | Specified the overlay UI, tested live, approved the plan    |
+| 2026-11-09    | Claude Code (Opus lead, four Sonnet workers) | Live-audio tests, meeting prep, About you, help level, adaptive and stutter-aware detection, runtime robustness, research | Set priorities, tested live, approved features and sessions |
