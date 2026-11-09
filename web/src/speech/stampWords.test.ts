@@ -131,3 +131,48 @@ describe('tokenize', () => {
     expect(tokenize('  a - b\n,  c ')).toEqual(['a', 'b', 'c']);
   });
 });
+
+describe('tokenize, for scripts without spaces', () => {
+  it('splits Chinese, Japanese and Thai into words instead of one giant token', () => {
+    for (const text of [
+      '我想要一杯咖啡和一个面包',
+      '今日は天気がいいですね',
+      'ฉันอยากได้กาแฟหนึ่งแก้ว',
+    ]) {
+      const words = tokenize(text);
+      expect(words.length).toBeGreaterThan(2);
+      expect(words.join('')).toBe(text);
+    }
+  });
+
+  it('segments only the token that needs it, and leaves other words and their punctuation', () => {
+    expect(tokenize('I said 你好吗 to Maria, today.')).toEqual([
+      'I',
+      'said',
+      '你好',
+      '吗',
+      'to',
+      'Maria,',
+      'today.',
+    ]);
+    expect(tokenize('Hello, world. What?')).toEqual(['Hello,', 'world.', 'What?']);
+  });
+
+  it('drops the sentence marks of those scripts, which are not words', () => {
+    expect(tokenize('你好，世界。')).toEqual(['你好', '世界']);
+  });
+
+  it('cuts any word to the 100 characters the server accepts', () => {
+    const long = 'a'.repeat(300);
+    expect(tokenize(`${long} ok`).map((t) => t.length)).toEqual([100, 2]);
+    // Counted in characters, so a pair of UTF-16 units is never cut in half.
+    expect(tokenize('𝐀'.repeat(150))[0]).toBe('𝐀'.repeat(100));
+  });
+
+  it('keeps times across a growing Chinese transcript', () => {
+    const first = stampWords([], '我想要', 100);
+    const grown = stampWords(first, '我想要一杯咖啡', 900);
+    expect(grown.slice(0, first.length)).toEqual(first);
+    expect(grown.slice(first.length).every((x) => x.startMs === 900)).toBe(true);
+  });
+});
