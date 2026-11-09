@@ -2,7 +2,7 @@
    comes from here; components use only these variables. */
 :root {
   /* Surfaces: dark translucent glass */
-  --surface-bg: rgba(20, 20, 22, 0.88);
+  --surface-bg: rgba(20, 20, 22, 0.92);
   --surface-blur: blur(24px) saturate(140%);
   --surface-border: 1px solid rgba(255, 255, 255, 0.08);
   --surface-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
