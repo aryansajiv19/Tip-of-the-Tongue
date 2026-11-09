@@ -22,10 +22,27 @@ export const config = {
   // Deepgram tells the voices apart, so only the user's own pauses start a guess. 0 turns it off.
   deepgramDiarize: process.env.DEEPGRAM_DIARIZE !== '0',
   // Browser origins allowed to open the WebSocket (stops other web pages from reading it).
-  allowedOrigins: (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean),
+  allowedOrigins: [
+    ...(process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean),
+    // The page served from this port (WEB_DIST) talks to its own socket.
+    ...(process.env.WEB_DIST
+      ? [
+          `http://127.0.0.1:${process.env.PORT || 3000}`,
+          `http://localhost:${process.env.PORT || 3000}`,
+        ]
+      : []),
+  ],
+  // A built web folder to serve on the same port (index.html at /). Off by default: the dev
+  // server runs the page.
+  webDist: process.env.WEB_DIST || undefined,
+  // When set, a WebSocket must open with ?token=<this>. The desktop app sets it, so another
+  // program on the machine cannot reach the microphone socket.
+  token: process.env.TOTT_TOKEN || undefined,
+  // Write the log to this file (appended) instead of stdout.
+  logFile: process.env.LOG_FILE || undefined,
   stuckPauseMs: num('STUCK_PAUSE_MS', 1500),
   gateMinConfidence: num('GATE_MIN_CONFIDENCE', 0.6),
   guessTimeoutMs: num('GUESS_TIMEOUT_MS', 2500),

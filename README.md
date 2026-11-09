@@ -103,7 +103,7 @@ CI runs lint, typecheck, unit tests and the build on Linux, macOS and Windows wi
 
 - No audio is stored. With Deepgram, audio is streamed for transcription only while you are listening.
 - Transcripts live in memory for the session and go only to the configured speech-to-text and AI providers. Info-level logs never contain your words.
-- The local server accepts WebSocket connections only from `ALLOWED_ORIGINS`. Message size, word count and word length are capped.
+- The local server accepts WebSocket connections only from `ALLOWED_ORIGINS` (and from its own port when `WEB_DIST` is set). With `TOTT_TOKEN` set, a socket must also open with `?token=<it>` or it is closed with code 4401; the token is compared in constant time and never logged. Message size, word count and word length are capped.
 
 ## Limitations
 
