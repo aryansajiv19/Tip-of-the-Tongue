@@ -87,6 +87,7 @@ describe('WEB_DIST', () => {
     await mkdir(join(dir, 'assets'));
     await writeFile(join(dir, 'index.html'), '<!doctype html><title>Tip</title>');
     await writeFile(join(dir, 'assets', 'app-abc123.js'), 'console.log(1)');
+    await writeFile(join(dir, 'assets', 'worker.mjs'), 'export {}');
     await writeFile(join(dir, '..', 'tott-secret.txt'), 'outside').catch(() => undefined);
     return dir;
   }
@@ -101,6 +102,10 @@ describe('WEB_DIST', () => {
     const js = await fetch(`http://${base}/assets/app-abc123.js`);
     expect(js.headers.get('content-type')).toMatch(/javascript/);
     expect(js.headers.get('cache-control')).toMatch(/immutable/);
+    // A module worker is checked strictly for a JavaScript type.
+    expect((await fetch(`http://${base}/assets/worker.mjs`)).headers.get('content-type')).toMatch(
+      /text\/javascript/,
+    );
   });
 
   it('keeps /health and /ws working next to the page', async () => {
