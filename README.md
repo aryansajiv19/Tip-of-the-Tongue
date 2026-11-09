@@ -1,71 +1,119 @@
 # Tip of the Tongue
 
-A live word-finding companion. It listens to your conversation, learns the topic as you go (or from a short brief you give it before a meeting), and when you're mid-sentence and can't find a word, a small pop-up at the side of the screen asks "Is this the word you're looking for?" with a few options. It stays silent when you don't need it.
+A live word-finding companion. It listens to your conversation. When you stall on a word mid-sentence, a small overlay offers up to three likely words, or just the first sound if you prefer. It stays silent while you speak fluently, while you are still finding the word yourself, and while someone else is talking.
 
-For anyone who loses a word mid-conversation: in meetings, on customer calls, or day to day, including people with aphasia.
+It's for anyone who loses words mid-conversation: in meetings, interviews and calls, or day to day. That includes people with anomic aphasia, brain fog or a stammer, older speakers, and people speaking a second language.
 
-Entry for the Hiya Voice AI Challenge — Accessibility track.
+Entry for the **Hiya Voice AI Challenge, Accessibility track**.
+
+<p align="center">
+  <img src="docs/assets/state-suggestion.png" width="420" alt="Overlay showing a suggested word with two alternatives">
+</p>
+
+## Features
+
+- **Spots stalls in any kind of speech.** It triggers on a pause, a filler, a cue phrase ("what's it called") or a description of the thing ("the place where you get medicine"). The pause threshold adapts to each speaker's pace. It stays quiet during stutters and blocks, and it never offers a word you have just rejected ("the fork, no, the…").
+- **Only your stalls count.** Deepgram tells the voices apart, so the other person's pauses never trigger it.
+- **Fast.** Guessing starts while you are still pausing. The pop-up typically appears 1.4–1.7 s after your last word.
+- **Uses context.** Drop in a meeting document (PDF, Markdown or text) and it uses that document's names and terms. "About you" adds your name, your role and words you often need. Words you accept are remembered on this device, as words only and never transcripts, so the next meeting already knows them.
+- **You decide how much help you get.** First sound only, the whole word, or only when you ask. Sensitivity runs from Calm to Eager.
+- **Desktop overlay.** An always-on-top macOS window with a menu-bar icon. It never takes focus and stays visible when you share your screen.
+- **Recovers from everyday failures.** It reconnects after a network drop or Mac sleep, recovers when a mic is unplugged or switched, and warns about muted or very quiet input.
+
+| Listening                                     | Thinking                                    | Accepted                                    | Help settings                               |
+| --------------------------------------------- | ------------------------------------------- | ------------------------------------------- | ------------------------------------------- |
+| ![Listening](docs/assets/state-listening.png) | ![Thinking](docs/assets/state-thinking.png) | ![Accepted](docs/assets/state-accepted.png) | ![Settings](docs/assets/state-settings.png) |
 
 ## Quick start
 
-Works from a clean clone with **no API keys**. You need Node 22 and Chrome or Edge, because they support the browser speech recognition the app uses by default.
+You need Node 22 (`nvm use`). It runs from a clean clone with **no API keys**: you get a mock guesser and the browser's speech recognition (Chrome or Edge).
 
 ```bash
-nvm use
 npm install
-npm run dev      # server on :3000, web on http://localhost:5173
+npm run dev     # server on :3000, web app on http://localhost:5173
+npm run app     # desktop overlay (macOS); needs DEEPGRAM_API_KEY for speech
 ```
 
-**Desktop overlay (macOS menu-bar app):** `npm run app` starts the server and the web dev server and opens a small always-on-top overlay at the top right of the screen you are working on. It never takes focus, appears in screenshots and screen sharing, and has a tray icon (click to show or hide; right-click for Start/Pause, New conversation and Quit). Shortcuts: Cmd/Ctrl+\\ shows or hides it, Cmd/Ctrl+Enter asks for a word, Esc dismisses a suggestion, and Cmd/Ctrl+1, 2 or 3 picks the first, second or third one (the card shows which key is which). The desktop app needs `DEEPGRAM_API_KEY` in `.env` for speech: without it Electron has no speech service to fall back on, and the overlay says so. The tray icon is a placeholder (`app/assets/trayTemplate.png`). Open the drawer under the pill (the context button) to drop in a meeting document, tell it your name, role and the words you often need, and see or forget the words it has remembered from words you accepted before (words only, kept on this device). The first time, it asks how you want to be helped: the first sound only ("w…", tap or press Cmd/Ctrl+Enter for the whole word), the whole word, or only when you ask; change it any time in Settings. In a browser the same pill is fixed at the top right of the page; add `?debug=1` for developer tools (transcript, meeting brief, a no-mic test input, the debug panel).
+For real use, copy `.env.example` to `.env` and add:
 
-Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, and `npm run e2e` (Playwright, through the no-mic test input). `npm run format` rewrites files with Prettier.
+| Variable            | What it enables                                                                                                                                                                  |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY` | Real word guessing with Claude (default model `claude-haiku-5-5`). Without it, a mock guesser runs.                                                                              |
+| `DEEPGRAM_API_KEY`  | Streaming speech-to-text (Nova-3) with real word timings, filler words and speaker labels. Without it, the browser's speech recognition is used. The desktop app needs this key. |
 
-### Optional keys (`.env`, see `.env.example`)
+Optional settings are in `.env.example`: a personal profile file, sensitivity and the allowed browser origins.
 
-- `ANTHROPIC_API_KEY` — real guessing with Claude. Without it, a mock guesser runs.
+### Keyboard shortcuts (desktop overlay)
 
-Speech-to-text: with `DEEPGRAM_API_KEY` set, the server streams your mic audio to Deepgram (Nova-3) and gets each word with real timings plus filler words ("um", "uh"). Without a key, the browser's Web Speech API is used, with approximate timings (Chrome and Edge only). If Deepgram fails mid-session, the app falls back to the browser automatically. A spoken cue is also planned; it needs echo handling first, because the microphone would hear the cue and count it as the user saying the word.
+| Keys         | Action                                                                       |
+| ------------ | ---------------------------------------------------------------------------- |
+| ⌘\\          | Show or hide the overlay                                                     |
+| ⌘↵           | Ask for a word now                                                           |
+| ⌘1 / ⌘2 / ⌘3 | Pick a suggestion (taken from other apps only while a suggestion is showing) |
+| Esc          | Dismiss a suggestion                                                         |
+| ⌘⇧N          | New conversation (clears everything heard)                                   |
 
-## Evaluate
-
-```bash
-npm run eval                                   # dev + holdout, mock guesser
-npm run eval -- --split dev|holdout|all --guesser mock|claude
-```
-
-## Why voice
-
-The moment that matters is mid-sentence, while talking to someone. Typing or searching breaks the conversation, and aphasia often affects reading and writing too.
+On Windows and Linux use Ctrl instead of ⌘. In the browser, add `?debug=1` for developer tools.
 
 ## How it works
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+```
+mic ─▶ speech-to-text ─▶ stall detector ─▶ Claude guesser ─▶ gate ─▶ overlay
+       (Deepgram or       (pause, fillers,    (context, profile,  (confidence,
+        browser)           pace, stutter,      document; streamed, repeats,
+                           self-corrections)   abstains if unsure) cooldown)
+```
 
-## Repository structure
+The server holds one session per connection. It keeps the transcript in memory, decides when you are stuck, asks Claude for candidates, and offers them only when confident. A word you then say is counted as accepted. Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Evidence
+
+All numbers come from our own scripted conversations, which are not real users. LLM results vary between runs. 95% Wilson intervals are in brackets.
+
+| Test                                                        | Result                                                                                                       |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 20 whole conversations (dev split), real Claude, three runs | 82–86% of stalls get the right word. 1–2 pop-ups in 165 fluent lines. 0–1 on the other speaker in 251 lines. |
+| Slow, breathy and self-correcting speakers                  | Right word on 9–11 of 11 stalls. A rejected word is never offered.                                           |
+| Live audio (macOS voices through real Deepgram and Claude)  | 6/8 stalls, 0 wrong, 0/22 fluent pop-ups                                                                     |
+
+Hard and holdout sets, the methods and the caveats are in [docs/write-up.md](docs/write-up.md). Research on how people speak, and the design choices it led to, is in [docs/RESEARCH.md](docs/RESEARCH.md).
+
+## Development
+
+```bash
+npm run lint && npm run typecheck && npm test && npm run build   # required before a PR
+npm run e2e                                                      # Playwright UI tests
+npm run eval -- --set hard --split dev --guesser claude          # word-guess evaluation
+npm run scenarios -w eval -- --guesser claude --split dev       # whole-conversation replay
+```
 
 ```
-server/  web/  eval/  data/  docs/
+server/   Fastify + WebSocket pipeline (session, stall detector, guesser, gate, Deepgram)
+web/      React overlay (pill, suggestion card, prep drawer, settings)
+app/      Electron shell for the desktop overlay
+eval/     Offline evaluation, scenario replay, live-audio harness
+e2e/      Playwright tests
+data/     Evaluation sets and an example profile
+docs/     Architecture, research, edge cases, write-up, status
 ```
 
-## Privacy
+CI runs lint, typecheck, unit tests and the build on Linux, macOS and Windows with Node 22 and 24, plus the end-to-end tests.
 
-No audio is stored. With `DEEPGRAM_API_KEY` set, mic audio is streamed to Deepgram for transcription while you are listening, and is not kept by this app. Transcripts are kept in memory for the session only and sent only to the configured speech-to-text and AI providers.
+## Privacy and security
 
-Security notes for running it locally:
-
-- The server accepts WebSocket connections only from browser origins in `ALLOWED_ORIGINS` (default: the Vite dev server on `localhost:5173` and `127.0.0.1:5173`). Without this check, any web page you visit could connect to the local server, read the guesses (which contain what you said) and spend your Claude key. Clients that send no `Origin` header, such as tests and the eval runner, are allowed.
-- Incoming messages are limited to 64 KB, 300 words per event and 100 characters per word. Anything invalid is dropped and logged without the transcript text.
-- If the guesser fails, the session stays silent instead of crashing.
+- No audio is stored. With Deepgram, audio is streamed for transcription only while you are listening.
+- Transcripts live in memory for the session and go only to the configured speech-to-text and AI providers. Info-level logs never contain your words.
+- The local server accepts WebSocket connections only from `ALLOWED_ORIGINS`. Message size, word count and word length are capped.
 
 ## Limitations
 
-- Tested only on our own written examples in the documented style of circumlocution, read as scripted text. **Not tested with people with aphasia**, and no claim of clinical benefit.
-- Speech-to-text may mishear real aphasic speech.
-- One microphone hears both sides of a conversation. With Deepgram, voices are told apart and only the user's own pauses start a guess; the user is taken to be whoever speaks first after Start, corrected when they accept a word or ask by hand. With browser speech there are no speaker labels, so the other person's pauses can trigger it.
-- The 2023 study that found a model identified the intended word 91.67% of the time used text, not live speech. Measuring the live version is what the eval is for.
+- **Not tested with people with aphasia**, and we make no clinical claim. The evidence comes from scripted conversations and synthetic voices.
+- Speech-to-text can mishear atypical speech. Severe dysarthria is a known weak spot for every recogniser.
+- With browser speech there are no speaker labels, so the other person's pauses can trigger a guess.
+- When you mix languages, it can offer the foreign word itself rather than the English one. A language setting is in progress.
 
 See [docs/EDGE-CASES.md](docs/EDGE-CASES.md) for the full list.
 
-## License
+## Licence
 
-MIT, see [LICENSE](LICENSE).
+MIT © Aryan Sajiv. See [LICENSE](LICENSE). How AI was used to build this project is in [ai.md](ai.md).
