@@ -1,10 +1,18 @@
 import type { StuckReason, Word } from '../events.js';
+import { disfluency, inStutterMode } from './disfluency.js';
 
 export type StuckResult =
   | { stuck: false }
   // sinceMs: end of the stall marker, where the missing word's search starts. Words said
   // after it may already be the answer.
-  | { stuck: true; reason: StuckReason; contextWindow: string; sinceMs: number };
+  | {
+      stuck: true;
+      reason: StuckReason;
+      contextWindow: string;
+      sinceMs: number;
+      // A word they said and took back ("the fork, no, the..."): not to be offered.
+      rejected?: string;
+    };
 
 // Only the end of the transcript matters, so an old cue cannot fire again and again.
 const TAIL_WORDS = 15;
@@ -34,7 +42,7 @@ const FILLER_PHRASES = [
   /\bwhat (?:do )?you call (?:it|that|them)\b/,
   /\bwhat (?:its|it is) name\b/,
   /\bwhatchamacallit\b|\bwhatsit\b|\bthingamajig\b|\bthingy\b|\bthingummy\b/,
-  new RegExp(`\\bthe thing(?! (?:${NOT_A_STALL_AFTER_THING})\\b)`),
+  new RegExp(`\\bthe (?:thing|stuff)(?! (?:${NOT_A_STALL_AFTER_THING})\\b)`),
 ];
 
 const DESCRIBING_PATTERNS = [
@@ -82,12 +90,13 @@ const tokenAt = (text: string, charIndex: number): number =>
 const CUE_NEAR_END_WORDS = 10;
 
 // Index of the token that marks a filler, or undefined.
-function fillerAt(t: string[], text: string): number | undefined {
+function fillerAt(t: string[], text: string, stutter: boolean): number | undefined {
   const n = t.length;
   const sound = t.findIndex((x, i) => i >= n - 3 && FILLER_SOUNDS.has(x));
   if (sound >= 0) return sound;
   // "the the": a determiner said twice, with at most two words after it.
-  for (let i = Math.max(1, n - 3); i < n; i++) {
+  // Not for someone who is stuttering: for them it is a repetition, not a search.
+  for (let i = Math.max(1, n - 3); i < n && !stutter; i++) {
     const w = t[i] as string;
     if (w === t[i - 1] && DETERMINERS.has(w)) return i;
   }
@@ -144,6 +153,30 @@ function stallMarkerEnd(recent: readonly Word[], pauseMs: number): number | unde
   return RECOVERY.test(afterMarker.join(' ')) ? undefined : markerEndMs;
 }
 
+// "pass me the fork, no, the..." : the word before "no" / "I mean" / "sorry" was wrong. Only when
+// they go on to a new noun phrase (or stop), so "no problem" and "I have no idea" are left alone.
+const TAKEBACK = ['no', 'nope', 'sorry', 'wait', 'actually', 'rather'];
+const TAKEBACK_TWO = [
+  ['i', 'mean'],
+  ['not', 'that'],
+];
+function rejectedWord(t: readonly string[]): string | undefined {
+  const lastStart = t.length - 6;
+  for (let i = Math.max(1, lastStart); i < t.length; i++) {
+    const two = TAKEBACK_TWO.some(([a, b]) => t[i] === a && t[i + 1] === b);
+    if (!two && !TAKEBACK.includes(t[i] as string)) continue;
+    const after = t[i + (two ? 2 : 1)];
+    const before = t[i - 1] as string;
+    if (
+      (after === undefined || DETERMINERS.has(after)) &&
+      before.length >= 3 &&
+      !DETERMINERS.has(before)
+    )
+      return before;
+  }
+  return undefined;
+}
+
 // What the microphone level says (from voice.activity events). Without it only words are used.
 export interface VoiceInfo {
   voiced: boolean;
@@ -174,11 +207,13 @@ export function detectStuck(
     .slice(-CONTEXT_WORDS)
     .map((w) => w.text)
     .join(' ');
+  const rejected = rejectedWord(tokens(ordered.slice(-TAIL_WORDS)));
   const hit = (reason: StuckReason, sinceMs: number): StuckResult => ({
     stuck: true,
     reason,
     contextWindow,
     sinceMs,
+    ...(rejected !== undefined ? { rejected } : {}),
   });
 
   const silentMs = nowMs - lastEndMs;
@@ -191,8 +226,12 @@ export function detectStuck(
   // How long it has really been quiet: no new words, and no sound either.
   const quietMs = soundSilentMs === undefined ? silentMs : Math.min(silentMs, soundSilentMs);
 
+  // Stuttering: a pause after a repeated or begun word is a block, not a search. Only a cue
+  // ("what's the word", a description) or a manual ask starts a guess then.
+  const stutter = inStutterMode(disfluency(ordered, nowMs));
   // Past TAIL_MS nobody is searching for a word any more: the conversation has moved on.
   const paused =
+    !stutter &&
     silentMs > (opts.earlyMs ?? opts.pauseMs) &&
     quietMs > (opts.earlyMs ?? opts.pauseMs) &&
     silentMs <= TAIL_MS &&
@@ -208,8 +247,8 @@ export function detectStuck(
   const text = t.join(' ');
 
   const describing = describingAt(t, text);
-  const filler = fillerAt(t, text);
-  const marker = stallMarkerEnd(recent, opts.pauseMs);
+  const filler = fillerAt(t, text, stutter);
+  const marker = stutter ? undefined : stallMarkerEnd(recent, opts.pauseMs);
   const cueSince = [
     describing === undefined ? undefined : ends[describing],
     filler === undefined ? undefined : ends[filler],
@@ -226,6 +265,7 @@ export function detectStuck(
   // A hum after the last word, then quiet, with the sentence unfinished.
   const hum = voice?.lastVoiced;
   if (
+    !stutter &&
     hum &&
     silentMs <= TAIL_MS &&
     !endsSentence(last) &&

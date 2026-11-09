@@ -55,6 +55,12 @@ describe('formatDebug', () => {
     );
   });
 
+  it('says how long a pause counts as a stall for this speaker', () => {
+    expect(formatDebug({ kind: 'pace', pauseMs: 2250 })).toBe(
+      'a pause counts as a stall after 2.3 s, for how you talk',
+    );
+  });
+
   it('says which voice is taken to be the user and why', () => {
     expect(formatDebug({ kind: 'speaker', me: 1, why: 'accepted' })).toBe(
       'you are voice 1 (accepted)',

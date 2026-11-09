@@ -3,6 +3,7 @@ import type { Candidate, ClientEvent, ServerEvent, Word } from './events.js';
 import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck, type VoiceInfo } from './stuck/detect.js';
 import { endsWithAskForWord } from './stuck/manual.js';
+import { effectivePauseMs } from './stuck/pace.js';
 import { speakerOfFirstUtterance } from './stuck/speaker.js';
 import { mergeProfiles, type Profile, type UiProfile } from './guess/profile.js';
 import { briefForGuesser, LONG_BRIEF_CHARS, type GlossaryBuilder } from './guess/glossary.js';
@@ -48,6 +49,8 @@ interface Speculation {
   confirmed: boolean;
   // Asked for by the user (Space or "what's the word"): the offer cooldown does not apply.
   manual?: boolean;
+  // A word they said and took back, which must not be offered.
+  rejected?: string;
   result?: GuessResult;
 }
 
@@ -232,13 +235,20 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   }
 
   // Starts a guess and keeps it in `spec`. Whoever confirms the stall later offers it.
-  function startGuess(lastEndMs: number, sinceMs: number, confirmed: boolean, manual = false) {
+  function startGuess(
+    lastEndMs: number,
+    sinceMs: number,
+    confirmed: boolean,
+    manual = false,
+    rejected?: string,
+  ) {
     const mine: Speculation = {
       lastEndMs,
       sinceMs,
       abort: new AbortController(),
       confirmed,
       manual,
+      ...(rejected !== undefined ? { rejected } : {}),
     };
     spec = mine;
     if (!confirmed) speculated++;
@@ -249,6 +259,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         {
           conversation: buffer.markedText(CONVERSATION_WORDS),
           stuckPhrase: buffer.markedText(STUCK_WORDS),
+          ...(rejected !== undefined ? { rejected: [rejected] } : {}),
           ...(brief ? { brief: briefForGuesser(brief, glossary) } : {}),
           ...(merged ? { profile: merged } : {}),
         },
@@ -288,6 +299,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         saidSinceStuck: buffer.wordsSince(current.sinceMs + 1),
         nowMs: now(),
         recentlyOffered,
+        ...(current.rejected !== undefined ? { rejected: [current.rejected] } : {}),
         ...(lastOfferAtMs !== undefined && !current.manual ? { lastOfferAtMs } : {}),
       },
       {
@@ -338,6 +350,21 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     });
   }
 
+  // The pause that counts as a stall for how this user talks, from their own words. The setting
+  // is the base. Debug shows it when it moves.
+  let lastPace = pauseMs;
+  function paceFor(words: readonly Word[]): number {
+    const own = words.filter(
+      (w) => w.speaker === undefined || me === undefined || w.speaker === me,
+    );
+    const pause = effectivePauseMs(pauseMs, own);
+    if (Math.abs(pause - lastPace) >= lastPace * 0.1) {
+      lastPace = pause;
+      debug(() => ({ kind: 'pace', pauseMs: pause }));
+    }
+    return pause;
+  }
+
   function check() {
     if (closed) return;
     if (offer) return trackOffer(offer);
@@ -361,7 +388,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
       return;
     }
 
-    const stuck = detectStuck(words, now(), { pauseMs, ...voiceOpt() });
+    const pause = paceFor(words);
+    const stuck = detectStuck(words, now(), { pauseMs: pause, ...voiceOpt() });
     const decision = stuck.stuck ? `${stuck.reason}@${stuck.sinceMs}` : 'no';
     if (decision !== lastDetector) {
       lastDetector = decision;
@@ -375,7 +403,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     if (stuck.stuck) {
       handledUpToMs = last.endMs;
       send({ type: 'stuck.detected', reason: stuck.reason, contextWindow: stuck.contextWindow });
-      if (!spec) return startGuess(last.endMs, stuck.sinceMs, true);
+      if (!spec) return startGuess(last.endMs, stuck.sinceMs, true, false, stuck.rejected);
       spec.confirmed = true;
       // Already answered: offer at once. Otherwise offer the moment it lands.
       if (spec.result) offerFrom(spec, spec.result);
@@ -384,8 +412,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
 
     const earlyMs = opts.speculateAfterMs ?? 0;
     if (earlyMs > 0 && !spec) {
-      const early = detectStuck(words, now(), { pauseMs, earlyMs, ...voiceOpt() });
-      if (early.stuck) startGuess(last.endMs, early.sinceMs, false);
+      const early = detectStuck(words, now(), { pauseMs: pause, earlyMs, ...voiceOpt() });
+      if (early.stuck) startGuess(last.endMs, early.sinceMs, false, false, early.rejected);
     }
   }
 

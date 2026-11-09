@@ -1229,9 +1229,10 @@
         },
         {
           "s": "me",
-          "t": "You too. Oh, I almost forgot. Could I have a b-... a b-... the thing to carry it in, made of paper, with handles",
+          "t": "Thank you. Oh, I almost forgot. Could I have a b-... a b-... a bag, a paper one with handles",
           "w": "bag",
-          "a": ["bag", "paper bag", "carrier bag"]
+          "a": ["bag", "paper bag", "carrier bag"],
+          "recover": true
         },
         {
           "s": "other",
@@ -2755,6 +2756,402 @@
         {
           "s": "other",
           "t": "See you."
+        }
+      ]
+    },
+    {
+      "id": "s25",
+      "type": "slow",
+      "split": "dev",
+      "title": "Slow speaker with long natural gaps between phrases",
+      "wordMs": 600,
+      "breathMs": 1500,
+      "stallMs": 3500,
+      "lines": [
+        {
+          "s": "other",
+          "t": "Good morning, Mr Hale. How have you been since the last visit?"
+        },
+        {
+          "s": "me",
+          "t": "Good morning… I have been quite well… thank you for asking."
+        },
+        {
+          "s": "other",
+          "t": "And the new routine at home, is it working?"
+        },
+        {
+          "s": "me",
+          "t": "Yes… my son comes every morning… and helps me with breakfast."
+        },
+        {
+          "s": "other",
+          "t": "That's good to hear. What about getting around, are you still walking?"
+        },
+        {
+          "s": "me",
+          "t": "A little each day… I go to the end of the road… and I use the... the walking aid with the rubber feet, I lean on it",
+          "w": "walking stick",
+          "a": ["walking stick", "cane", "stick", "zimmer frame", "walking frame", "crutch"]
+        },
+        {
+          "s": "other",
+          "t": "Good. Do you manage the stairs?"
+        },
+        {
+          "s": "me",
+          "t": "Slowly… one step at a time… but I manage."
+        },
+        {
+          "s": "other",
+          "t": "Excellent. Is anything bothering you at the moment?"
+        },
+        {
+          "s": "me",
+          "t": "My ears… sometimes there is a noise… like a whistle… and I cannot hear the... the little machine on the table when it rings",
+          "w": "telephone",
+          "a": ["telephone", "phone", "landline"]
+        },
+        {
+          "s": "other",
+          "t": "I can arrange a hearing test for you if you would like."
+        },
+        {
+          "s": "me",
+          "t": "Yes please… that would be helpful… my daughter can drive me."
+        },
+        {
+          "s": "other",
+          "t": "Wonderful. And the tablets, are you taking them every day?"
+        },
+        {
+          "s": "me",
+          "t": "Every morning… with a glass of water… and one at night."
+        },
+        {
+          "s": "other",
+          "t": "Do you ever forget?"
+        },
+        {
+          "s": "me",
+          "t": "Sometimes… so my son bought me a… a plastic box with a lid for each day of the week to keep them in",
+          "w": "pill organiser",
+          "a": [
+            "pill organiser",
+            "pill organizer",
+            "pill box",
+            "pillbox",
+            "pill dispenser",
+            "organiser",
+            "dosette box"
+          ]
+        },
+        {
+          "s": "other",
+          "t": "That's a very good idea."
+        },
+        {
+          "s": "me",
+          "t": "He is a good boy… he worries about me… too much sometimes."
+        },
+        {
+          "s": "other",
+          "t": "It's lovely to have family nearby. Anything else for today?"
+        },
+        {
+          "s": "me",
+          "t": "Only that I need a new... the paper from you that I take to the chemist to get my medicine",
+          "w": "prescription",
+          "a": ["prescription"]
+        },
+        {
+          "s": "other",
+          "t": "Of course, I'll print it now."
+        },
+        {
+          "s": "me",
+          "t": "Thank you very much… you have been very kind."
+        },
+        {
+          "s": "other",
+          "t": "Not at all. See you in three months."
+        }
+      ]
+    },
+    {
+      "id": "s26",
+      "type": "stammer_blocks",
+      "split": "holdout",
+      "title": "Stammering speaker, blocks and repeated starts, no word search (nothing should be offered)",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Hello, Parkview Dental, how can I help you?"
+        },
+        {
+          "s": "me",
+          "t": "H-... h-... hello. I would l-... l-... like to book an appointment, please."
+        },
+        {
+          "s": "other",
+          "t": "Of course. Is it for a check-up or is something hurting?"
+        },
+        {
+          "s": "me",
+          "t": "A check-up. I have not b-... b-... been for a long time."
+        },
+        {
+          "s": "other",
+          "t": "No problem. We have a free slot on Tuesday at ten or on Thursday afternoon."
+        },
+        {
+          "s": "me",
+          "t": "T-... t-... Tuesday is good. At ten o'clock."
+        },
+        {
+          "s": "other",
+          "t": "Lovely. Can I take your name?"
+        },
+        {
+          "s": "me",
+          "t": "It is D-... D-... Daniel Reyes. R, E, Y, E, S."
+        },
+        {
+          "s": "other",
+          "t": "Thank you, Mr Reyes. And a phone number in case we need to reach you?"
+        },
+        {
+          "s": "me",
+          "t": "Yes. It is oh seven seven, f-... f-... four one, two two nine, eight eight."
+        },
+        {
+          "s": "other",
+          "t": "Got it. Is there anything we should know about before you come in?"
+        },
+        {
+          "s": "me",
+          "t": "I am a b-... b-... bit nervous about the dentist, that is all."
+        },
+        {
+          "s": "other",
+          "t": "That's very common. We will take our time."
+        },
+        {
+          "s": "me",
+          "t": "Th-... thank you. That is very k-... k-... kind."
+        },
+        {
+          "s": "other",
+          "t": "Would you like a reminder by text message?"
+        },
+        {
+          "s": "me",
+          "t": "Y-... y-... yes please, that would be good."
+        },
+        {
+          "s": "other",
+          "t": "Done. See you on Tuesday at ten."
+        },
+        {
+          "s": "me",
+          "t": "Th-... thank you. G-... g-... goodbye."
+        }
+      ]
+    },
+    {
+      "id": "s27",
+      "type": "self_correction",
+      "split": "dev",
+      "title": "Frequent self-corrections: a wrong word, then the search (the wrong word must not be offered)",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Are you ready to eat? I've put everything on the table."
+        },
+        {
+          "s": "me",
+          "t": "Yes, thanks. Pass me the fork, no, the... the round one for soup, I have the soup first",
+          "w": "spoon",
+          "a": ["spoon", "soup spoon", "tablespoon"]
+        },
+        {
+          "s": "other",
+          "t": "Here you go. Did you have a good day?"
+        },
+        {
+          "s": "me",
+          "t": "Busy. I was at the shop and then the post office."
+        },
+        {
+          "s": "other",
+          "t": "Did you manage to see Karen?"
+        },
+        {
+          "s": "me",
+          "t": "I did, we met in the kitchen, sorry, the... where we keep all the files and the printer, upstairs",
+          "w": "office",
+          "a": ["office", "study", "print room"]
+        },
+        {
+          "s": "other",
+          "t": "How is she?"
+        },
+        {
+          "s": "me",
+          "t": "She is very well. She is moving house next month."
+        },
+        {
+          "s": "other",
+          "t": "Oh, where to?"
+        },
+        {
+          "s": "me",
+          "t": "Not far, the village, no, the... the place with the big river and the old bridge, near the cathedral",
+          "w": "city centre",
+          "a": [
+            "city centre",
+            "town centre",
+            "centre",
+            "centre of town",
+            "old town",
+            "town",
+            "city"
+          ]
+        },
+        {
+          "s": "other",
+          "t": "Nice. Did you get the tickets for Saturday?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, I booked them online this afternoon."
+        },
+        {
+          "s": "other",
+          "t": "Which train are we taking?"
+        },
+        {
+          "s": "me",
+          "t": "The bus, no, the... the one that goes under the ground, from the station near us, it is faster",
+          "w": "tube",
+          "a": ["tube", "underground", "train", "subway", "metro"]
+        },
+        {
+          "s": "other",
+          "t": "Good plan. Do you need your coat?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, and my scarf, I mean, the... the warm things for the hands in winter, with five fingers",
+          "w": "gloves",
+          "a": ["gloves", "glove", "mittens", "mitten"]
+        },
+        {
+          "s": "other",
+          "t": "They're in the drawer by the door."
+        },
+        {
+          "s": "me",
+          "t": "Found them, thanks. I'll be ready in five minutes."
+        },
+        {
+          "s": "other",
+          "t": "No hurry. We have plenty of time."
+        }
+      ]
+    },
+    {
+      "id": "s28",
+      "type": "breathy",
+      "split": "dev",
+      "title": "Speaker with long breathing pauses in every sentence (two real searches, longer)",
+      "wordMs": 450,
+      "breathMs": 1900,
+      "stallMs": 4500,
+      "lines": [
+        {
+          "s": "other",
+          "t": "Hello Anna, thanks for coming. How are you feeling today?"
+        },
+        {
+          "s": "me",
+          "t": "I am tired today… but I am glad… to be here."
+        },
+        {
+          "s": "other",
+          "t": "Tell me about this week. Has anything changed?"
+        },
+        {
+          "s": "me",
+          "t": "My voice is weaker… in the evening… and it is hard… to speak for long."
+        },
+        {
+          "s": "other",
+          "t": "Do you use the exercises we talked about?"
+        },
+        {
+          "s": "me",
+          "t": "Yes… every morning… for ten minutes… after breakfast."
+        },
+        {
+          "s": "other",
+          "t": "That's good. How is your breathing when you speak?"
+        },
+        {
+          "s": "me",
+          "t": "I need to stop… between the words… to take a breath."
+        },
+        {
+          "s": "other",
+          "t": "That is quite normal with this condition. What about eating?"
+        },
+        {
+          "s": "me",
+          "t": "I eat slowly… but I cough… when I drink… so the nurse gave me the... the powder you put in drinks to make them thicker",
+          "w": "thickener",
+          "a": ["thickener", "thickening powder", "thickening agent", "thickner"]
+        },
+        {
+          "s": "other",
+          "t": "Is it helping?"
+        },
+        {
+          "s": "me",
+          "t": "Yes… the drinks are easier… to swallow now."
+        },
+        {
+          "s": "other",
+          "t": "Good. And at home, is your husband helping?"
+        },
+        {
+          "s": "me",
+          "t": "He is very good… he cooks… and he listens… when I speak."
+        },
+        {
+          "s": "other",
+          "t": "Great. Do you want to try a communication aid?"
+        },
+        {
+          "s": "me",
+          "t": "I would like that… something with the... the screen that says the words out loud when I touch it, for the shops",
+          "w": "tablet",
+          "a": ["tablet", "speech device", "communication aid", "speaking device", "talker", "ipad"]
+        },
+        {
+          "s": "other",
+          "t": "I can refer you to the speech therapist for that."
+        },
+        {
+          "s": "me",
+          "t": "Thank you… that would be… a great help."
+        },
+        {
+          "s": "other",
+          "t": "I'll send the referral today. See you next week."
+        },
+        {
+          "s": "me",
+          "t": "See you… next week… thank you."
         }
       ]
     }

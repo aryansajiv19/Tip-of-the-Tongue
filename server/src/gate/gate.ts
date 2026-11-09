@@ -16,6 +16,8 @@ export interface GateContext {
   lastOfferAtMs?: number;
   // Words already offered, with the time of the offer. Keys are compared after normalizing.
   recentlyOffered: ReadonlyMap<string, number>;
+  // Words they said and took back: never offered.
+  rejected?: string[];
 }
 
 export type GateDecision =
@@ -46,6 +48,10 @@ export function decideOffer(
 
   const fresh = ranked.filter((c) => {
     if (findPhrase(ctx.saidSinceStuck, c.word) !== -1) return false;
+    if (
+      ctx.rejected?.some((r) => normalizePhrase(r).join(' ') === normalizePhrase(c.word).join(' '))
+    )
+      return false;
     const tokens = normalizePhrase(c.word);
     return offered.every(
       (o) =>

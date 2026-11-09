@@ -5,23 +5,28 @@ const WORD_STEP_MS = 300;
 const WORD_LEN_MS = 100;
 // A "..." in the written utterance stands for a real pause before the next word.
 const PAUSE_MS = 2000;
+// A "…" (one character) stands for a natural pause: a breath, or slow speech. Not a stall.
+const BREATH_MS = 1500;
 // How often the live server checks for a stall.
 const SWEEP_STEP_MS = 200;
 
-// `stepMs` is the time between word starts and `pauseMs` the silence for each "...". Fast talkers
+// `stepMs` is the time between word starts, `pauseMs` the silence for each "..." and `breathMs` for each "…". Fast talkers
 // and short pauses are modelled by changing them.
 export function toTimedWords(
   utterance: string,
-  opts: { stepMs?: number; pauseMs?: number; startMs?: number } = {},
+  opts: { stepMs?: number; pauseMs?: number; breathMs?: number; startMs?: number } = {},
 ): Word[] {
   const step = opts.stepMs ?? WORD_STEP_MS;
   const pause = opts.pauseMs ?? PAUSE_MS;
+  const breath = opts.breathMs ?? BREATH_MS;
   const len = Math.min(WORD_LEN_MS, step);
   const words: Word[] = [];
   let startMs = opts.startMs ?? 0;
   for (const text of utterance.split(/\s+/).filter(Boolean)) {
     words.push({ text, startMs, endMs: startMs + len });
-    startMs = text.includes('...') ? startMs + len + pause : startMs + step;
+    if (text.includes('...')) startMs += len + pause;
+    else if (text.endsWith('…')) startMs += len + breath;
+    else startMs += step;
   }
   return words;
 }

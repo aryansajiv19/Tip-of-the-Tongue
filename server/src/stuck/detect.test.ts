@@ -516,3 +516,81 @@ describe('with the microphone level (voice)', () => {
     expect(reason(detectStuck(words, endMs + 1700, { pauseMs: PAUSE_MS }))).toBe('pause');
   });
 });
+
+describe('stuttering is not word-finding', () => {
+  it('stays silent in a long pause after a begun word', () => {
+    for (const text of [
+      'I would like a c-',
+      'I would like a c- c-',
+      'and then I need a b-b-',
+      'I want coffee coffee',
+      'it is ssso',
+    ]) {
+      expect(afterGap(text, 4000)).toEqual({ stuck: false });
+      expect(afterGap(text, 2000)).toEqual({ stuck: false });
+    }
+  });
+
+  it('stays silent in pauses once there were two repetitions, whatever the last word is', () => {
+    const text = 'I c- c- cannot find b- b- the answer to that now';
+    expect(afterGap(text, 2500)).toEqual({ stuck: false });
+  });
+
+  it('still lets a cue phrase in: "what is it called" after a block is a request', () => {
+    const r = afterGap('I would like a c- c- what is it called', PAUSE_MS / 2);
+    expect(reason(r)).not.toBeNull();
+  });
+
+  it('does NOT go quiet for a typical speaker who says "the the" twice in 20 seconds', () => {
+    const { words, endMs } = say('I went to the the shop and then I looked for the the thing');
+    // They stop after "the thing": a pause after "the the" and the sentence unfinished.
+    expect(detectStuck(words, endMs + 2000, opts).stuck).toBe(true);
+    // and the same when the repeated words are not the last ones
+    const second = say('on the the list of people who want it, the the one that');
+    expect(detectStuck(second.words, second.endMs + 2000, opts).stuck).toBe(true);
+  });
+
+  it('does not take "very very" or a co-worker for stuttering', () => {
+    const { words, endMs } = say('that was very very good and my co-worker was');
+    expect(detectStuck(words, endMs + 2000, opts).stuck).toBe(true);
+  });
+});
+
+describe('self-corrections', () => {
+  it('names the word they took back, so it is not offered', () => {
+    const r = afterGap('pass me the fork no the', 2000);
+    expect(r.stuck && r.rejected).toBe('fork');
+    const r2 = afterGap('we should call Dan I mean the', 2000);
+    expect(r2.stuck && r2.rejected).toBe('dan');
+    const r3 = afterGap('it is in the kitchen sorry the', 2000);
+    expect(r3.stuck && r3.rejected).toBe('kitchen');
+  });
+
+  it('is also found when the pause comes right after the take-back', () => {
+    const r = afterGap('hand me the spanner no', 2000);
+    expect(r.stuck && r.rejected).toBe('spanner');
+  });
+
+  it('leaves ordinary no and sorry alone', () => {
+    for (const text of [
+      'there is no problem with that at all',
+      'I have no idea what to do next',
+      'no no we are fine thanks',
+      'sorry I am late',
+    ]) {
+      const r = afterGap(text, 2000);
+      expect(r.stuck && r.rejected).toBeFalsy();
+    }
+  });
+});
+
+describe('generic words are a cue', () => {
+  it('"thing" and "stuff" in place of a name count like a filler', () => {
+    expect(reason(paused('I need to buy the thing'))).not.toBeNull();
+    expect(reason(paused('we put it with the stuff'))).not.toBeNull();
+  });
+  it('but "the stuff is" and "the thing is" are ordinary speech', () => {
+    expect(paused('the stuff is in the car')).toEqual({ stuck: false });
+    expect(paused('the thing is we are late')).toEqual({ stuck: false });
+  });
+});
