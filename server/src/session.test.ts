@@ -6,7 +6,7 @@ import { createSession } from './session.js';
 
 const T0 = 1_000_000;
 
-function setup(guess: Guesser = mockGuesser) {
+function setup(guess: Guesser = mockGuesser, extra: { speculateAfterMs?: number } = {}) {
   const events: ServerEvent[] = [];
   const session = createSession((e) => events.push(e), {
     guess,
@@ -16,6 +16,7 @@ function setup(guess: Guesser = mockGuesser) {
     acceptWindowMs: 10_000,
     moveOnWords: 6,
     now: () => Date.now(),
+    ...extra,
   });
   // Speaks a phrase as one final utterance, 300 ms per word, starting now.
   const say = (text: string) => {
@@ -698,6 +699,69 @@ describe('session pipeline', () => {
       for (let n = 1; n <= 4; n++) await stall(say, n);
       expect(statuses(events)).toEqual([]);
       session.close();
+    });
+
+    const refused =
+      (status: number, retryAfterMs?: number): Guesser =>
+      async () => ({
+        candidates: [],
+        abstain: true,
+        latencyMs: 1,
+        error: true,
+        status,
+        ...(retryAfterMs === undefined ? {} : { retryAfterMs }),
+      });
+    const reasons = (events: ServerEvent[]) =>
+      events.flatMap((e) => (e.type === 'guesser.status' ? [e.reason] : []));
+
+    it('reports a refused key at once, with the reason', async () => {
+      const { session, events, say } = setup(refused(401));
+      await stall(say, 1);
+      expect(statuses(events)).toEqual([false]);
+      expect(reasons(events)).toEqual(['key']);
+      session.close();
+    });
+
+    it('reports a rate limit as busy after two failures', async () => {
+      const { session, events, say } = setup(refused(429));
+      await stall(say, 1);
+      await stall(say, 2);
+      expect(reasons(events)).toEqual(['busy']);
+      session.close();
+    });
+
+    describe('backoff', () => {
+      // One early guess per call: speak, wait past the early threshold but not a stall.
+      async function early(say: (t: string) => void, n: number) {
+        // Two words, so the silence before the next call stays under the 1.5 s stall pause.
+        say(`pass thing${n}`);
+        await vi.advanceTimersByTimeAsync(700);
+      }
+
+      it('starts no early guess for the retry-after wait, clamped to 5 to 30 s', async () => {
+        const guess = vi.fn(refused(429, 1000)); // asks for 1 s: raised to 5 s
+        const { session, say } = setup(guess, { speculateAfterMs: 500 });
+        await early(say, 1);
+        expect(guess).toHaveBeenCalledTimes(1);
+        await early(say, 2);
+        expect(guess).toHaveBeenCalledTimes(1);
+        await vi.advanceTimersByTimeAsync(5000); // the confirmed stall still asks once
+        const before = guess.mock.calls.length;
+        await early(say, 3);
+        expect(guess).toHaveBeenCalledTimes(before + 1);
+        session.close();
+      });
+
+      it('caps a long retry-after at 30 s', async () => {
+        const guess = vi.fn(refused(529, 600_000));
+        const { session, say } = setup(guess, { speculateAfterMs: 500 });
+        await early(say, 1);
+        await vi.advanceTimersByTimeAsync(31_000);
+        const before = guess.mock.calls.length;
+        await early(say, 2);
+        expect(guess).toHaveBeenCalledTimes(before + 1);
+        session.close();
+      });
     });
 
     it('counts a guesser that throws as a failure', async () => {

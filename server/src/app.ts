@@ -42,14 +42,19 @@ export async function buildApp(deps: AppDeps = {}) {
     createGuesser({
       model: config.anthropicModel,
       timeoutMs: config.guessTimeoutMs,
+      onFailure: (info) => app.log.warn(info, 'guesser: Claude call failed'),
       ...(config.anthropicApiKey ? { apiKey: config.anthropicApiKey } : {}),
     });
+
+  // Injected guessers (tests) count as real ones.
+  const guesserKind = deps.guess || config.anthropicApiKey ? 'claude' : 'mock';
 
   const buildGlossary =
     deps.buildGlossary ??
     createGlossaryBuilder({
       model: config.anthropicModel,
       timeoutMs: GLOSSARY_TIMEOUT_MS,
+      onFailure: (info) => app.log.warn(info, 'glossary: Claude call failed'),
       ...(config.anthropicApiKey ? { apiKey: config.anthropicApiKey } : {}),
     });
 
@@ -103,7 +108,7 @@ export async function buildApp(deps: AppDeps = {}) {
           onError: (err) => {
             app.log.error({ err }, 'deepgram: failed, falling back to browser speech recognition');
             sttMode = 'browser';
-            send({ type: 'session.ready', stt: 'browser' });
+            send({ type: 'session.ready', stt: 'browser', guesser: guesserKind });
           },
         })
       : undefined;
@@ -123,7 +128,7 @@ export async function buildApp(deps: AppDeps = {}) {
       ...(deps.profile ? { profile: deps.profile } : {}),
       ...deps.session,
     });
-    send({ type: 'session.ready', stt: stt ? 'deepgram' : 'browser' });
+    send({ type: 'session.ready', stt: stt ? 'deepgram' : 'browser', guesser: guesserKind });
 
     socket.on('close', () => {
       stt?.close();

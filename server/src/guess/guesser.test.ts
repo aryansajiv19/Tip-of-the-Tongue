@@ -1,4 +1,4 @@
-import type Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it } from 'vitest';
 import { buildPrompt, createGuesser, modelOptions } from './guesser.js';
 import { ProfileSchema } from './profile.js';
@@ -172,6 +172,26 @@ describe('Claude guesser', () => {
     const r = await guess(input);
     expect(r.abstain).toBe(true);
     expect(r.error).toBe(true);
+  });
+
+  it('reports the status and retry-after of an API error, and logs the status without the text', async () => {
+    const failures: unknown[] = [];
+    const guess = createGuesser(
+      { ...cfg, onFailure: (i) => failures.push(i) },
+      fakeClient(() =>
+        Promise.reject(
+          Anthropic.APIError.generate(
+            429,
+            { type: 'error', error: { type: 'rate_limit_error', message: 'the pharmacy line' } },
+            'the pharmacy line',
+            new Headers({ 'retry-after': '7' }),
+          ),
+        ),
+      ),
+    );
+    const r = await guess(input);
+    expect(r).toMatchObject({ error: true, status: 429, retryAfterMs: 7000 });
+    expect(failures).toEqual([{ status: 429, error: 'RateLimitError' }]);
   });
 
   it('abstains when the client throws synchronously', async () => {

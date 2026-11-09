@@ -16,6 +16,9 @@ export interface GuessResult {
   latencyMs: number;
   // Set when the provider failed or timed out, as opposed to the model choosing to abstain.
   error?: true;
+  // The HTTP status of an Anthropic error, and the wait it asked for (retry-after), if any.
+  status?: number;
+  retryAfterMs?: number;
 }
 
 // Never throws: errors and timeouts come back as an abstain with `error: true`.
