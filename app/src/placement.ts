@@ -61,11 +61,14 @@ export function placeOverlay(
   return display && topRight(display.workArea, size, margin);
 }
 
-// The window is as tall as the pill plus the card under it, within sane limits.
+// The window is as tall as the pill plus whatever is under it (card, drawer, settings), but
+// never taller than the work area of its screen minus the margin above and below.
 export const MIN_HEIGHT = 44;
-export const MAX_HEIGHT = 480;
 
-export function clampHeight(requested: unknown): number | undefined {
+export const maxHeight = (workArea: Rect, margin = MARGIN): number =>
+  Math.max(MIN_HEIGHT, workArea.height - 2 * margin);
+
+export function clampHeight(requested: unknown, max: number): number | undefined {
   if (typeof requested !== 'number' || !Number.isFinite(requested)) return undefined;
-  return Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, Math.round(requested)));
+  return Math.min(max, Math.max(MIN_HEIGHT, Math.round(requested)));
 }
