@@ -28,10 +28,11 @@
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
-  --text-xs: 11px; /* smallest text allowed */
-  --text-sm: 13px;
-  --text-md: 15px;
-  --text-word: 30px;
+  --text-xs: 12px; /* smallest text allowed */
+  --text-sm: 14px; /* labels and status lines */
+  --text-md: 16px;
+  --text-alt: 18px; /* alternative words on the card */
+  --text-word: 36px;
 
   /* Spacing: 4/8 grid */
   --space-1: 4px;
@@ -41,11 +42,13 @@
   --space-6: 24px;
 
   /* Sizes */
-  --overlay-width: 340px;
-  --pill-height: 44px;
-  --icon: 16px;
+  --overlay-width: 420px;
+  --pill-height: 56px;
+  --target: 44px; /* the smallest button or hit target, both ways */
+  --drawer-max-height: 400px; /* the prep drawer scrolls inside beyond this */
+  --icon: 20px;
   --icon-stroke: 1.5;
-  --keycap-height: 20px;
+  --keycap-height: 24px;
 
   /* Motion: opacity + 4px translate, ease-out */
   --ease: cubic-bezier(0.2, 0, 0, 1);
