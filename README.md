@@ -16,7 +16,7 @@ Entry for the **Hiya Voice AI Challenge, Accessibility track**.
 - **Only your stalls count.** Deepgram tells the voices apart, so the other person's pauses never trigger it.
 - **Fast.** Guessing starts while you are still pausing. The pop-up typically appears 1.4–1.7 s after your last word.
 - **Uses context.** Drop in a meeting document (PDF, Markdown or text) and it uses that document's names and terms. "About you" adds your name, your role and words you often need. Words you accept are remembered on this device, as words only and never transcripts, so the next meeting already knows them.
-- **You decide how much help you get.** First sound only, the whole word, or only when you ask. "How quickly I offer words" runs from Calm to Eager. Light or dark follows your system, Large text is one click, and Settings > Privacy lists everything kept on your device with a Forget everything button.
+- **You decide how much help you get.** First sound only, the whole word, or only when you ask. "How quickly I offer words" runs from Calm to Eager. Light or dark follows your system, Large text is one click, and Settings > Privacy lists everything kept on your device with a Forget everything button. Pick your language in Settings. The desktop app asks for your own Anthropic and Deepgram keys on first launch, or you can try the demo, which says plainly that its suggestions are examples.
 - **Desktop overlay.** An always-on-top macOS window with a menu-bar icon. It never takes focus and stays visible when you share your screen.
 - **Recovers from everyday failures.** It reconnects after a network drop or Mac sleep, recovers when a mic is unplugged or switched, and warns about muted or very quiet input.
 

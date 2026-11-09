@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Settings as GearIcon } from 'lucide-react';
 import { HELP_KEYS, HELP_LABELS, helpHint, type HelpLevel } from '../settings/help';
 import { TEXT_SIZES, TEXT_SIZE_LABELS, type TextSize } from '../settings/textSize';
+import { LANGUAGE_OPTIONS, MIXED_HINT, isLanguage } from '../settings/language';
+import type { Language } from '../../../server/src/events';
 import { micOptions, type MicOption } from '../settings/mic';
 import {
   SENSITIVITIES,
@@ -22,6 +24,8 @@ interface Props {
   onHelp: (value: HelpLevel) => void;
   sensitivity: Sensitivity | null;
   onSensitivity: (value: Sensitivity) => void;
+  language: Language | null;
+  onLanguage: (value: Language) => void;
   textSize: TextSize;
   onTextSize: (value: TextSize) => void;
   micId: string | null;
@@ -162,6 +166,27 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
           ))}
         </div>
       </fieldset>
+
+      <div className="settings-field">
+        <label htmlFor="settings-language">Language</label>
+        <select
+          id="settings-language"
+          value={p.language ?? 'en'}
+          aria-describedby={p.language === 'multi' ? 'settings-language-hint' : undefined}
+          onChange={(e) => isLanguage(e.target.value) && p.onLanguage(e.target.value)}
+        >
+          {LANGUAGE_OPTIONS.map((o) => (
+            <option key={o.code} value={o.code} lang={o.code === 'multi' ? undefined : o.code}>
+              {o.name}
+            </option>
+          ))}
+        </select>
+        {p.language === 'multi' && (
+          <p id="settings-language-hint" className="settings-hint">
+            {MIXED_HINT}
+          </p>
+        )}
+      </div>
 
       <label className="settings-field">
         <span>Microphone</span>
