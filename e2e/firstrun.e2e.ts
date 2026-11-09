@@ -132,15 +132,18 @@ test('each sensitivity says, in plain words, how long a pause it waits for', asy
   await expect(panel).toContainText('2.5 s pause');
 });
 
-test.describe('at the 340 px overlay width', () => {
+test.describe('at the 420 px overlay width', () => {
   test.use({ viewport: { width: 700, height: 600 } });
 
   test('the context label and the rest of the pill are shown in full', async ({ page }) => {
     await launch(page);
     const label = contextButton(page).locator('.pill-mode-text');
     const fits = () => label.evaluate((e) => e.scrollWidth <= e.clientWidth);
-    expect((await pill(page).boundingBox())?.width).toBe(340);
+    expect((await pill(page).boundingBox())?.width).toBe(420);
     await expect(label).toHaveText('Add context');
+    expect(await fits()).toBe(true);
+    // CI's fonts (Linux) are wider than macOS's: it must still fit with the text 10 % wider.
+    await page.addStyleTag({ content: '.control-pill * { letter-spacing: 0.08em !important; }' });
     expect(await fits()).toBe(true);
 
     // Nothing else in the pill is squeezed out either.
@@ -206,7 +209,7 @@ test.describe('at the 340 px overlay width', () => {
     await contextButton(page).click();
     const drawer = page.getByRole('region', { name: 'Meeting prep' });
     const box = await drawer.boundingBox();
-    expect(box?.height).toBeLessThanOrEqual(320);
+    expect(box?.height).toBeLessThanOrEqual(400);
     expect(await drawer.evaluate((e) => e.scrollHeight > e.clientHeight)).toBe(true);
 
     const last = drawer.getByRole('list', { name: 'Remembered' }).getByRole('listitem').last();
