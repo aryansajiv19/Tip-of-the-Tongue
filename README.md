@@ -55,6 +55,10 @@ Optional settings are in `.env.example`: a personal profile file, sensitivity an
 
 On Windows and Linux use Ctrl instead of ⌘. In the browser, add `?debug=1` for developer tools.
 
+## Install the desktop app (macOS)
+
+`npm run dist` builds two installers in `release/`: `Tip of the Tongue-0.1.0-arm64.dmg` (Apple silicon) and `Tip of the Tongue-0.1.0.dmg` (Intel). Open one and drag the app to Applications. The app is **not signed yet**, so the first time, right-click it and choose Open, then Open again (or allow it in System Settings › Privacy & Security). It asks for the microphone on first use. Paste your own keys in the app; they are stored encrypted in the macOS keychain, and no `.env` is needed.
+
 ## How it works
 
 ```

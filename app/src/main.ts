@@ -10,11 +10,14 @@ import {
   safeStorage,
   screen,
   session,
+  shell,
   systemPreferences,
   type IpcMainEvent,
   type IpcMainInvokeEvent,
 } from 'electron';
+import crypto from 'node:crypto';
 import { startChildren, waitForUrl } from './children';
+import { startServerProcess } from './serverProcess';
 import { checkKey } from './keyCheck';
 import { KEY_NAMES, createKeyStore } from './keyStore';
 import { allCardShortcuts, parseCapture, wantedShortcuts } from './cardKeys';
@@ -25,7 +28,14 @@ const PORTS = {
   server: Number(process.env.TOTT_SERVER_PORT ?? 3000),
   web: Number(process.env.TOTT_WEB_PORT ?? 5173),
 };
-const URL = `http://localhost:${PORTS.web}`;
+// Installed: one fixed loopback port serves the page and the socket (so saved settings keep the
+// same origin), and a per-launch token keeps other local programs off the socket.
+const PACKAGED = app.isPackaged;
+const PACKAGED_PORT = Number(process.env.TOTT_SERVER_PORT ?? 47821);
+const TOKEN = crypto.randomBytes(24).toString('hex');
+const PAGE_URL = PACKAGED
+  ? `http://127.0.0.1:${PACKAGED_PORT}/?token=${TOKEN}`
+  : `http://localhost:${PORTS.web}`;
 const WIDTH = 420;
 const START_HEIGHT = 44;
 
@@ -45,7 +55,18 @@ const savedKeys = () =>
       return key ? [[ENV_NAMES[name], key]] : [];
     }),
   );
-const children = startChildren(ROOT, PORTS, savedKeys);
+const children = PACKAGED
+  ? startServerProcess({
+      script: path.join(process.resourcesPath, 'server/index.mjs'),
+      env: () => ({
+        PORT: String(PACKAGED_PORT),
+        WEB_DIST: path.join(process.resourcesPath, 'web'),
+        TOTT_TOKEN: TOKEN,
+        LOG_FILE: path.join(app.getPath('userData'), 'logs', 'server.log'),
+        ...savedKeys(),
+      }),
+    })
+  : startChildren(ROOT, PORTS, savedKeys);
 
 const displays = (): DisplayInfo[] =>
   screen.getAllDisplays().map((d) => ({ id: d.id, bounds: d.bounds, workArea: d.workArea }));
@@ -123,7 +144,16 @@ function createWindow() {
   // must show up in screenshots and screen sharing.
   win.setAlwaysOnTop(true, 'floating');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  void win.loadURL(URL);
+  // Links (such as "Get a key") open in the system browser, https only; the overlay itself never
+  // navigates away from the app page.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https://')) void shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  win.webContents.on('will-navigate', (event, to) => {
+    if (new URL(to).origin !== new URL(PAGE_URL).origin) event.preventDefault();
+  });
+  void win.loadURL(PAGE_URL);
   win.once('ready-to-show', show);
   win.on('show', syncCardKeys);
   win.on('hide', syncCardKeys);
@@ -193,7 +223,7 @@ void app.whenReady().then(async () => {
     allow(permission === 'media'),
   );
   if (process.platform === 'darwin') await systemPreferences.askForMediaAccess('microphone');
-  await waitForUrl(URL, 60_000);
+  await waitForUrl(PAGE_URL, 60_000);
   createWindow();
   createTray();
   wire();

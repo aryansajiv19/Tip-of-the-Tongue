@@ -11,3 +11,5 @@ playwright-report/
 
 # Local knowledge graph (graphify), rebuilt on demand
 graphify-out/
+app/server-bundle/
+release/
