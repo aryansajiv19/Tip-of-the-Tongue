@@ -6,7 +6,7 @@ A small pop-up that listens while you talk and, when you get stuck on a word, of
 
 ## 1. Install
 
-1. Download the app from the project's releases page and open the download.
+1. Download the .dmg from the project's GitHub Releases page and open it. If there's no release yet, build it from source with `npm run dist` (see README › Install).
 2. Drag **Tip of the Tongue** into your Applications folder.
 3. The first time only: **right-click the app and choose Open**, then choose **Open** again in the box that appears. The app is not signed by Apple yet, so a normal double-click is refused. After this one time it opens normally.
 4. A small icon appears in the menu bar at the top of the screen. The pop-up lives at the top right of your screen.
@@ -59,7 +59,7 @@ Keep your keys private. The app stores them on your computer, encrypted with you
 | **⌘ 1, 2, 3** | Pick the first, second or third word while a card shows |
 | **Esc**       | Dismiss the card                                        |
 
-The app is for macOS. If you try the page in a browser on Windows or Linux, Ctrl takes the place of ⌘, and **Space** also asks for a word unless a button or a box has focus. The menu-bar icon has Show or Hide, Pause or Start listening, New conversation and Quit, and is getting Settings and Recent words.
+The app is for macOS. If you try the page in a browser on Windows or Linux, Ctrl takes the place of ⌘, and **Space** also asks for a word unless a button or a box has focus. The menu-bar icon has: Show or Hide, Pause or Start listening, New conversation, Settings…, Recent words, Start at login (installed app only), Reset window position, and Quit.
 
 ## 6. Settings
 
