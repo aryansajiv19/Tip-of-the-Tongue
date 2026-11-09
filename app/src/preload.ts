@@ -13,6 +13,17 @@ contextBridge.exposeInMainWorld('tott', {
   setHeight(px: number) {
     ipcRenderer.send('overlay:height', px);
   },
+  // Asks the main process to hand over Esc while a suggestion is on screen, and to stop when
+  // the returned function is called.
+  captureEscape(cb: () => void) {
+    const listener = () => cb();
+    ipcRenderer.on('escape', listener);
+    ipcRenderer.send('overlay:escape', true);
+    return () => {
+      ipcRenderer.removeListener('escape', listener);
+      ipcRenderer.send('overlay:escape', false);
+    };
+  },
   report(state: { listening: boolean }) {
     ipcRenderer.send('overlay:state', state);
   },

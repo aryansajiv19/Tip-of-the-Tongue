@@ -5,6 +5,7 @@ import { commandForKey, type Command } from './commands';
 export interface DesktopBridge {
   onCommand(cb: (command: Exclude<Command, 'toggle-visible'>) => void): () => void;
   setHeight(px: number): void;
+  captureEscape(cb: () => void): () => void;
   report(state: { listening: boolean }): void;
 }
 
