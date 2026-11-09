@@ -7,6 +7,10 @@
   padding: var(--space-3);
   border-radius: var(--radius-card);
   font-size: var(--text-sm);
+  /* The desktop window is at most 480 px tall (app/src/placement.ts): the pill, this drawer and
+     the two note lines must fit, so what does not is reached by scrolling inside the drawer. */
+  max-height: 320px;
+  overflow-y: auto;
 }
 .prep p {
   margin: 0;
@@ -20,6 +24,9 @@
   color: var(--text-muted);
   border: 1px dashed var(--text-faint);
   border-radius: var(--radius-card);
+}
+.prep-drop p {
+  text-align: center;
 }
 .prep-drop-over {
   color: var(--text);
