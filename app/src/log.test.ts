@@ -18,6 +18,17 @@ describe('log', () => {
     expect(lines[1]).toMatch(/ error multi line message$/);
   });
 
+  it('never writes the launch token', () => {
+    const file = path.join(dir(), 'app.log');
+    createLog(file)(
+      'error',
+      "ERR_FAILED (-2) loading 'http://127.0.0.1:47821/?token=abc123DEF&x=1'",
+    );
+    const text = fs.readFileSync(file, 'utf8');
+    expect(text).not.toContain('abc123');
+    expect(text).toContain('token=[redacted]');
+  });
+
   it('rotates, keeping at most two old files', () => {
     const file = path.join(dir(), 'app.log');
     const log = createLog(file, 100);

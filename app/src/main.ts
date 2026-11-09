@@ -185,7 +185,7 @@ function createWindow() {
   win.webContents.on('will-navigate', (event, to) => {
     if (new URL(to).origin !== new URL(PAGE_URL).origin) event.preventDefault();
   });
-  void win.loadURL(PAGE_URL);
+  win.loadURL(PAGE_URL).catch((err: Error) => log('error', `page: ${err.message}`));
   win.once('ready-to-show', show);
   win.on('show', syncCardKeys);
   win.on('hide', syncCardKeys);
@@ -305,7 +305,7 @@ async function boot() {
   }
   if (failed !== undefined) return;
   setStatus({ state: 'ready' });
-  if (win) void win.loadURL(PAGE_URL);
+  if (win) win.loadURL(PAGE_URL).catch((err: Error) => log('error', `page: ${err.message}`));
   else createWindow();
 }
 

@@ -17,7 +17,8 @@ export function createLog(file: string, maxBytes = MAX_BYTES) {
     try {
       fs.mkdirSync(path.dirname(file), { recursive: true });
       if (fs.existsSync(file) && fs.statSync(file).size >= maxBytes) rotate();
-      const oneLine = message.replace(/\s+/g, ' ');
+      // The page address carries the per-launch token, and Electron error text can include it.
+      const oneLine = message.replace(/\s+/g, ' ').replace(/token=[^\s&'"]+/gi, 'token=[redacted]');
       fs.appendFileSync(file, `${new Date().toISOString()} ${level} ${oneLine}\n`);
     } catch {
       // Logging must never take the app down.
