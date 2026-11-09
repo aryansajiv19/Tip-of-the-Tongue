@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, CircleAlert } from 'lucide-react';
 import type { Candidate } from '../../../server/src/events';
 import { confidenceDots } from './cardView';
@@ -58,12 +58,15 @@ export function SuggestionCard({ card, problem, onPick, onDismiss, masked, onRev
   const { shown, leaving, done } = useExit(content);
 
   // The page's handler changes every render; the key listeners must not be re-registered each time.
+  // Layout effects, not effects: the keys must work from the moment the card is on screen. A card
+  // arrives from the network, not from a click, so React would otherwise attach the listener after
+  // paint, and a key pressed in that gap (a fast user, or a test) would be lost.
   const latest = useRef({ onPick, onDismiss, masked, onReveal });
-  useEffect(() => {
+  useLayoutEffect(() => {
     latest.current = { onPick, onDismiss, masked, onReveal };
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!content || content.kind === 'accepted') return;
     const words =
       content.kind === 'offer' ? [content.primary, ...content.alternatives].map((c) => c.word) : [];
