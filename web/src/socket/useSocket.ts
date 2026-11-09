@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ClientEvent, ServerEvent } from '../../../server/src/events';
 import { DEBUG_CHANNEL } from '../debug/channel';
-import { backoffMs, parseServerEvent, silentFor } from './protocol';
+import { backoffMs, parseServerEvent, silentFor, socketUrl } from './protocol';
 
 const MAX_BUFFERED_BYTES = 256 * 1024;
 // Held by the one tab that is listening; a second tab would open a second microphone and double
@@ -32,9 +32,7 @@ export function useSocket(onEvent: (e: ServerEvent) => void, debugOn: boolean) {
     const channel = new BroadcastChannel(DEBUG_CHANNEL);
 
     const connect = () => {
-      const socket = new WebSocket(
-        `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`,
-      );
+      const socket = new WebSocket(socketUrl(location));
       ws.current = socket;
       lastHeardMs = Date.now();
       socket.onopen = () => {
