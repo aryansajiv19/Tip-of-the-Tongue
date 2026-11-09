@@ -25,7 +25,9 @@ const MIN_HABITUAL_GAPS = 6;
 const WORDS_PER_HABITUAL_GAP = 12;
 const HABITUAL_MARGIN = 1.25;
 const HABITUAL_FROM_MS = 1200;
-const MIN_PAUSE_MS = 700;
+// The settings' own minimum: below it the end of every sentence, before the other person starts,
+// would start a guess.
+const MIN_PAUSE_MS = 800;
 const MAX_PAUSE_MS = 6000;
 
 const percentile = (sorted: number[], p: number): number =>
@@ -68,5 +70,5 @@ export function effectivePauseMs(
   ) {
     pause = Math.max(pause, HABITUAL_MARGIN * percentile(habitual, 0.5));
   }
-  return Math.round(Math.min(MAX_PAUSE_MS, Math.max(MIN_PAUSE_MS, pause)));
+  return Math.round(Math.min(MAX_PAUSE_MS, Math.max(Math.min(MIN_PAUSE_MS, basePauseMs), pause)));
 }

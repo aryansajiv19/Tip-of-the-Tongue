@@ -38,11 +38,13 @@ describe('effectivePauseMs', () => {
     expect(slow).toBeLessThan(3500);
   });
 
-  it('waits less for a fast speaker, never under 700 ms', () => {
+  it('waits less for a fast speaker, never under the 800 ms minimum of the settings', () => {
     const fast = effectivePauseMs(BASE, speak(80, 150));
     expect(fast).toBeLessThan(BASE);
-    expect(fast).toBeGreaterThanOrEqual(700);
-    expect(effectivePauseMs(900, speak(80, 100))).toBe(700);
+    expect(fast).toBeGreaterThanOrEqual(800);
+    expect(effectivePauseMs(900, speak(80, 100))).toBe(800);
+    // a base already under the floor is kept
+    expect(effectivePauseMs(700, speak(80, 100))).toBe(700);
   });
 
   it('is capped at 6 s however slow they are', () => {
