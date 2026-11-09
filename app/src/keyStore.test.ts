@@ -35,7 +35,8 @@ describe('key store', () => {
     expect(onDisk).not.toContain(ANTHROPIC);
     expect(onDisk).not.toContain(DEEPGRAM);
     expect(onDisk).not.toContain(Buffer.from(ANTHROPIC).toString('base64'));
-    expect(fs.statSync(file).mode & 0o077).toBe(0);
+    // Windows has no POSIX permission bits.
+    if (process.platform !== 'win32') expect(fs.statSync(file).mode & 0o077).toBe(0);
   });
 
   it('keeps what is omitted, replaces what is given, removes on empty', () => {
