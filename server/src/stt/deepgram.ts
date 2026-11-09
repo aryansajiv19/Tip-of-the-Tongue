@@ -128,8 +128,8 @@ export function createDeepgramStream(opts: DeepgramOptions) {
   let streamStartMs = 0;
   let pending: Buffer[] = [];
   let idleTimer: NodeJS.Timeout | undefined;
-  // Once the retries run out we stop for good: the caller falls back to browser speech
-  // recognition instead of retrying ten times a second.
+  // Once the retries run out the caller falls back to browser speech recognition, and a probe
+  // checks every minute whether Deepgram answers again.
   let failed = false;
   let failures = 0;
   let retryAtMs = 0;

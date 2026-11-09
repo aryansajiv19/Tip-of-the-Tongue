@@ -108,7 +108,7 @@ export async function buildApp(deps: AppDeps = {}) {
           onRecovered: () => {
             app.log.info('deepgram: answering again, back from browser speech recognition');
             sttMode = 'deepgram';
-            send({ type: 'session.ready', stt: 'deepgram' });
+            send({ type: 'session.ready', stt: 'deepgram', guesser: guesserKind });
           },
           onError: (err) => {
             app.log.error({ err }, 'deepgram: failed, falling back to browser speech recognition');
