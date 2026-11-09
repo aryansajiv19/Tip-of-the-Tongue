@@ -354,10 +354,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   // is the base. Debug shows it when it moves.
   let lastPace = pauseMs;
   function paceFor(words: readonly Word[]): number {
-    const own = words.filter(
-      (w) => w.speaker === undefined || me === undefined || w.speaker === me,
-    );
-    const pause = effectivePauseMs(pauseMs, own);
+    const isOwn = (w: Word) => w.speaker === undefined || me === undefined || w.speaker === me;
+    const pause = effectivePauseMs(pauseMs, words, isOwn);
     if (Math.abs(pause - lastPace) >= lastPace * 0.1) {
       lastPace = pause;
       debug(() => ({ kind: 'pace', pauseMs: pause }));

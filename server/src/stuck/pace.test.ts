@@ -83,4 +83,36 @@ describe('effectivePauseMs', () => {
     const words = speak(80, 700);
     expect(effectivePauseMs(BASE, [...words].reverse())).toBe(effectivePauseMs(BASE, words));
   });
+
+  it('does not take turn gaps for a breathing habit: a fast speaker with short stalls keeps a short pause', () => {
+    // 130 ms per word, an 800 ms stall every 15 words, and the other person's turn (700 ms gap)
+    // after every 20 words, all in one stream as without speaker labels.
+    const words: Word[] = [];
+    let at = 0;
+    for (let i = 1; i <= 120; i++) {
+      words.push({ text: `w${i}`, startMs: at, endMs: at + 100 });
+      at += i % 15 === 0 ? 100 + 800 : i % 20 === 0 ? 100 + 700 : 130;
+    }
+    expect(effectivePauseMs(700, words)).toBe(700);
+  });
+
+  it("does not count the other person's turn as a long gap between two of the user's words", () => {
+    // The user says 6 words, the other speaker 8 words (3 s of talk), over and over.
+    const words: (Word & { own: boolean })[] = [];
+    let at = 0;
+    for (let round = 0; round < 8; round++) {
+      for (let i = 0; i < 6; i++) {
+        words.push({ text: 'me', startMs: at, endMs: at + 100, own: true });
+        at += 300;
+      }
+      for (let i = 0; i < 8; i++) {
+        words.push({ text: 'they', startMs: at, endMs: at + 100, own: false });
+        at += 400;
+      }
+    }
+    const own = (w: Word) => (w as Word & { own: boolean }).own;
+    expect(effectivePauseMs(BASE, words, own)).toBe(BASE);
+    // Handing over only the user's words would make each turn look like a 3 s breath.
+    expect(effectivePauseMs(BASE, words.filter(own))).toBeGreaterThan(BASE);
+  });
 });

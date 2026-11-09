@@ -24,6 +24,7 @@ const MAX_FACTOR = 2.5;
 const MIN_HABITUAL_GAPS = 6;
 const WORDS_PER_HABITUAL_GAP = 12;
 const HABITUAL_MARGIN = 1.25;
+const HABITUAL_FROM_MS = 1200;
 const MIN_PAUSE_MS = 700;
 const MAX_PAUSE_MS = 6000;
 
@@ -31,13 +32,20 @@ const percentile = (sorted: number[], p: number): number =>
   sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] as number;
 
 // The pause that counts as a stall for this speaker. `words` are the speaker's own, in any order.
-export function effectivePauseMs(basePauseMs: number, words: readonly Word[]): number {
+export function effectivePauseMs(
+  basePauseMs: number,
+  words: readonly Word[],
+  // Words of other voices stay in the list, so that two of the user's words with someone else's
+  // between them are not taken for one long gap.
+  isOwn: (w: Word) => boolean = () => true,
+): number {
   const w = [...words].sort((a, b) => a.startMs - b.startMs).slice(-WINDOW_WORDS);
   const steps: number[] = [];
   const gaps: number[] = [];
   for (let i = 1; i < w.length; i++) {
     const a = w[i - 1] as Word;
     const b = w[i] as Word;
+    if (!isOwn(a) || !isOwn(b)) continue;
     const step = b.startMs - a.startMs;
     if (step > 0 && step <= MAX_INTERVAL_MS) steps.push(step);
     const gap = b.startMs - a.endMs;
@@ -50,8 +58,11 @@ export function effectivePauseMs(basePauseMs: number, words: readonly Word[]): n
     ratio < NEUTRAL_LOW ? ratio / NEUTRAL_LOW : ratio > NEUTRAL_HIGH ? ratio / NEUTRAL_HIGH : 1;
   const factor = Math.min(MAX_FACTOR, Math.max(MIN_FACTOR, raw));
   let pause = basePauseMs * factor;
-  const habitual = gaps.filter((g) => g >= pause).sort((x, y) => x - y);
+  // Only for a person who is not fast, and only gaps of breath length: turn gaps and short stalls
+  // are not their habit.
+  const habitual = gaps.filter((g) => g >= Math.max(pause, HABITUAL_FROM_MS)).sort((x, y) => x - y);
   if (
+    factor >= 1 &&
     habitual.length >= MIN_HABITUAL_GAPS &&
     habitual.length * WORDS_PER_HABITUAL_GAP >= w.length
   ) {
