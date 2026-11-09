@@ -3,6 +3,19 @@ import { z } from 'zod';
 
 // Caps keep one message small; the socket also has a byte limit (see app.ts).
 export const MAX_WORDS_PER_EVENT = 300;
+// "About you": how many words, and how long a word or a name can be. The page keeps to the same.
+export const MAX_PROFILE_WORDS = 100;
+export const MAX_PROFILE_WORD_CHARS = 40;
+// No control, format or line-break characters: these words go into a prompt.
+const ProfileText = z
+  .string()
+  .max(80)
+  .regex(/^[^\p{C}\p{Zl}\p{Zp}]*$/u);
+const ProfileWord = z
+  .string()
+  .min(1)
+  .max(MAX_PROFILE_WORD_CHARS)
+  .regex(/^[^\p{C}\p{Zl}\p{Zp}]+$/u);
 
 const WordSchema = z.object({
   text: z.string().min(1).max(100),
@@ -32,6 +45,15 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
     type: z.literal('session.brief'),
     text: z.string().max(50_000),
     source: z.string().max(200).optional(),
+  }),
+  // "About you" from the page: personal words for the guesser and the speech recogniser. Words
+  // are plain text without control characters; all sizes are capped. Replaces the previous one.
+  z.object({
+    type: z.literal('session.profile'),
+    name: ProfileText.optional(),
+    role: ProfileText.optional(),
+    words: z.array(ProfileWord).max(MAX_PROFILE_WORDS),
+    remembered: z.array(ProfileWord).max(MAX_PROFILE_WORDS),
   }),
   // The user clicked a suggested word. Counts like saying it.
   z.object({

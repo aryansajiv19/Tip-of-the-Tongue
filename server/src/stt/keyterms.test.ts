@@ -75,3 +75,30 @@ describe('selectKeyterms', () => {
     expect(selectKeyterms({})).toEqual([]);
   });
 });
+
+describe('selectKeyterms with a long personal list', () => {
+  it('stays within 100 terms and the token budget, keeping the first words', () => {
+    const words = Array.from({ length: 300 }, (_, i) => `word${i}`);
+    const out = selectKeyterms({ profile: ProfileSchema.parse({ frequentlyLostWords: words }) });
+    expect(out.length).toBeLessThanOrEqual(100);
+    expect(out.slice(0, 3)).toEqual(['word0', 'word1', 'word2']);
+    expect(out.reduce((n, t) => n + Math.ceil(t.length / 3) + 1, 0)).toBeLessThanOrEqual(400);
+  });
+
+  it('stops on tokens before the count when the words are long', () => {
+    const words = Array.from({ length: 100 }, (_, i) => `${'long-name-'.repeat(3)}${i}`);
+    const out = selectKeyterms({ profile: ProfileSchema.parse({ frequentlyLostWords: words }) });
+    expect(out.length).toBeLessThan(100);
+    expect(out.reduce((n, t) => n + Math.ceil(t.length / 3) + 1, 0)).toBeLessThanOrEqual(400);
+  });
+
+  it('lets the brief terms be squeezed out, never the personal words', () => {
+    const words = Array.from({ length: 100 }, (_, i) => `word${i}`);
+    const out = selectKeyterms({
+      profile: ProfileSchema.parse({ frequentlyLostWords: words }),
+      brief: 'Review with Northwind.',
+    });
+    expect(out).not.toContain('Northwind');
+    expect(out).toHaveLength(100);
+  });
+});
