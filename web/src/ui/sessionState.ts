@@ -33,9 +33,8 @@ export function formatClock(ms: number): string {
   return `${mm}:${ss}`;
 }
 
-export type Mode = 'Everyday' | 'Meeting';
-
-// Meeting once the user has loaded a brief (or other context); Everyday otherwise.
-export function sessionMode(brief: string | null): Mode {
-  return brief !== null && brief.trim() !== '' ? 'Meeting' : 'Everyday';
+// The label on the pill's context button: an invitation until something is loaded, then what.
+export function contextLabel(brief: string | null, source?: string): string {
+  if (brief === null || brief.trim() === '') return 'Add context';
+  return source ? `Meeting \u00b7 ${source}` : 'Meeting';
 }

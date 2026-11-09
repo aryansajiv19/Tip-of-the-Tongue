@@ -107,3 +107,9 @@
     animation: none;
   }
 }
+
+.settings-hint {
+  margin: var(--space-2) 0 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}

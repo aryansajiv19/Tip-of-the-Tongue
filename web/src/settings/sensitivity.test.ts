@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SENSITIVITIES, isSensitivity, savedSensitivity, saveSensitivity } from './sensitivity';
+import {
+  SENSITIVITIES,
+  isSensitivity,
+  sensitivityHint,
+  savedSensitivity,
+  saveSensitivity,
+} from './sensitivity';
 
 function fakeStorage(initial: Record<string, string> = {}) {
   const data = { ...initial };
@@ -58,5 +64,13 @@ describe('sensitivity', () => {
     });
     expect(savedSensitivity()).toBeNull();
     expect(() => saveSensitivity('calm')).not.toThrow();
+  });
+});
+
+describe('sensitivityHint', () => {
+  it('quotes the real pause for each choice', () => {
+    expect(sensitivityHint('calm')).toMatch(/2\.5 s pause/);
+    expect(sensitivityHint('balanced')).toMatch(/1\.5 s pause/);
+    expect(sensitivityHint('eager')).toMatch(/0\.9 s pause/);
   });
 });
