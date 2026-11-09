@@ -20,6 +20,7 @@ Defined once in `server/src/events.ts`. Times are epoch ms.
 | ----------------------------------------- | ------------ | ------------------------------------------------------------------------------- |
 | `transcript.partial` / `transcript.final` | web → server | words with start/end ms (browser STT)                                           |
 | `session.brief`                           | web → server | optional meeting brief text, and the file name it came from                     |
+| `session.profile`                         | web → server | "About you": name, role, the words the user often needs, and remembered words   |
 | `session.settings`                        | web → server | pause wait in ms (800–5000), optional minConfidence                             |
 | `session.debug`                           | web → server | turns the debug stream on or off for this connection                            |
 | `guess.picked`                            | web → server | the user clicked an offered word (offer id, word)                               |
@@ -72,6 +73,8 @@ The page is a control pill (pause/resume, a five-bar mic waveform, a listening t
 ## Meeting prep
 
 A compact drawer under the pill (opened from the context button, closed by default) takes a dropped or chosen PDF, `.md` or `.txt` file. PDFs are read in the browser with pdf.js; the text (at most 50,000 characters) is sent as `session.brief` with the file name as `source`, and becomes the brief for the guesser and the key terms for speech recognition. The server answers with `brief.terms`: the names and jargon of a short brief right away, the glossary of a long one when it is ready. A suggested word that appears in the document (case-insensitive, whole word or phrase) carries the document's name as `Candidate.source`. Nothing is stored: removing the document clears the brief.
+
+**About you.** The same drawer has an "About you" section: a name, a role and a short list of words the user often needs (one per line or separated by commas). It is saved in the browser's localStorage (`tott.aboutYou`) and sent as `session.profile` after a short pause in typing, on every (re)connect, and whenever it changes; nothing is sent until there is something to send. The server rejects anything over 100 words per list, a word over 40 characters, a name or role over 80, or any control or line-break character (the words go into the guesser prompt). The server keeps it for the connection (it survives a new conversation) and merges it with the `PROFILE_PATH` file profile (`mergeProfiles`): the page's name and role win, and the words are added after the file's, without repeats. The merged profile is what the guesser sees ("user Dana; role product lead; often forgets ...") and its words are Deepgram keyterms inside the existing 100-term, 400-token budget, ahead of the brief's terms. **Remembered words** are the words the user accepted (by saying them or clicking), added when `guess.accepted` arrives: only the word, never what was said, newest last, at most 100 with the oldest dropped first, kept on this device. One "Forget" button clears them. They are sent with the profile (after the user's own words, so they are the first to be squeezed out of the keyterm budget), which is how an earlier meeting's words carry over without storing any conversation.
 
 ## Key decisions
 

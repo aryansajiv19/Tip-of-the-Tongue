@@ -4,7 +4,7 @@ import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck, type VoiceInfo } from './stuck/detect.js';
 import { endsWithAskForWord } from './stuck/manual.js';
 import { speakerOfFirstUtterance } from './stuck/speaker.js';
-import type { Profile } from './guess/profile.js';
+import { mergeProfiles, type Profile, type UiProfile } from './guess/profile.js';
 import { briefForGuesser, LONG_BRIEF_CHARS, type GlossaryBuilder } from './guess/glossary.js';
 import type { GuessResult, Guesser } from './guess/types.js';
 import { decideOffer } from './gate/gate.js';
@@ -79,6 +79,10 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   let glossary: string | undefined;
   // The file the brief came from, when it came from one.
   let briefSource: string | undefined;
+  // What the page's "About you" sent. It stays for the connection, across new conversations.
+  let uiProfile: UiProfile | undefined;
+  // The file's profile plus the page's.
+  const profile = () => mergeProfiles(opts.profile, uiProfile);
   let keyterms: string[] = opts.profile ? selectKeyterms({ profile: opts.profile }) : [];
   let debugOn = false;
   // Which voice is the user's, once speech-to-text labels voices. Undefined: treat every voice as theirs.
@@ -127,8 +131,9 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   }
 
   function refreshKeyterms() {
+    const merged = profile();
     const next = selectKeyterms({
-      ...(opts.profile ? { profile: opts.profile } : {}),
+      ...(merged ? { profile: merged } : {}),
       ...(brief ? { brief } : {}),
       ...(glossary ? { glossary } : {}),
     });
@@ -214,6 +219,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     };
     spec = mine;
     if (!confirmed) speculated++;
+    const merged = profile();
     const failed: GuessResult = { candidates: [], abstain: true, latencyMs: 0, error: true };
     opts
       .guess(
@@ -221,7 +227,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
           conversation: buffer.markedText(CONVERSATION_WORDS),
           stuckPhrase: buffer.markedText(STUCK_WORDS),
           ...(brief ? { brief: briefForGuesser(brief, glossary) } : {}),
-          ...(opts.profile ? { profile: opts.profile } : {}),
+          ...(merged ? { profile: merged } : {}),
         },
         mine.abort.signal,
       )
@@ -445,7 +451,10 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   return {
     handle(event: ClientEvent) {
       if (event.type === 'session.brief') setBrief(event.text.trim() || undefined, event.source);
-      else if (event.type === 'session.settings') {
+      else if (event.type === 'session.profile') {
+        uiProfile = event;
+        refreshKeyterms();
+      } else if (event.type === 'session.settings') {
         pauseMs = event.pauseMs;
         if (event.minConfidence !== undefined) minConfidence = event.minConfidence;
       } else if (event.type === 'session.debug') {
