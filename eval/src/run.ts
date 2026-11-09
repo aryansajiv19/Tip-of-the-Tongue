@@ -119,6 +119,9 @@ async function main(): Promise<void> {
       model: { type: 'string' },
       'no-context': { type: 'boolean', default: false },
       'stt-noise': { type: 'boolean', default: false },
+      // Ids to run (comma separated) and how many times, to look at single items.
+      only: { type: 'string' },
+      runs: { type: 'string', default: '1' },
     },
   });
   const split = values.split;
@@ -163,10 +166,15 @@ async function main(): Promise<void> {
     items = applyBriefMode(items, briefMode as BriefMode, docs, glossaries);
   }
 
+  const only = values.only?.split(',').map((x) => x.trim());
+  if (only) items = items.filter((i) => only.includes(i.id));
+  if (items.length === 0) throw new Error('no items match');
   const results: ItemResult[] = [];
   const opts: RunOptions = { context: !values['no-context'], sttNoise: values['stt-noise'] };
-  for (const item of items) results.push(await runItem(item, guess, profile, opts));
-  const tag = `${set === 'hard' ? '-hard' : ''}${briefMode ? `-brief-${briefMode}` : ''}${values.model ? `-${values.model}` : ''}${opts.context ? '' : '-nocontext'}${opts.sttNoise ? '-noise' : ''}`;
+  for (let run = 0; run < Math.max(1, Number(values.runs)); run++) {
+    for (const item of items) results.push(await runItem(item, guess, profile, opts));
+  }
+  const tag = `${set === 'hard' ? '-hard' : ''}${only ? `-only-${only.join('+')}` : ''}${briefMode ? `-brief-${briefMode}` : ''}${values.model ? `-${values.model}` : ''}${opts.context ? '' : '-nocontext'}${opts.sttNoise ? '-noise' : ''}`;
 
   const meta: RunMeta = {
     guesser: kind,
