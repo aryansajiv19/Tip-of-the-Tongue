@@ -232,6 +232,27 @@ test.describe('hands on the buttons', () => {
   });
 });
 
+test('in the desktop app, speech that cannot be reached says to add a Deepgram key', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    // What the Electron preload script exposes.
+    (window as unknown as { tott: object }).tott = {
+      onCommand: () => () => undefined,
+      setHeight: () => undefined,
+      captureCardKeys: () => () => undefined,
+      report: () => undefined,
+    };
+  });
+  await installFakeSpeech(page);
+  await page.goto('/?debug=1');
+  await expect(status(page)).toHaveText('Server: connected');
+  await start(page).click();
+  await failRecognition(page, 'network');
+  await expect(page.getByRole('alert')).toContainText('Add DEEPGRAM_API_KEY to .env');
+  await expect(page.getByRole('alert')).not.toContainText('connection');
+});
+
 test('browser speech that cannot reach its service backs off instead of restarting four times a second', async ({
   page,
 }) => {
