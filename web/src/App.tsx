@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { ClientEvent, ServerEvent, Word } from '../../server/src/events';
+import { HelpQuestion } from './ui/HelpQuestion';
 import { SettingsGear, SettingsPanel } from './ui/Settings';
 import { SuggestionCard } from './ui/SuggestionCard';
 import { cardReducer, emptyCard } from './ui/cardState';
@@ -9,6 +10,7 @@ import { createResetGate } from './ui/resetGate';
 import { useCardClock } from './ui/useCardClock';
 import { saveDebug, savedDebug } from './settings/debug';
 import { isFirstRun, markStarted } from './settings/firstRun';
+import { saveHelp, savedHelp, type HelpLevel } from './settings/help';
 import { saveMicId, savedMicId } from './settings/mic';
 import { useManualKey } from './audio/useManualKey';
 import { useMic } from './audio/useMic';
@@ -56,6 +58,10 @@ export function App() {
   const [sensitivity, setSensitivity] = useState<Sensitivity | null>(savedSensitivity);
   const [guesserDown, setGuesserDown] = useState(false);
   const [firstRun, setFirstRun] = useState(isFirstRun);
+  // How the user wants to be helped; null until they have been asked (the whole word shows).
+  const [help, setHelp] = useState<HelpLevel | null>(savedHelp);
+  // The suggestion whose words the user has asked to see, under "first sound" help.
+  const [revealedId, setRevealedId] = useState<string | null>(null);
 
   // Who recognises speech: the server (Deepgram, audio streamed from here) or this browser.
   const [stt, setStt] = useState<'deepgram' | 'browser'>('browser');
@@ -202,6 +208,17 @@ export function App() {
   useCardClock(card.view !== null, dispatchCard);
   const problem = statusLine({ connection: status, guesserDown });
 
+  const changeHelp = (level: HelpLevel) => {
+    setHelp(level);
+    saveHelp(level);
+  };
+  const offerId = card.view?.kind === 'offer' ? card.view.id : null;
+  const masked = help === 'sound' && offerId !== null && offerId !== revealedId;
+  const revealCard = () => setRevealedId(offerId);
+  useEffect(() => {
+    if (status === 'connected' && help !== null) send({ type: 'session.help', level: help });
+  }, [status, help, send]);
+
   const changeSensitivity = (value: Sensitivity) => {
     setSensitivity(value);
     saveSensitivity(value);
@@ -236,7 +253,9 @@ export function App() {
     if (command === 'toggle-visible') setVisible((v) => !v);
     else if (command === 'toggle-listening') (listening ? pauseListening : startListening)();
     else if (command === 'manual') {
-      if (listening) send({ type: 'stuck.manual' });
+      // Under "first sound" help the key shows the whole word before it asks for another.
+      if (masked) revealCard();
+      else if (listening) send({ type: 'stuck.manual' });
     } else newConversation();
   });
 
@@ -282,6 +301,8 @@ export function App() {
 
           {settingsOpen && (
             <SettingsPanel
+              help={help}
+              onHelp={changeHelp}
               sensitivity={sensitivity}
               onSensitivity={changeSensitivity}
               micId={micId}
@@ -330,6 +351,8 @@ export function App() {
             {heardLine([...heard, ...partialWords])}
           </p>
 
+          {help === null && <HelpQuestion onChoose={changeHelp} />}
+
           <div className="card-slot">
             <SuggestionCard
               card={card}
@@ -339,6 +362,8 @@ export function App() {
                 send({ type: 'guess.picked', id, word });
               }}
               onDismiss={dismissCard}
+              masked={masked}
+              onReveal={revealCard}
             />
           </div>
         </div>

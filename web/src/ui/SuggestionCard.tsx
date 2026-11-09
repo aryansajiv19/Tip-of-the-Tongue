@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, CircleAlert } from 'lucide-react';
 import type { Candidate } from '../../../server/src/events';
 import { confidenceDots } from './cardView';
 import type { CardState } from './cardState';
 import { modifierLabel, pickForKey } from './commands';
 import { desktop } from './desktop';
+import { cue } from './firstSound';
 import './card.css';
 
 interface Props {
@@ -13,6 +14,9 @@ interface Props {
   problem: string | null;
   // The user clicked a word.
   onPick: (id: string, word: string) => void;
+  // "First sound" help: the words show as cues ("w…") until the user asks for the whole word.
+  masked: boolean;
+  onReveal: () => void;
   onDismiss: () => void;
 }
 
@@ -49,23 +53,29 @@ function useExit(content: Content | null) {
 }
 
 // The live region stays mounted so screen readers announce a suggestion when it appears.
-export function SuggestionCard({ card, problem, onPick, onDismiss }: Props) {
+export function SuggestionCard({ card, problem, onPick, onDismiss, masked, onReveal }: Props) {
   const content = useContent(card, problem);
   const { shown, leaving, done } = useExit(content);
 
   // The page's handler changes every render; the key listeners must not be re-registered each time.
-  const latest = useRef({ onPick, onDismiss });
-  useEffect(() => {
-    latest.current = { onPick, onDismiss };
+  // Layout effects, not effects: the keys must work from the moment the card is on screen. A card
+  // arrives from the network, not from a click, so React would otherwise attach the listener after
+  // paint, and a key pressed in that gap (a fast user, or a test) would be lost.
+  const latest = useRef({ onPick, onDismiss, masked, onReveal });
+  useLayoutEffect(() => {
+    latest.current = { onPick, onDismiss, masked, onReveal };
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!content || content.kind === 'accepted') return;
     const words =
       content.kind === 'offer' ? [content.primary, ...content.alternatives].map((c) => c.word) : [];
     const pick = (index: number) => {
       const word = words[index];
-      if (content.kind === 'offer' && word !== undefined) latest.current.onPick(content.id, word);
+      if (content.kind !== 'offer' || word === undefined) return;
+      // A cue is not a word to pick blind: the first press shows the words.
+      if (latest.current.masked) latest.current.onReveal();
+      else latest.current.onPick(content.id, word);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') return latest.current.onDismiss();
@@ -92,7 +102,7 @@ export function SuggestionCard({ card, problem, onPick, onDismiss }: Props) {
           className={leaving ? 'suggestion glass is-leaving' : 'suggestion glass'}
           onAnimationEnd={done}
         >
-          <Body content={shown} onPick={onPick} />
+          <Body content={shown} onPick={onPick} masked={masked} onReveal={onReveal} />
         </section>
       )}
     </aside>
@@ -110,7 +120,17 @@ const Hint = ({ n }: { n: 1 | 2 | 3 }) => (
   </kbd>
 );
 
-function Body({ content, onPick }: { content: Content; onPick: Props['onPick'] }) {
+function Body({
+  content,
+  onPick,
+  masked,
+  onReveal,
+}: {
+  content: Content;
+  onPick: Props['onPick'];
+  masked: boolean;
+  onReveal: () => void;
+}) {
   switch (content.kind) {
     case 'thinking':
       return <p className="card-thinking">Finding the word</p>;
@@ -138,9 +158,12 @@ function Body({ content, onPick }: { content: Content; onPick: Props['onPick'] }
                 type="button"
                 className="card-primary"
                 aria-keyshortcuts={`${SHORTCUT}+1`}
-                onClick={() => onPick(content.id, content.primary.word)}
+                {...(masked
+                  ? { 'aria-label': `Show the word that starts ${cue(content.primary.word)}` }
+                  : {})}
+                onClick={() => (masked ? onReveal() : onPick(content.id, content.primary.word))}
               >
-                {content.primary.word}
+                {masked ? cue(content.primary.word) : content.primary.word}
               </button>
               <Hint n={1} />
             </span>
@@ -162,16 +185,21 @@ function Body({ content, onPick }: { content: Content; onPick: Props['onPick'] }
                   <button
                     type="button"
                     aria-keyshortcuts={`${SHORTCUT}+${i + 2}`}
-                    onClick={() => onPick(content.id, c.word)}
+                    {...(masked
+                      ? { 'aria-label': `Show the word that starts ${cue(c.word)}` }
+                      : {})}
+                    onClick={() => (masked ? onReveal() : onPick(content.id, c.word))}
                   >
-                    {c.word}
+                    {masked ? cue(c.word) : c.word}
                   </button>
                   <Hint n={(i + 2) as 2 | 3} />
                 </li>
               ))}
             </ul>
           )}
-          {content.primary.source && <p className="card-source">from {content.primary.source}</p>}
+          {!masked && content.primary.source && (
+            <p className="card-source">from {content.primary.source}</p>
+          )}
         </>
       );
     }

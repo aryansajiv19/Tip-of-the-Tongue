@@ -102,5 +102,7 @@ test('the drawer and settings controls are at least 44 by 44', async ({ page }) 
   const settings = page.getByRole('group', { name: 'Settings' });
   await expectTargets(settings.getByRole('combobox'));
   await expectTargets(settings.locator('.settings-segments label'));
-  expect(await fontSize(settings.locator('.settings-hint'))).toBeGreaterThanOrEqual(MIN_TEXT);
+  for (const hint of await settings.locator('.settings-hint').all()) {
+    expect(await fontSize(hint)).toBeGreaterThanOrEqual(MIN_TEXT);
+  }
 });

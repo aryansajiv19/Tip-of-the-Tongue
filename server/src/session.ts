@@ -88,6 +88,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   const profile = () => mergeProfiles(opts.profile, uiProfile);
   let keyterms: string[] = opts.profile ? selectKeyterms({ profile: opts.profile }) : [];
   let debugOn = false;
+  // 'Only when I ask': a pause or a hum alone starts nothing; a cue phrase or the manual key does.
+  let askOnly = false;
   // Which voice is the user's, once speech-to-text labels voices. Undefined: treat every voice as theirs.
   let me: number | undefined;
   let lastDetector = '';
@@ -398,7 +400,9 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         ...(stuck.stuck ? { reason: stuck.reason, sinceMs: stuck.sinceMs } : {}),
       }));
     }
-    if (stuck.stuck) {
+    // A pause or a hum is the only thing that starts a guess by itself; "ask only" turns that off.
+    const automatic = stuck.stuck && (stuck.reason === 'pause' || stuck.reason === 'hum');
+    if (stuck.stuck && !(askOnly && automatic)) {
       handledUpToMs = last.endMs;
       send({ type: 'stuck.detected', reason: stuck.reason, contextWindow: stuck.contextWindow });
       if (!spec) return startGuess(last.endMs, stuck.sinceMs, true, false, stuck.rejected);
@@ -412,7 +416,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     const baseEarlyMs = opts.speculateAfterMs ?? 0;
     const earlyMs =
       baseEarlyMs > 0 ? Math.max(baseEarlyMs, typicalStepMs(words, isOwnWord) ?? 0) : 0;
-    if (earlyMs > 0 && !spec) {
+    // "Ask only" starts nothing early either.
+    if (earlyMs > 0 && !spec && !askOnly) {
       const early = detectStuck(words, now(), { pauseMs: pause, earlyMs, ...voiceOpt() });
       if (early.stuck) startGuess(last.endMs, early.sinceMs, false, false, early.rejected);
     }
@@ -508,6 +513,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   return {
     handle(event: ClientEvent) {
       if (event.type === 'session.brief') setBrief(event.text.trim() || undefined, event.source);
+      else if (event.type === 'session.help') askOnly = event.level === 'ask';
       else if (event.type === 'session.profile') {
         uiProfile = event;
         refreshKeyterms();

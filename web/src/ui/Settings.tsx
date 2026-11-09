@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Settings as GearIcon } from 'lucide-react';
+import { HELP_KEYS, HELP_LABELS, helpHint, type HelpLevel } from '../settings/help';
 import { micOptions, type MicOption } from '../settings/mic';
 import {
   SENSITIVITIES,
@@ -7,9 +8,12 @@ import {
   sensitivityHint,
   type Sensitivity,
 } from '../settings/sensitivity';
+import { modifierLabel } from './commands';
 import './settings.css';
 
 interface Props {
+  help: HelpLevel | null;
+  onHelp: (value: HelpLevel) => void;
   sensitivity: Sensitivity | null;
   onSensitivity: (value: Sensitivity) => void;
   micId: string | null;
@@ -77,6 +81,27 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
 
   return (
     <div id={PANEL_ID} className="settings-panel glass" role="group" aria-label="Settings">
+      <fieldset>
+        <legend>How I help</legend>
+        <div className="settings-segments">
+          {HELP_KEYS.map((key) => (
+            <label key={key}>
+              <input
+                type="radio"
+                name="help"
+                value={key}
+                checked={(p.help ?? 'word') === key}
+                onChange={() => p.onHelp(key)}
+              />
+              <span>{HELP_LABELS[key]}</span>
+            </label>
+          ))}
+        </div>
+        <p className="settings-hint">
+          {helpHint(p.help ?? 'word', modifierLabel(navigator.platform))}
+        </p>
+      </fieldset>
+
       <fieldset>
         <legend>Sensitivity</legend>
         <div className="settings-segments">
