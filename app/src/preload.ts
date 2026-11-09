@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 type Command = 'toggle-listening' | 'manual' | 'new-conversation';
+type Presence = 'set' | 'missing';
+type Check = 'ok' | 'invalid' | 'unreachable' | 'missing';
 
 // What the page may do: hear commands from the tray and shortcuts, and tell the window how tall
 // it needs to be and whether the mic is live. Matches DesktopBridge in web/src/ui/desktop.ts.
@@ -26,5 +28,13 @@ contextBridge.exposeInMainWorld('tott', {
   },
   report(state: { listening: boolean }) {
     ipcRenderer.send('overlay:state', state);
+  },
+  // The user's own provider keys. The page can set and test them but never read them back.
+  keys: {
+    status: (): Promise<{ anthropic: Presence; deepgram: Presence }> =>
+      ipcRenderer.invoke('keys:status'),
+    save: (keys: { anthropic?: string; deepgram?: string }): Promise<void> =>
+      ipcRenderer.invoke('keys:save', keys),
+    test: (): Promise<{ anthropic: Check; deepgram: Check }> => ipcRenderer.invoke('keys:test'),
   },
 });
