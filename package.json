@@ -21,7 +21,8 @@
     "e2e": "playwright test -c e2e/playwright.config.ts",
     "eval": "npm run eval -w eval --",
     "e2e:live": "playwright test -c e2e/live/playwright.live.config.ts",
-    "app": "npm run start -w app"
+    "app": "npm run start -w app",
+    "scenarios:live": "npm run scenarios:live -w eval --"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

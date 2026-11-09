@@ -75,7 +75,7 @@ test('thinking stops when the server says the guess went nowhere', async ({ page
   await expect(offer(page)).toHaveText('');
 });
 
-test('uses the spec sizes: 340 wide, radius 16, 30 px semibold word, 15 px muted alternatives', async ({
+test('uses the spec sizes: 420 wide, radius 16, 36 px semibold word, 18 px muted alternatives', async ({
   page,
 }) => {
   const server = await start(page);
@@ -92,19 +92,19 @@ test('uses the spec sizes: 340 wide, radius 16, 30 px semibold word, 15 px muted
       const s = getComputedStyle(e);
       return { width: e.getBoundingClientRect().width, radius: s.borderTopLeftRadius };
     });
-  expect(card).toEqual({ width: 340, radius: '16px' });
+  expect(card).toEqual({ width: 420, radius: '16px' });
   const word = await primary(page).evaluate((e) => {
     const s = getComputedStyle(e);
     return { size: s.fontSize, weight: s.fontWeight, underline: s.textDecorationColor };
   });
-  expect(word).toEqual({ size: '30px', weight: '600', underline: 'rgb(125, 211, 252)' });
+  expect(word).toEqual({ size: '36px', weight: '600', underline: 'rgb(125, 211, 252)' });
   const alt = await offer(page)
     .locator('.card-alts button')
     .evaluate((e) => {
       const s = getComputedStyle(e);
       return { size: s.fontSize, color: s.color };
     });
-  expect(alt).toEqual({ size: '15px', color: 'rgb(161, 161, 170)' });
+  expect(alt).toEqual({ size: '18px', color: 'rgb(161, 161, 170)' });
 });
 
 test('clicking the main word or an alternative picks it, shows a check mark, then the card goes', async ({

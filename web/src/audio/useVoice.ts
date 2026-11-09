@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { initialVad, stepVad } from './vad';
 
 const FRAME_MS = 50; // 20 readings a second
@@ -21,8 +21,12 @@ export function useVoice(
     levelHandler.current = onLevel;
   });
 
+  // Bumped when the microphone goes away, to open the default one.
+  const [reopen, setReopen] = useState(0);
+
   useEffect(() => {
     if (!active) return;
+    const openedAt = Date.now();
     let stop: () => void = () => undefined;
     let cancelled = false;
 
@@ -45,6 +49,10 @@ export function useVoice(
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 1024;
         ctx.createMediaStreamSource(stream).connect(analyser);
+        // Unplugged: the level would freeze. Not again if it ended at once (nothing to open).
+        stream.getAudioTracks()[0]?.addEventListener('ended', () => {
+          if (!cancelled && Date.now() - openedAt > 3000) setReopen((n) => n + 1);
+        });
         const samples = new Float32Array(analyser.fftSize);
         let vad = initialVad;
 
@@ -76,5 +84,5 @@ export function useVoice(
       cancelled = true;
       stop();
     };
-  }, [active, deviceId]);
+  }, [active, deviceId, reopen]);
 }

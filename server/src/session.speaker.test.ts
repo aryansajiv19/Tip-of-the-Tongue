@@ -240,4 +240,58 @@ describe('who is speaking', () => {
     expect(offers()).toBe(1);
     session.close();
   });
+
+  describe('a stray voice number on one word', () => {
+    const LEAD_IN = 'I need to go to the the place where you get';
+
+    it("does not hide the user's stall when the last word before it gets a voice number nobody else has", async () => {
+      const { session, say, offers, introduce } = setup();
+      introduce();
+      await vi.advanceTimersByTimeAsync(3000);
+      const before = offers();
+      say(0, LEAD_IN);
+      say(2, 'medicine');
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(offers()).toBe(before + 1);
+      expect(session.speaker()).toBe(0);
+      session.close();
+    });
+
+    it("does not make a stray voice the user's when they ask by hand or accept", async () => {
+      const { session, say, introduce } = setup();
+      introduce();
+      say(0, LEAD_IN);
+      say(2, 'medicine');
+      session.handle({ type: 'stuck.manual' });
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(session.speaker()).toBe(0);
+      session.close();
+    });
+
+    it('still stays silent for the other person, even after a one-word turn', async () => {
+      const { session, say, offers, stalls, introduce } = setup();
+      introduce();
+      await vi.advanceTimersByTimeAsync(3000);
+      const before = { stalls: stalls(), offers: offers() };
+      // Voice 1 has already said "Sure go ahead" in the introduction, so it is a real person.
+      say(1, 'Well');
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(stalls()).toBe(before.stalls);
+      expect(offers()).toBe(before.offers);
+      session.close();
+    });
+
+    it("counts a voice's words only since the last reset", async () => {
+      const { session, say, introduce, stalls } = setup();
+      introduce();
+      session.handle({ type: 'session.reset' });
+      // Voice 1 spoke only before the reset. With nothing said since, it is not yet a real person,
+      // and a word of it right against the user's last word is a stray label: the user's stall.
+      say(0, 'Good morning let us get started with the review and then');
+      say(1, 'the');
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(stalls()).toBe(1);
+      session.close();
+    });
+  });
 });

@@ -382,6 +382,15 @@
       "category": "not_stuck",
       "split": "holdout",
       "pause": true
+    },
+    {
+      "id": "h41",
+      "context": "Sales call with a clinic manager. I have been explaining that when a patient cancels, the slot goes to the next person who asked for an earlier appointment. She has asked how many empty slots that recovers.",
+      "utterance": "Most of our clinics recover about one in four of those, it depends on how many people are on there... the list of people who want an earlier appointment",
+      "target": "waiting list",
+      "acceptable": ["waiting list", "waitlist", "wait list"],
+      "category": "context",
+      "split": "dev"
     }
   ]
 }

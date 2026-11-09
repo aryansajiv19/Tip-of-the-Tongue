@@ -37,6 +37,12 @@ const Ctor =
 export const speechSupported = Ctor !== undefined;
 
 const RESTART_DELAY_MS = 250;
+// A recogniser that ends within this of starting, again and again, cannot reach its service:
+// each try waits twice as long as the last, up to the cap, instead of hammering it.
+const QUICK_END_MS = 2000;
+const MAX_RESTART_DELAY_MS = 8000;
+const NETWORK_ERROR =
+  'Speech recognition cannot reach its service. Check your connection; I keep trying.';
 // In a quiet room this restarts the recognizer about every 20 s (a brief gap): cheaper than missing a silent stall.
 const WATCHDOG_CHECK_MS = 5000;
 
@@ -92,12 +98,14 @@ export function useSpeech({ onPartial, onFinal, debug = false }: Handlers) {
 
   const beginRef = useRef<() => void>(() => undefined);
   const lastEvent = useRef(0); // set by begin() before the watchdog can run
+  const quickEnds = useRef(0);
   const begin = useCallback(() => {
     if (!Ctor) return;
     const touch = () => {
       lastEvent.current = Date.now();
     };
     touch();
+    const startedAt = Date.now();
     const r = new Ctor();
     r.continuous = true;
     r.interimResults = true;
@@ -108,6 +116,8 @@ export function useSpeech({ onPartial, onFinal, debug = false }: Handlers) {
     };
     r.onresult = (e) => {
       touch();
+      quickEnds.current = 0;
+      setError((current) => (current === NETWORK_ERROR ? null : current));
       const results = Array.from({ length: e.results.length }, (_, i) => {
         const result = e.results[i];
         return { isFinal: result?.isFinal ?? false, transcript: result?.[0].transcript ?? '' };
@@ -120,6 +130,7 @@ export function useSpeech({ onPartial, onFinal, debug = false }: Handlers) {
     };
     r.onerror = (e) => {
       record({ event: 'error', error: e.error });
+      if (e.error === 'network') setError(NETWORK_ERROR);
       const message = FATAL[e.error];
       if (message) {
         wanted.current = false;
@@ -133,7 +144,12 @@ export function useSpeech({ onPartial, onFinal, debug = false }: Handlers) {
       touch();
       record({ event: 'end' });
       flush();
-      if (wanted.current) setTimeout(() => wanted.current && beginRef.current(), RESTART_DELAY_MS);
+      quickEnds.current = Date.now() - startedAt < QUICK_END_MS ? quickEnds.current + 1 : 0;
+      const delay = Math.min(
+        RESTART_DELAY_MS * 2 ** Math.max(0, quickEnds.current - 1),
+        MAX_RESTART_DELAY_MS,
+      );
+      if (wanted.current) setTimeout(() => wanted.current && beginRef.current(), delay);
     };
     rec.current = r;
     try {

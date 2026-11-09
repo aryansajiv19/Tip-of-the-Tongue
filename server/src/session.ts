@@ -125,6 +125,29 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     debug(() => ({ kind: 'speaker', me: speaker, why }));
   }
 
+  // Deepgram sometimes gives one word in the middle of someone's speech a voice number nobody else
+  // has, and one such word must not make the user look like someone else. A voice is a real
+  // person's once it has said a few words; a newcomer also counts if it starts after a gap, as a
+  // turn does (a stray label sits right against the word before it).
+  const REAL_VOICE_WORDS = 3;
+  const TURN_GAP_MS = 300;
+  const isRealVoice = (speaker: number) =>
+    buffer.words().filter((w) => w.speaker === speaker).length >= REAL_VOICE_WORDS;
+  function startedTurn(words: readonly Word[]): boolean {
+    const last = words.at(-1);
+    if (!last || last.speaker === undefined) return false;
+    const before = words.at(-2);
+    return (
+      isRealVoice(last.speaker) ||
+      (before !== undefined && last.startMs - before.endMs >= TURN_GAP_MS)
+    );
+  }
+  // The evidence for "this voice is the user" (an accepted pop-up, a hand ask) counts only from a
+  // real voice, unless nothing is known yet.
+  function learnMe(speaker: number | undefined, why: 'accepted' | 'manual') {
+    if (speaker !== undefined && (me === undefined || isRealVoice(speaker))) setMe(speaker, why);
+  }
+
   // Debug events carry what was said, so nothing is built or sent unless the client asked.
   function debug(info: () => DebugInfo) {
     if (debugOn) send({ type: 'debug', atMs: now(), info: info() });
@@ -154,7 +177,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     const result = checkAcceptance(current, spoken, now(), opts.acceptWindowMs);
     if (result.status === 'accepted') {
       send({ type: 'guess.accepted', id: current.id, word: result.word, afterMs: result.afterMs });
-      if (current.speaker !== undefined) setMe(current.speaker, 'accepted');
+      learnMe(current.speaker, 'accepted');
     } else if (result.status === 'expired') {
       send({ type: 'guess.expired', id: current.id });
     } else if (spoken.filter((w) => w.startMs > current.offeredAtMs).length >= opts.moveOnWords) {
@@ -185,7 +208,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
       word: chosen.word,
       afterMs: now() - offer.offeredAtMs,
     });
-    if (offer.speaker !== undefined) setMe(offer.speaker, 'accepted');
+    learnMe(offer.speaker, 'accepted');
     closeOffer();
   }
 
@@ -328,7 +351,12 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     if (endsWithAskForWord(words)) return askNow();
 
     // The other person is the one who paused: not the user's stall, whatever they say next.
-    if (me !== undefined && last.speaker !== undefined && last.speaker !== me) {
+    if (
+      me !== undefined &&
+      last.speaker !== undefined &&
+      last.speaker !== me &&
+      startedTurn(words)
+    ) {
       discardSpeculation();
       return;
     }
@@ -401,7 +429,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     if (!last) return;
     handledUpToMs = last.endMs;
     // They pressed it because they are stuck, so the last voice is theirs.
-    if (last.speaker !== undefined) setMe(last.speaker, 'manual');
+    learnMe(last.speaker, 'manual');
     const phrase = buffer.recentText();
     send({ type: 'stuck.detected', reason: 'manual', contextWindow: phrase });
     if (!spec) return startGuess(last.endMs, last.startMs - 1, true, true);
