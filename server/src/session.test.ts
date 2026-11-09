@@ -6,7 +6,10 @@ import { createSession } from './session.js';
 
 const T0 = 1_000_000;
 
-function setup(guess: Guesser = mockGuesser, extra: { speculateAfterMs?: number } = {}) {
+function setup(
+  guess: Guesser = mockGuesser,
+  extra: { speculateAfterMs?: number; maxCallsPerMinute?: number } = {},
+) {
   const events: ServerEvent[] = [];
   const session = createSession((e) => events.push(e), {
     guess,
@@ -770,6 +773,45 @@ describe('session pipeline', () => {
       await stall(say, 1);
       await stall(say, 2);
       expect(statuses(events)).toEqual([false]);
+      session.close();
+    });
+  });
+
+  describe('call cap', () => {
+    const stall = 'can you pass me the thing';
+    it('asks Claude at most the cap per minute, then stays silent until the minute passes', async () => {
+      const guess = vi.fn<Guesser>(mockGuesser);
+      const { session, say } = setup(guess, { maxCallsPerMinute: 3 });
+      for (let n = 0; n < 5; n++) {
+        say(`${stall} number${n}`);
+        await vi.advanceTimersByTimeAsync(2000);
+      }
+      expect(guess).toHaveBeenCalledTimes(3);
+      await vi.advanceTimersByTimeAsync(60_000);
+      say(`${stall} again`);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(guess).toHaveBeenCalledTimes(4);
+      session.close();
+    });
+
+    it('lets a manual ask through when capped, and counts it', async () => {
+      const guess = vi.fn<Guesser>(mockGuesser);
+      const { session, say } = setup(guess, { maxCallsPerMinute: 1 });
+      say(`${stall} one`);
+      await vi.advanceTimersByTimeAsync(2000);
+      say('I need the place where you get medicine');
+      session.handle({ type: 'stuck.manual' });
+      await vi.advanceTimersByTimeAsync(50);
+      expect(guess).toHaveBeenCalledTimes(2);
+      session.close();
+    });
+
+    it('sends idle, not a pop-up, for a stall that was capped', async () => {
+      const { session, events, say } = setup(mockGuesser, { maxCallsPerMinute: 0 });
+      say('I need to go to the the place where you get medicine');
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(events.map((e) => e.type)).not.toContain('guess.offered');
+      expect(events.map((e) => e.type)).toContain('guess.idle');
       session.close();
     });
   });

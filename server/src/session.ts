@@ -33,6 +33,8 @@ export interface SessionOptions {
   now?: () => number;
   // Silence after which a guess starts early, before the stall is confirmed. 0 or unset: off.
   speculateAfterMs?: number;
+  // Cap on Claude calls per minute; the default is MAX_CALLS_PER_MINUTE.
+  maxCallsPerMinute?: number;
   // Timing and cost numbers (stall to offer, speculative calls wasted).
   log?: (info: Record<string, unknown>) => void;
   // Called when the guesser or a timer tick fails; the session carries on.
@@ -69,6 +71,10 @@ const VOICED_MAX_MS = 10_000;
 // How much of the call the guesser reads: about eight minutes of speech, so a name from early in
 // the call is still in view.
 const CONVERSATION_WORDS = 1200;
+// At most this many Claude calls a minute per session. The busiest scripted dev conversation
+// (a slow stammering speaker, s28) peaks at 39 in a minute, so normal speech never reaches it.
+// A manual ask always goes through, but counts.
+const MAX_CALLS_PER_MINUTE = 60;
 // How long speculative calls stop after the API refuses or rate-limits us.
 const BACKOFF_MIN_MS = 5_000;
 const BACKOFF_MAX_MS = 30_000;
@@ -118,6 +124,8 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   let guesserDown = false;
   // After a 401/403/429/529 no speculative call starts until then.
   let backoffUntilMs = -Infinity;
+  // When each recent Claude call started, for the per-minute cap.
+  let callTimes: number[] = [];
   let downReason: 'key' | 'busy' | undefined;
 
   // Who the user is: the voice of their first words, then corrected by evidence (a pop-up they
@@ -272,6 +280,15 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
       ...(rejected !== undefined ? { rejected } : {}),
     };
     spec = mine;
+    callTimes = callTimes.filter((t) => now() - t < 60_000);
+    if (!manual && callTimes.length >= (opts.maxCallsPerMinute ?? MAX_CALLS_PER_MINUTE)) {
+      // Over the cap: nothing is asked, so this stall ends as an abstain.
+      mine.result = { candidates: [], abstain: true, latencyMs: 0 };
+      opts.log?.({ capped: true });
+      if (confirmed) offerFrom(mine, mine.result);
+      return;
+    }
+    callTimes.push(now());
     if (!confirmed) speculated++;
     const merged = profile();
     const failed: GuessResult = { candidates: [], abstain: true, latencyMs: 0, error: true };
