@@ -27,6 +27,7 @@ const START_HEIGHT = 44;
 let win: BrowserWindow | undefined;
 let tray: Tray | undefined;
 let listening = false;
+let wantEscape = false;
 const children = startChildren(ROOT, PORTS);
 
 const displays = (): DisplayInfo[] =>
@@ -45,6 +46,15 @@ function show() {
   place();
   // Shows without taking focus, so it never pulls the user out of what they are typing.
   win.showInactive();
+}
+
+// Esc is a global shortcut only while a suggestion is showing and the overlay is visible, so it
+// is never taken from other apps otherwise.
+function syncEscape() {
+  const on = wantEscape && Boolean(win?.isVisible());
+  if (on === globalShortcut.isRegistered('Escape')) return;
+  if (on) globalShortcut.register('Escape', () => win?.webContents.send('escape'));
+  else globalShortcut.unregister('Escape');
 }
 
 function toggle() {
@@ -90,6 +100,8 @@ function createWindow() {
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   void win.loadURL(URL);
   win.once('ready-to-show', show);
+  win.on('show', syncEscape);
+  win.on('hide', syncEscape);
 }
 
 function createTray() {
@@ -111,6 +123,12 @@ function wire() {
   ipcMain.on('overlay:state', (event: IpcMainEvent, state: unknown) => {
     if (event.sender !== win?.webContents) return;
     listening = Boolean((state as { listening?: unknown } | null)?.listening);
+  });
+
+  ipcMain.on('overlay:escape', (event: IpcMainEvent, on: unknown) => {
+    if (event.sender !== win?.webContents) return;
+    wantEscape = on === true;
+    syncEscape();
   });
 
   globalShortcut.register('CommandOrControl+\\', toggle);

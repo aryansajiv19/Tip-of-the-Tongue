@@ -3,6 +3,7 @@ import { Check, CircleAlert } from 'lucide-react';
 import type { Candidate } from '../../../server/src/events';
 import { confidenceDots } from './cardView';
 import type { CardState } from './cardState';
+import { desktop } from './desktop';
 import './card.css';
 
 interface Props {
@@ -57,7 +58,12 @@ export function SuggestionCard({ card, problem, onPick, onDismiss }: Props) {
       if (e.key === 'Escape') onDismiss();
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // The desktop overlay never takes focus, so Esc has to come from a global shortcut.
+    const releaseEscape = desktop?.captureEscape(onDismiss);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      releaseEscape?.();
+    };
   }, [content, onDismiss]);
 
   return (

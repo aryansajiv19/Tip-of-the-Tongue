@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Word } from '../../../server/src/events';
 import { applyResults, emptySpeech, flushSpeech, resetSpeech, type SpeechState } from './results';
 import { isStale } from './stampWords';
+import { MIC_BLOCKED } from '../ui/desktop';
 
 // The Web Speech API is not in TypeScript's DOM types, so declare the little we use.
 interface Alternative {
@@ -41,8 +42,7 @@ const WATCHDOG_CHECK_MS = 5000;
 
 // Errors after which restarting would just fail again.
 const FATAL: Record<string, string> = {
-  'not-allowed':
-    'Microphone access was blocked. Allow it in the browser address bar, then press Start.',
+  'not-allowed': MIC_BLOCKED,
   'service-not-allowed': 'Speech recognition is not allowed in this browser. Try Chrome or Edge.',
   'audio-capture': 'No microphone was found. Connect one, then press Start.',
   'language-not-supported': 'This language is not supported by speech recognition.',

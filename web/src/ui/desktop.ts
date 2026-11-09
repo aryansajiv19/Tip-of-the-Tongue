@@ -5,6 +5,7 @@ import { commandForKey, type Command } from './commands';
 export interface DesktopBridge {
   onCommand(cb: (command: Exclude<Command, 'toggle-visible'>) => void): () => void;
   setHeight(px: number): void;
+  captureEscape(cb: () => void): () => void;
   report(state: { listening: boolean }): void;
 }
 
@@ -30,3 +31,8 @@ export function useCommands(handler: (command: Command) => void) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 }
+
+// Where the user turns the microphone back on differs between the app and a browser tab.
+export const MIC_BLOCKED = `Microphone access was blocked. Allow it in ${
+  desktop ? 'System Settings > Privacy & Security > Microphone' : 'the browser address bar'
+}, then press Start.`;
