@@ -76,7 +76,7 @@ Open it with the gear button.
 - **Keys.** Paste, check or remove your keys.
 - **Privacy.** See section 7.
 
-**Meeting notes** (the button on the control bar): drop in a PDF, Markdown or text file, and the app uses its names and terms. **About you** holds your name, role and words you often need.
+**Notes** (the button on the control bar): drop in a PDF, Markdown or text file, and the app uses its names and terms. **About you** holds your name, role and words you often need.
 
 ## 7. Privacy: what is kept, and where
 
@@ -84,7 +84,7 @@ Open it with the gear button.
 - **The conversation is not saved.** What was heard is kept in memory while the app runs, and gone when you press New conversation or quit.
 - **Claude sees text.** To find a word, the app sends Anthropic the recent words of the conversation, your meeting notes and the words in About you. Both providers handle that under their own terms; read them if this matters to you.
 - **On your computer only:** your settings, your name, role and words from About you, and **remembered words** (words you accepted, never what was said around them). Your keys are kept encrypted with the keychain. Meeting notes are not saved: they last until you remove them or quit.
-- **To forget:** open **Settings > Privacy**. Each remembered word has a remove button. **Forget everything** (it asks you to confirm) clears About you, remembered words and your meeting notes. **Clear About you** in the Meeting notes panel clears only that. Remove a key under **Settings > Keys**.
+- **To forget:** open **Settings > Privacy**. Each remembered word has a remove button. **Forget everything** (it asks you to confirm) clears About you, remembered words and your meeting notes. **Clear About you** in the Notes panel clears only that. Remove a key under **Settings > Keys**.
 
 ## 8. Troubleshooting
 
