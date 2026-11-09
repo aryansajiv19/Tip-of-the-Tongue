@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Word } from '../../../server/src/events';
 import { applyResults, emptySpeech, flushSpeech, resetSpeech, type SpeechState } from './results';
 import { isStale } from './stampWords';
-import { MIC_BLOCKED } from '../ui/desktop';
+import { MIC_BLOCKED, SPEECH_UNREACHABLE } from '../ui/desktop';
 
 // The Web Speech API is not in TypeScript's DOM types, so declare the little we use.
 interface Alternative {
@@ -41,8 +41,6 @@ const RESTART_DELAY_MS = 250;
 // each try waits twice as long as the last, up to the cap, instead of hammering it.
 const QUICK_END_MS = 2000;
 const MAX_RESTART_DELAY_MS = 8000;
-const NETWORK_ERROR =
-  'Speech recognition cannot reach its service. Check your connection; I keep trying.';
 // In a quiet room this restarts the recognizer about every 20 s (a brief gap): cheaper than missing a silent stall.
 const WATCHDOG_CHECK_MS = 5000;
 
@@ -117,7 +115,7 @@ export function useSpeech({ onPartial, onFinal, debug = false }: Handlers) {
     r.onresult = (e) => {
       touch();
       quickEnds.current = 0;
-      setError((current) => (current === NETWORK_ERROR ? null : current));
+      setError((current) => (current === SPEECH_UNREACHABLE ? null : current));
       const results = Array.from({ length: e.results.length }, (_, i) => {
         const result = e.results[i];
         return { isFinal: result?.isFinal ?? false, transcript: result?.[0].transcript ?? '' };
@@ -130,7 +128,7 @@ export function useSpeech({ onPartial, onFinal, debug = false }: Handlers) {
     };
     r.onerror = (e) => {
       record({ event: 'error', error: e.error });
-      if (e.error === 'network') setError(NETWORK_ERROR);
+      if (e.error === 'network') setError(SPEECH_UNREACHABLE);
       const message = FATAL[e.error];
       if (message) {
         wanted.current = false;
