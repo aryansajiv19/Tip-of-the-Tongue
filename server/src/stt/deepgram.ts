@@ -106,14 +106,26 @@ const IDLE_CLOSE_MS = 3000;
 // Audio arrives in ~100 ms chunks, so the first chunk started about this long before it arrived.
 // ponytail: origin is estimated from arrival time, off by network jitter (~tens of ms).
 const CHUNK_MS = 100;
+// A far-off clock counts as lost audio when the next chunk shows the same lag, give or take this.
+const SAME_LAG_MS = 50;
 interface Timeline {
   origin: number;
   chunks: number;
+  // Corrections still needed for words yet to be reported (the last few seconds of audio), and
+  // the sum of all the older ones, which apply to every word that can still arrive.
   shifts: { atMs: number; shiftMs: number }[];
+  base: number;
+  // The sum of every correction so far.
+  total: number;
+  // A far-off clock that has not lasted yet: audio that arrives late in a burst looks like a
+  // gap at first, but catches up on the next chunk, and then nothing was lost.
+  doubt: { atMs: number; lagMs: number } | undefined;
 }
+// Corrections older than this much audio are folded into `base`: no result is that late.
+const KEEP_SHIFTS_MS = 10_000;
 // The total correction for a word at this audio position.
 const shiftedBy = (t: Timeline, audioMs: number): number =>
-  t.shifts.reduce((sum, s) => (s.atMs <= audioMs ? sum + s.shiftMs : sum), 0);
+  t.shifts.reduce((sum, s) => (s.atMs <= audioMs ? sum + s.shiftMs : sum), t.base);
 // Audio further than this from real time is corrected (network jitter is well under it).
 const MAX_LAG_MS = 300;
 // Audio kept while the connection opens: about 5 s.
@@ -146,7 +158,14 @@ export function createDeepgramStream(opts: DeepgramOptions) {
   // given so far, to notice that. Each correction is kept with the audio position it starts at:
   // results come 0.3 to 1 s after the audio, so words from before the gap still arrive later and
   // must keep their time.
-  let timeline: Timeline = { origin: 0, chunks: 0, shifts: [] };
+  let timeline: Timeline = {
+    origin: 0,
+    chunks: 0,
+    shifts: [],
+    base: 0,
+    total: 0,
+    doubt: undefined,
+  };
   let pending: Buffer[] = [];
   let idleTimer: NodeJS.Timeout | undefined;
   // Once the retries run out the caller falls back to browser speech recognition, and a probe
@@ -220,7 +239,14 @@ export function createDeepgramStream(opts: DeepgramOptions) {
 
   function open() {
     opts.onStreamStart?.();
-    const own: Timeline = { origin: now() - CHUNK_MS, chunks: 0, shifts: [] };
+    const own: Timeline = {
+      origin: now() - CHUNK_MS,
+      chunks: 0,
+      shifts: [],
+      base: 0,
+      total: 0,
+      doubt: undefined,
+    };
     timeline = own;
     const urlTerms = opts.keyterms?.() ?? [];
     const socket = connect(deepgramUrl(language, urlTerms, opts.diarize), opts.apiKey);
@@ -297,6 +323,20 @@ export function createDeepgramStream(opts: DeepgramOptions) {
     });
   }
 
+  function checkLag(t: Timeline, lag: number) {
+    const doubt = t.doubt;
+    t.doubt = undefined;
+    if (doubt && Math.abs(lag - doubt.lagMs) <= SAME_LAG_MS) {
+      t.shifts.push({ atMs: doubt.atMs, shiftMs: doubt.lagMs });
+      t.total += doubt.lagMs;
+      const old = t.shifts.filter((x) => x.atMs < t.chunks * CHUNK_MS - KEEP_SHIFTS_MS);
+      t.base += old.reduce((sum, x) => sum + x.shiftMs, 0);
+      t.shifts = t.shifts.filter((x) => !old.includes(x));
+    } else if (Math.abs(lag) > MAX_LAG_MS) {
+      t.doubt = { atMs: (t.chunks - 1) * CHUNK_MS, lagMs: lag };
+    }
+  }
+
   function keepIdleTimer() {
     clearTimeout(idleTimer);
     idleTimer = setTimeout(drop, IDLE_CLOSE_MS);
@@ -314,11 +354,8 @@ export function createDeepgramStream(opts: DeepgramOptions) {
       timeline.chunks++;
       // Real-time audio keeps this near zero. Far from it, audio went missing (or came late in
       // a burst): move the origin by that much so word times follow the clock again.
-      const lag =
-        now() - timeline.origin - shiftedBy(timeline, Infinity) - timeline.chunks * CHUNK_MS;
-      if (Math.abs(lag) > MAX_LAG_MS) {
-        timeline.shifts.push({ atMs: (timeline.chunks - 1) * CHUNK_MS, shiftMs: lag });
-      }
+      const lag = now() - timeline.origin - timeline.total - timeline.chunks * CHUNK_MS;
+      checkLag(timeline, lag);
       keepIdleTimer();
     },
     close() {
