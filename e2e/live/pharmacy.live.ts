@@ -32,7 +32,7 @@ test('a spoken circumlocution produces a pharmacy pop-up through real Deepgram a
   });
 
   await page.goto('/');
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(page.getByRole('status').first()).toHaveText('Connected');
   await expect.poll(() => events.find((e) => e.type === 'session.ready')?.detail).toBe('deepgram');
 
   await page.getByRole('button', { name: 'Start listening' }).click();

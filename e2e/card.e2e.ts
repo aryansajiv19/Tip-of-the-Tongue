@@ -7,7 +7,7 @@ const status = (page: Page) => page.getByRole('status').first();
 async function start(page: Page) {
   const server = await fakeServer(page);
   await page.goto('/');
-  await expect(status(page)).toHaveText('Server: connected');
+  await expect(status(page)).toHaveText('Connected');
   return server;
 }
 
@@ -215,7 +215,7 @@ test.describe('problems show as one short line, in red, never a dialog', () => {
   test('the suggestion service is down, then back', async ({ page }) => {
     const server = await start(page);
     server.send({ type: 'guesser.status', ok: false });
-    const line = offer(page).getByRole('alert');
+    const line = offer(page).locator('.card-problem');
     await expect(line).toHaveText('Suggestions are unavailable right now. Listening continues.');
     expect(await line.evaluate((e) => getComputedStyle(e).color)).toBe('rgb(248, 113, 113)');
     expect(await page.getByRole('dialog').count()).toBe(0);
@@ -230,7 +230,7 @@ test.describe('problems show as one short line, in red, never a dialog', () => {
       else ws.connectToServer();
     });
     await page.goto('/');
-    await expect(offer(page).getByRole('alert')).toHaveText('Not connected. Reconnecting…');
+    await expect(offer(page).locator('.card-problem')).toHaveText('Not connected. Reconnecting…');
     down = false;
     await expect(offer(page)).toHaveText('', { timeout: 15_000 });
   });
@@ -254,6 +254,6 @@ test.describe('problems show as one short line, in red, never a dialog', () => {
     server.send(offered('a', [['renewal', 0.9]]));
     server.send({ type: 'guesser.status', ok: false });
     await expect(primary(page)).toHaveText('renewal');
-    await expect(offer(page).getByRole('alert')).toHaveCount(0);
+    await expect(offer(page).locator('.card-problem')).toHaveCount(0);
   });
 });

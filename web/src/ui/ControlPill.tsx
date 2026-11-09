@@ -78,8 +78,8 @@ export function ControlPill(p: Props) {
         <kbd
           className="keycap"
           role="img"
-          aria-label={`${p.modifier} backslash: start or pause listening`}
-          title="Start or pause listening"
+          aria-label={`${p.modifier} backslash: show or hide this overlay`}
+          title="Show or hide this overlay"
         >
           {p.modifier}\
         </kbd>

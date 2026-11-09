@@ -17,7 +17,7 @@ test('the card stays while hovered and goes after it is left; recent words are l
 }) => {
   const server = await fakeServer(page);
   await page.goto('/');
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(page.getByRole('status').first()).toHaveText('Connected');
   server.send({ type: 'stuck.detected', reason: 'pause', contextWindow: 'the' });
   server.send(offered('o1', THREE));
   const card = offer(page).locator('.suggestion');

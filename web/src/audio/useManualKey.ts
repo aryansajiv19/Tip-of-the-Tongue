@@ -1,8 +1,26 @@
 import { useEffect, useRef } from 'react';
 
 // Space should only ask for a word when it isn't being used for something else.
-export function isTypingTarget(el: { tagName?: string; isContentEditable?: boolean } | null) {
+const OWN_SPACE_ROLES = [
+  'button',
+  'radio',
+  'checkbox',
+  'switch',
+  'tab',
+  'menuitem',
+  'option',
+  'link',
+];
+
+export function isTypingTarget(
+  el: {
+    tagName?: string;
+    isContentEditable?: boolean;
+    getAttribute?: (n: string) => string | null;
+  } | null,
+) {
   if (!el) return false;
+  if (OWN_SPACE_ROLES.includes(el.getAttribute?.('role') ?? '')) return true;
   if (el.isContentEditable) return true;
   return ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A', 'SUMMARY'].includes(el.tagName ?? '');
 }

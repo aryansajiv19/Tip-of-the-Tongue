@@ -3,6 +3,7 @@ import { Check, FileText, X } from 'lucide-react';
 import { MAX_TEXT_CHARS, aboutYou } from '../settings/aboutYou';
 import { useAboutYouState } from '../settings/useAboutYou';
 import { readDocument } from './readDocument';
+import { useReturnFocus } from './useReturnFocus';
 import type { RecentWord } from './recentWords';
 import './prepDrawer.css';
 
@@ -24,6 +25,7 @@ interface Props {
 // A compact drawer under the pill: drop a PDF, .md or .txt file and it becomes the brief.
 export function PrepDrawer({ docName, terms, recent, onLoad, onClear, onClose }: Props) {
   const input = useRef<HTMLInputElement>(null);
+  const drawer = useReturnFocus<HTMLElement>();
   const { about, remembered } = useAboutYouState();
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -50,6 +52,8 @@ export function PrepDrawer({ docName, terms, recent, onLoad, onClear, onClose }:
   return (
     <section
       id="prep-drawer"
+      ref={drawer}
+      tabIndex={-1}
       className="prep glass"
       aria-label="Meeting prep"
       onKeyDown={(e) => e.key === 'Escape' && onClose()}

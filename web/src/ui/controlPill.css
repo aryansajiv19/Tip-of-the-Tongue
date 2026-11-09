@@ -1,4 +1,6 @@
 .control-pill {
+  /* The pill is fixed size: Large text applies to what is read, not the controls. */
+  --text-sm: 14px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -109,7 +111,6 @@
   flex-direction: column;
   align-items: stretch;
   gap: calc(var(--space-1) / 2);
-  margin-left: var(--space-1);
 }
 
 /* The desktop window and the browser both place the overlay; the card slot sits under the pill. */

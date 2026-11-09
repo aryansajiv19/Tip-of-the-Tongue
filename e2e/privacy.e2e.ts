@@ -20,7 +20,7 @@ test.beforeEach(async ({ page }) => {
 async function openSettings(page: import('@playwright/test').Page) {
   const server = await fakeServer(page);
   await page.goto('/');
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(page.getByRole('status').first()).toHaveText('Connected');
   await page.getByRole('button', { name: 'Settings' }).click();
   return server;
 }
@@ -69,7 +69,7 @@ test('Forget everything clears About you, remembered words and the copy on this 
 test('About you can be cleared on its own from the drawer', async ({ page }) => {
   await fakeServer(page);
   await page.goto('/');
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(page.getByRole('status').first()).toHaveText('Connected');
   await page.getByRole('button', { name: /^Meeting prep/ }).click();
   await page.getByRole('button', { name: 'Clear About you' }).click();
   await expect(page.getByLabel('Name')).toHaveValue('');

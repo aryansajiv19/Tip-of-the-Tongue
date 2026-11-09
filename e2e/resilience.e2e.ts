@@ -13,11 +13,11 @@ test('page survives the server going away and reconnects when it returns', async
   });
   down = true;
   await page.goto('/?debug=1');
-  await expect(page.getByRole('status').first()).toHaveText('Server: reconnecting');
+  await expect(page.getByRole('status').first()).toHaveText('Not connected. Reconnecting…');
   await expect(page.getByRole('group', { name: 'Listening controls' })).toBeVisible();
 
   down = false;
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected', {
+  await expect(page.getByRole('status').first()).toHaveText('Connected', {
     timeout: 20_000,
   });
 });

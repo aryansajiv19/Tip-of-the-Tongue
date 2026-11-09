@@ -74,7 +74,7 @@ async function listening(page: Page, options?: MicOptions) {
   await installFakeSpeech(page);
   const fake = await fakeServer(page);
   await page.goto('/?debug=1');
-  await expect(status(page)).toHaveText('Server: connected');
+  await expect(status(page)).toHaveText('Connected');
   fake.server.say({ type: 'session.ready', stt: 'deepgram' });
   await start(page).click();
   await expect.poll(() => fake.audio.length, { timeout: 5000 }).toBeGreaterThan(3);
@@ -186,7 +186,7 @@ test.describe('hands on the buttons', () => {
     await installFakeSpeech(page);
     const { audio, server } = await fakeServer(page);
     await page.goto('/?debug=1');
-    await expect(status(page)).toHaveText('Server: connected');
+    await expect(status(page)).toHaveText('Connected');
     server.say({ type: 'session.ready', stt: 'deepgram' });
     await start(page).dblclick();
     await expect.poll(() => audio.length, { timeout: 5000 }).toBeGreaterThan(3);
@@ -219,7 +219,7 @@ test.describe('hands on the buttons', () => {
   }) => {
     await installFakeSpeech(page);
     await page.goto('/?debug=1');
-    await expect(status(page)).toHaveText('Server: connected');
+    await expect(status(page)).toHaveText('Connected');
     for (let i = 0; i < 40; i++) {
       await (i % 2 === 0 ? start(page) : pause(page)).click({ delay: 0 });
     }
@@ -246,10 +246,10 @@ test('in the desktop app, speech that cannot be reached says to add a Deepgram k
   });
   await installFakeSpeech(page);
   await page.goto('/?debug=1');
-  await expect(status(page)).toHaveText('Server: connected');
+  await expect(status(page)).toHaveText('Connected');
   await start(page).click();
   await failRecognition(page, 'network');
-  await expect(page.getByRole('alert')).toContainText('Add DEEPGRAM_API_KEY to .env');
+  await expect(page.getByRole('alert')).toContainText('Speech needs a Deepgram key');
   await expect(page.getByRole('alert')).not.toContainText('connection');
 });
 
@@ -258,7 +258,7 @@ test('browser speech that cannot reach its service backs off instead of restarti
 }) => {
   await installFakeSpeech(page);
   await page.goto('/?debug=1');
-  await expect(status(page)).toHaveText('Server: connected');
+  await expect(status(page)).toHaveText('Connected');
   await start(page).click();
   // The service is unreachable: every session errors and ends at once.
   const stop = Date.now() + 4000;
