@@ -1,4 +1,5 @@
-import Fastify from 'fastify';
+import { createHash, timingSafeEqual } from 'node:crypto';
+import Fastify, { type FastifyRequest } from 'fastify';
 import websocket from '@fastify/websocket';
 import { config } from './config.js';
 import { ClientEventSchema, type ServerEvent } from './events.js';
@@ -6,6 +7,7 @@ import { createGlossaryBuilder, type GlossaryBuilder } from './guess/glossary.js
 import { createGuesser } from './guess/guesser.js';
 import type { Profile } from './guess/profile.js';
 import type { Guesser } from './guess/types.js';
+import { serveFolder } from './static.js';
 import { createSession, type SessionOptions } from './session.js';
 import { createDeepgramStream, type DeepgramOptions } from './stt/deepgram.js';
 
@@ -23,6 +25,12 @@ export interface AppDeps {
   heartbeatMs?: number;
   profile?: Profile;
   buildGlossary?: GlossaryBuilder;
+  // Defaults to config.logFile (LOG_FILE): append the log here instead of writing it to stdout.
+  logFile?: string;
+  // Defaults to config.token (TOTT_TOKEN): a WebSocket must open with ?token=<it>.
+  token?: string;
+  // Defaults to config.webDist (WEB_DIST): a built web folder to serve at /.
+  webDist?: string;
   // Defaults to config.allowedOrigins.
   allowedOrigins?: string[];
   // Server-side speech-to-text; defaults to Deepgram when DEEPGRAM_API_KEY is set.
@@ -32,10 +40,15 @@ export interface AppDeps {
 }
 
 export async function buildApp(deps: AppDeps = {}) {
+  const logFile = deps.logFile ?? config.logFile;
   const app = Fastify({
     logger: {
       level: process.env.LOG_LEVEL ?? 'info',
-      ...(deps.logStream ? { stream: deps.logStream } : {}),
+      ...(deps.logStream ? { stream: deps.logStream } : logFile ? { file: logFile } : {}),
+      // The token travels in the query string, so it must not reach the log.
+      serializers: {
+        req: (req: FastifyRequest) => ({ method: req.method, url: req.url.replace(/\?.*/, '') }),
+      },
     },
   });
   await app.register(websocket, { options: { maxPayload: MAX_MESSAGE_BYTES } });
@@ -77,8 +90,22 @@ export async function buildApp(deps: AppDeps = {}) {
   });
 
   app.get('/health', async () => ({ ok: true }));
+  const webDist = deps.webDist ?? config.webDist;
+  if (webDist) serveFolder(app, webDist);
 
-  app.get('/ws', { websocket: true }, (socket) => {
+  const token = deps.token ?? config.token;
+  // Digests, so the comparison takes the same time whatever the length or the first wrong byte.
+  const digest = (s: string) => createHash('sha256').update(s).digest();
+  const tokenOk = (given: string | null) =>
+    token === undefined || (given !== null && timingSafeEqual(digest(given), digest(token)));
+
+  app.get('/ws', { websocket: true }, (socket, req) => {
+    // A browser cannot read the status of a refused upgrade, so the socket opens and closes with 4401.
+    if (!tokenOk(new URL(req.url, 'http://localhost').searchParams.get('token'))) {
+      app.log.warn('ws: rejected token');
+      socket.close(4401, 'token');
+      return;
+    }
     const send = (event: ServerEvent) => {
       // Type only at info level: payloads contain what the user said.
       app.log.info({ type: event.type }, 'ws: send');
