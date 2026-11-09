@@ -18,7 +18,7 @@ const KEY_PATTERN = /^[\x21-\x7e]{8,300}$/;
 // Keys encrypted with the OS keychain (safeStorage), kept in one file. Nothing is ever written
 // unencrypted: without encryption, saving fails.
 export function createKeyStore(file: string, cipher: Cipher) {
-  const read = (): Partial<Record<KeyName, string>> => {
+  const read = (): Partial<Record<KeyName, string | undefined>> => {
     try {
       const parsed: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
       return typeof parsed === 'object' && parsed !== null ? parsed : {};
