@@ -19,6 +19,7 @@ import {
   labelStats,
   lineForTime,
   pausePoint,
+  silenceBefore,
   TAIL_MS,
   trackTime,
   type Pause,
@@ -104,16 +105,29 @@ export async function runLive(
     await sleep(1500);
     ws.close();
 
+    const words: Word[] = events.flatMap(({ event }) =>
+      event.type === 'transcript.final' ? event.words : [],
+    );
+    const onTrack = (serverMs: number) => trackTime(serverMs - start.epochMs, start.pause);
+    const wordEnds = words.map((w) => onTrack(w.endMs));
     const offers: Offer[] = events.flatMap(({ perfMs, event }) => {
       if (event.type !== 'guess.offered') return [];
       const atMs = trackTime(perfMs - start.perfMs, start.pause);
-      const line = lineForTime(placed, atMs);
       return [
-        { atMs, candidates: event.candidates, line, silenceMs: atMs - (placed[line]?.endMs ?? 0) },
+        {
+          atMs,
+          candidates: event.candidates,
+          line: lineForTime(placed, atMs),
+          silenceMs: silenceBefore(wordEnds, atMs),
+        },
       ];
     });
-    const words: Word[] = events.flatMap(({ event }) =>
-      event.type === 'transcript.final' ? event.words : [],
+    // What the session reported about each moment, on the audio track's clock, for working out
+    // why a stall was missed.
+    const trace = events.flatMap(({ perfMs, event }) =>
+      event.type === 'debug'
+        ? [{ atMs: trackTime(perfMs - start.perfMs, start.pause), info: event.info }]
+        : [],
     );
     const chosen = events
       .flatMap(({ event }) =>
@@ -126,9 +140,14 @@ export async function runLive(
       score: scoreScenario(sc.id, sc.type, placed, offers),
       placed,
       offers,
-      labels: labelStats(words, placed, (serverMs) =>
-        trackTime(serverMs - start.epochMs, start.pause),
-      ),
+      labels: labelStats(words, placed, onTrack),
+      words: words.map((w, i) => ({
+        text: w.text,
+        startMs: onTrack(w.startMs),
+        endMs: wordEnds[i] ?? 0,
+        ...(w.speaker === undefined ? {} : { speaker: w.speaker }),
+      })),
+      trace,
       chosen,
     };
   } finally {
@@ -216,6 +235,9 @@ async function main(): Promise<void> {
         offers: r.offers,
         labels: r.labels,
         chosen: r.chosen,
+        words: r.words,
+        trace: r.trace,
+        lines: r.placed.map((p) => ({ s: p.line.s, startMs: p.startMs, endMs: p.endMs })),
       })),
       null,
       2,

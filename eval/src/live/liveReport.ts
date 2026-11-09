@@ -1,3 +1,4 @@
+import type { DebugInfo } from '../../../server/src/events.js';
 import { wilson, type Rate } from '../metrics.js';
 import type { ScenarioScore } from '../score.js';
 import { summarize } from '../score.js';
@@ -12,6 +13,10 @@ export interface LiveRun {
   placed: PlacedLine[];
   offers: Offer[];
   labels: LabelStats;
+  // Words as the recogniser returned them, and the session's debug events, both on the audio
+  // track's clock.
+  words: { text: string; startMs: number; endMs: number; speaker?: number }[];
+  trace: { atMs: number; info: DebugInfo }[];
   // The voice number the session settled on as the user's, if it chose one.
   chosen: number | undefined;
 }
@@ -96,7 +101,7 @@ export function renderLiveReport(
     ),
     row('All', runs),
     '',
-    'The other person is spoken by a contrasting voice. Label accuracy is the share of words labelled with their speaker\'s usual voice number. "End of speech to pop-up" is measured from the end of the line to the pop-up.',
+    'The other person is spoken by a contrasting voice. Label accuracy is the share of words labelled with their speaker\'s usual voice number. "End of speech to pop-up" is measured from the end of the last word before the pop-up.',
     '',
     '## Failures',
     '',

@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { Word } from '../../../server/src/events.js';
 import { durationMs, silence } from './audio.js';
-import { buildTrack, labelStats, lineForTime, pausePoint, TAIL_MS, trackTime } from './track.js';
+import {
+  buildTrack,
+  labelStats,
+  lineForTime,
+  pausePoint,
+  silenceBefore,
+  TAIL_MS,
+  trackTime,
+} from './track.js';
 import type { Scenario } from '../scenarios.js';
 
 type Line = Scenario['lines'][number];
@@ -62,13 +70,23 @@ describe('lineForTime', () => {
       [me(), 800],
     ]),
   );
-  it('is the last line whose speech had ended', () => {
+  it('is the last line that had started, so a pop-up while the user still talks counts for that line', () => {
     expect(lineForTime(placed, 100)).toBe(-1);
-    expect(lineForTime(placed, 1499)).toBe(-1);
-    expect(lineForTime(placed, 1500)).toBe(0);
-    expect(lineForTime(placed, 2699)).toBe(0);
-    expect(lineForTime(placed, 2700)).toBe(1);
+    expect(lineForTime(placed, 499)).toBe(-1);
+    expect(lineForTime(placed, 500)).toBe(0);
+    expect(lineForTime(placed, 1460)).toBe(0);
+    // 40 ms before the end of the second line's speech, still that line
+    expect(lineForTime(placed, 2660)).toBe(1);
     expect(lineForTime(placed, 99_999)).toBe(2);
+  });
+});
+
+describe('silenceBefore', () => {
+  it('counts from the end of the last word before the moment, never negative', () => {
+    expect(silenceBefore([1000, 1400, 2500], 2000)).toBe(600);
+    expect(silenceBefore([1000, 1400, 2500], 2500)).toBe(0);
+    expect(silenceBefore([1000], 900)).toBe(0);
+    expect(silenceBefore([], 900)).toBe(0);
   });
 });
 

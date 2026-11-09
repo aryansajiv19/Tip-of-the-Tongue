@@ -35,13 +35,20 @@ export function buildTrack(lines: RenderedLine[]): { pcm: Buffer; placed: Placed
   return { pcm: Buffer.concat(parts), placed };
 }
 
-// The line a pop-up belongs to: the last line whose speech had ended by then.
+// The line a pop-up belongs to: the last line that had started by then, so one that appears while
+// the user is still talking counts for that line (as in the text replay), not for the line before.
 export function lineForTime(placed: readonly PlacedLine[], ms: number): number {
   let found = -1;
   placed.forEach((p, i) => {
-    if (p.endMs <= ms) found = i;
+    if (p.startMs <= ms) found = i;
   });
   return found;
+}
+
+// How long it had been since the end of the last word spoken before `ms` (0 if none yet).
+export function silenceBefore(wordEnds: readonly number[], ms: number): number {
+  const last = Math.max(-1, ...wordEnds.filter((e) => e <= ms));
+  return last < 0 ? 0 : ms - last;
 }
 
 // The line a spoken word belongs to: the last line that had started (within 150 ms) by then.

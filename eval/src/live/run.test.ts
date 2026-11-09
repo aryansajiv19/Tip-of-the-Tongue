@@ -78,6 +78,9 @@ describe.skipIf(!canSpeak)('runLive, with a stand-in for Deepgram', () => {
     // The pop-up comes after the line's speech ended.
     expect(run.offers[0]?.silenceMs).toBeGreaterThan(0);
     expect(run.labels.heard[0]).toContain('medicine');
+    // kept for working out misses: the words and the session's debug events, on the track clock
+    expect(run.words.map((w) => w.text)).toContain('medicine');
+    expect(run.trace.some((t) => t.info.kind === 'speaker')).toBe(true);
     expect(run.chosen).toBe(1);
     expect(run.labels.userLabel).toBe(1);
   }, 60_000);
