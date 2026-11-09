@@ -19,19 +19,17 @@ describe('confidenceDots', () => {
 });
 
 describe('statusLine', () => {
-  const ok = { micError: null, connection: 'connected' as const, guesserDown: false };
+  const ok = { connection: 'connected' as const, guesserDown: false };
 
   it('is nothing when all is well', () => expect(statusLine(ok)).toBeNull());
 
   it('shows one line, the most important first', () => {
     const all = {
-      micError: 'Microphone blocked.',
       connection: 'reconnecting' as const,
       guesserDown: true,
     };
-    expect(statusLine(all)).toBe('Microphone blocked.');
-    expect(statusLine({ ...all, micError: null })).toMatch(/Not connected/);
-    expect(statusLine({ ...all, micError: null, connection: 'connected' })).toMatch(/unavailable/);
+    expect(statusLine(all)).toMatch(/Not connected/);
+    expect(statusLine({ ...all, connection: 'connected' })).toMatch(/unavailable/);
   });
 
   it('says nothing while the first connection is still being made', () => {

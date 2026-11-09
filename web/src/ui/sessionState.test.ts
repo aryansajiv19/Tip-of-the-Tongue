@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  contextLabel,
   elapsedMs,
   formatClock,
   idleClock,
   pauseClock,
   resetClock,
-  sessionMode,
   startClock,
 } from './sessionState';
 
@@ -65,14 +65,20 @@ describe('formatClock', () => {
   });
 });
 
-describe('sessionMode', () => {
-  it('is Everyday without a brief', () => {
-    expect(sessionMode(null)).toBe('Everyday');
-    expect(sessionMode('')).toBe('Everyday');
-    expect(sessionMode('  \n ')).toBe('Everyday');
+describe('contextLabel', () => {
+  it('invites the user to add context while nothing is loaded', () => {
+    expect(contextLabel(null)).toBe('Add context');
+    expect(contextLabel('')).toBe('Add context');
+    expect(contextLabel('  \n ', 'notes.txt')).toBe('Add context');
   });
 
-  it('is Meeting once a brief is loaded', () => {
-    expect(sessionMode('Q3 review with Northwind')).toBe('Meeting');
+  it('names the loaded file', () => {
+    expect(contextLabel('Q3 review with Northwind', 'agenda.pdf')).toBe(
+      'Meeting \u00b7 agenda.pdf',
+    );
+  });
+
+  it('is just Meeting for a pasted brief', () => {
+    expect(contextLabel('Q3 review with Northwind')).toBe('Meeting');
   });
 });

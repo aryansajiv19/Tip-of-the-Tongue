@@ -107,10 +107,26 @@ test('the default microphone asks for no particular device', async ({ page }) =>
   expect((await asked(page)).every((c) => c.audio.deviceId === undefined)).toBe(true);
 });
 
-test('debug is off by default, remembered, and sends session.debug', async ({ page }) => {
+test('without ?debug=1 there are no debug controls, even with a stale saved choice', async ({
+  page,
+}) => {
   await installMics(page);
   const server = await fakeServer(page);
+  await page.addInitScript(() => localStorage.setItem('tott.debug', '1'));
   await page.goto('/');
+  await expect(status(page)).toHaveText('Server: connected');
+  await gear(page).click();
+  await expect(panel(page)).toBeVisible();
+  await expect(panel(page).getByLabel('Debug')).toHaveCount(0);
+  expect(server.count('session.debug')).toBe(0);
+});
+
+test('debug (?debug=1) is off by default, remembered, and sends session.debug', async ({
+  page,
+}) => {
+  await installMics(page);
+  const server = await fakeServer(page);
+  await page.goto('/?debug=1');
   await expect(status(page)).toHaveText('Server: connected');
   expect(server.count('session.debug')).toBe(0);
   await gear(page).click();

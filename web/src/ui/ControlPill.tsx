@@ -1,6 +1,6 @@
 import { useSyncExternalStore, type ReactNode } from 'react';
 import { ChevronDown, Pause, Play, RotateCcw } from 'lucide-react';
-import { formatClock, type Mode } from './sessionState';
+import { formatClock } from './sessionState';
 import { BAR_COUNT, barHeights } from './levelBars';
 import { levelStore } from './levelStore';
 import './controlPill.css';
@@ -10,7 +10,10 @@ interface Props {
   // False when this browser can't listen at all: the button is shown but disabled.
   canListen: boolean;
   elapsedMs: number;
-  mode: Mode;
+  // The context button's text: "Add context", or "Meeting \u00b7 <file>".
+  contextLabel: string;
+  // True once something is loaded.
+  hasContext: boolean;
   prepOpen: boolean;
   onTogglePrep: () => void;
   // What to print on the keycaps: "⌘" or "Ctrl".
@@ -50,21 +53,38 @@ export function ControlPill(p: Props) {
       <button
         type="button"
         className="pill-mode"
-        aria-label={`Meeting prep, ${p.mode}`}
+        aria-label={`Meeting prep, ${p.contextLabel}`}
+        title={
+          p.hasContext ? p.contextLabel : 'Add an agenda or PDF so I know your names and terms'
+        }
         aria-expanded={p.prepOpen}
         aria-controls="prep-drawer"
         onClick={p.onTogglePrep}
       >
-        {p.mode}
+        <span className="pill-mode-text">{p.contextLabel}</span>
         <ChevronDown
           {...ICON}
           className={p.prepOpen ? 'pill-chevron pill-chevron-open' : 'pill-chevron'}
         />
       </button>
 
-      <span className="pill-keys" aria-hidden="true">
-        <kbd className="keycap">{p.modifier}\</kbd>
-        <kbd className="keycap">{p.modifier}↵</kbd>
+      <span className="pill-keys">
+        <kbd
+          className="keycap"
+          role="img"
+          aria-label={`${p.modifier} backslash: start or pause listening`}
+          title="Start or pause listening"
+        >
+          {p.modifier}\
+        </kbd>
+        <kbd
+          className="keycap"
+          role="img"
+          aria-label={`${p.modifier} return: I'm stuck, help now`}
+          title="I'm stuck: suggest a word now"
+        >
+          {p.modifier}↵
+        </kbd>
       </span>
 
       {p.gear}
