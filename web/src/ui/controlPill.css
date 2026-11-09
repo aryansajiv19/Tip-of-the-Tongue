@@ -190,3 +190,13 @@ html:not(.desktop) body {
   outline: none;
   box-shadow: var(--focus-ring);
 }
+
+/* The desktop window is frameless: the pill's own background drags it, and everything that can be
+   clicked or typed into, and everything under the pill, opts out so it still works. */
+html.desktop .control-pill {
+  -webkit-app-region: drag;
+}
+html.desktop .control-pill :is(button, a, input, select, textarea, label),
+html.desktop .overlay > :not(.control-pill) {
+  -webkit-app-region: no-drag;
+}

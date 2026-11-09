@@ -92,3 +92,38 @@ test('open-settings closes the drawer', async ({ page }) => {
   await fire(page, 'open-settings');
   await expect(page.getByRole('region', { name: 'Meeting prep' })).toHaveCount(0);
 });
+
+test.describe('moving the desktop window', () => {
+  const region = (page: Page, selector: string) =>
+    page
+      .locator(selector)
+      .first()
+      .evaluate((el) => getComputedStyle(el).getPropertyValue('-webkit-app-region'));
+
+  test('the pill drags; its buttons, the settings, the drawer and the card do not', async ({
+    page,
+  }) => {
+    const server = await launch(page);
+    expect(await region(page, '.control-pill')).toBe('drag');
+    expect(await region(page, '.control-pill button')).toBe('no-drag');
+    await fire(page, 'open-settings');
+    await expect(page.getByRole('group', { name: 'Settings' })).toBeVisible();
+    expect(await region(page, '.settings-panel')).toBe('no-drag');
+    expect(await region(page, '.settings-panel select')).toBe('no-drag');
+    await fire(page, 'open-recent');
+    await expect(page.getByRole('region', { name: 'Meeting prep' })).toBeVisible();
+    expect(await region(page, '.prep')).toBe('no-drag');
+    expect(await region(page, '.prep input')).toBe('no-drag');
+    server.send({ type: 'stuck.detected', reason: 'pause', contextWindow: 'x' });
+    server.send(offered('o1', [['renewal', 0.9]]));
+    await expect(page.locator('.card-primary')).toBeVisible();
+    expect(await region(page, '.card-slot')).toBe('no-drag');
+  });
+
+  test('a browser page has no drag region at all', async ({ page }) => {
+    await fakeServer(page);
+    await page.goto('/');
+    await expect(page.getByRole('status').first()).toHaveText('Connected');
+    expect(await region(page, '.control-pill')).not.toBe('drag');
+  });
+});
