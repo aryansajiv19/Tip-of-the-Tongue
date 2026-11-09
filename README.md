@@ -24,6 +24,8 @@ Entry for the **Hiya Voice AI Challenge, Accessibility track**.
 | --------------------------------------------- | ------------------------------------------- | ------------------------------------------- | ------------------------------------------- |
 | ![Listening](docs/assets/state-listening.png) | ![Thinking](docs/assets/state-thinking.png) | ![Accepted](docs/assets/state-accepted.png) | ![Settings](docs/assets/state-settings.png) |
 
+New to the app? Read the [user guide](docs/USER-GUIDE.md): install, getting your keys, settings, privacy and troubleshooting.
+
 ## Quick start
 
 You need Node 22 (`nvm use`). It runs from a clean clone with **no API keys**: you get a mock guesser and the browser's speech recognition (Chrome or Edge).
