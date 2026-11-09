@@ -1,0 +1,25 @@
+electronVersion: 45.2.3
+appId: com.hiya.tipofthetongue
+productName: Tip of the Tongue
+directories:
+  output: ../release
+files:
+  - dist/**
+  - assets/**
+  - package.json
+extraResources:
+  - from: server-bundle
+    to: server
+  - from: ../web/dist
+    to: web
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+  icon: assets/icon.png
+  # Unsigned for now: macOS asks the user to approve the first launch (see the README).
+  identity: null
+  extendInfo:
+    NSMicrophoneUsageDescription: Tip of the Tongue listens through the microphone to hear when you are stuck on a word. Audio is not stored.
+    LSUIElement: true

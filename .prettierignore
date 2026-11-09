@@ -1,3 +1,5 @@
 package-lock.json
 dist/
 .serena/
+app/server-bundle/
+release/

@@ -1,13 +1,18 @@
 {
   "name": "app",
+  "version": "0.1.0",
+  "description": "Live word-finding companion: a small overlay that offers the word on the tip of your tongue.",
+  "author": "Hiya Voice AI Challenge team",
   "private": true,
   "main": "dist/main.js",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsc",
-    "start": "tsc && electron ."
+    "start": "tsc && electron .",
+    "dist": "tsc && electron-builder"
   },
   "devDependencies": {
-    "electron": "^45.2.3"
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0"
   }
 }
