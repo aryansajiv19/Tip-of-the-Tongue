@@ -27,15 +27,20 @@ export type TranscriptEvent = { type: 'transcript.partial' | 'transcript.final';
 
 // Deepgram times are seconds from the start of the audio stream; `streamStartMs` maps them to
 // epoch ms.
-export function toTranscriptEvent(message: unknown, streamStartMs: number): TranscriptEvent | null {
+export function toTranscriptEvent(
+  message: unknown,
+  streamStartMs: number,
+  // Extra ms for a word at this audio position (see `timeline` in createDeepgramStream).
+  shiftAt: (audioMs: number) => number = () => 0,
+): TranscriptEvent | null {
   const parsed = ResultsSchema.safeParse(message);
   if (!parsed.success) return null;
   const words: Word[] = (parsed.data.channel.alternatives[0]?.words ?? [])
     .filter((w) => w.word.trim() !== '')
     .map((w) => ({
       text: (w.punctuated_word ?? w.word).slice(0, 100),
-      startMs: streamStartMs + w.start * 1000,
-      endMs: streamStartMs + w.end * 1000,
+      startMs: streamStartMs + w.start * 1000 + shiftAt(w.start * 1000),
+      endMs: streamStartMs + w.end * 1000 + shiftAt(w.start * 1000),
       ...(w.confidence !== undefined ? { confidence: w.confidence } : {}),
       ...(w.speaker !== undefined ? { speaker: w.speaker } : {}),
     }));
@@ -101,6 +106,16 @@ const IDLE_CLOSE_MS = 3000;
 // Audio arrives in ~100 ms chunks, so the first chunk started about this long before it arrived.
 // ponytail: origin is estimated from arrival time, off by network jitter (~tens of ms).
 const CHUNK_MS = 100;
+interface Timeline {
+  origin: number;
+  chunks: number;
+  shifts: { atMs: number; shiftMs: number }[];
+}
+// The total correction for a word at this audio position.
+const shiftedBy = (t: Timeline, audioMs: number): number =>
+  t.shifts.reduce((sum, s) => (s.atMs <= audioMs ? sum + s.shiftMs : sum), 0);
+// Audio further than this from real time is corrected (network jitter is well under it).
+const MAX_LAG_MS = 300;
 // Audio kept while the connection opens: about 5 s.
 const MAX_PENDING_CHUNKS = 50;
 // A dropped or refused connection is tried again after these waits (audio in between is lost);
@@ -125,7 +140,13 @@ export function createDeepgramStream(opts: DeepgramOptions) {
       new WebSocket(url, { headers: { Authorization: `Token ${apiKey}` } }));
   let ws: WebSocket | undefined;
   let language = opts.language;
-  let streamStartMs = 0;
+  // Where the current stream's audio sits on our clock: Deepgram's times count the audio it was
+  // given, so audio lost on the way (the page dropped frames, the queue overflowed, listening
+  // paused for a moment) would make every later word look older than it is. `chunks` is the audio
+  // given so far, to notice that. Each correction is kept with the audio position it starts at:
+  // results come 0.3 to 1 s after the audio, so words from before the gap still arrive later and
+  // must keep their time.
+  let timeline: Timeline = { origin: 0, chunks: 0, shifts: [] };
   let pending: Buffer[] = [];
   let idleTimer: NodeJS.Timeout | undefined;
   // Once the retries run out the caller falls back to browser speech recognition, and a probe
@@ -199,8 +220,8 @@ export function createDeepgramStream(opts: DeepgramOptions) {
 
   function open() {
     opts.onStreamStart?.();
-    streamStartMs = now() - CHUNK_MS;
-    const origin = streamStartMs;
+    const own: Timeline = { origin: now() - CHUNK_MS, chunks: 0, shifts: [] };
+    timeline = own;
     const urlTerms = opts.keyterms?.() ?? [];
     const socket = connect(deepgramUrl(language, urlTerms, opts.diarize), opts.apiKey);
     ws = socket;
@@ -246,7 +267,7 @@ export function createDeepgramStream(opts: DeepgramOptions) {
         return;
       }
       // Results from a stream we already closed still map with that stream's own origin.
-      const event = toTranscriptEvent(json, origin);
+      const event = toTranscriptEvent(json, own.origin, (ms) => shiftedBy(own, ms));
       if (event) {
         // Words are coming: this connection works, so earlier failures no longer count.
         failures = 0;
@@ -276,6 +297,11 @@ export function createDeepgramStream(opts: DeepgramOptions) {
     });
   }
 
+  function keepIdleTimer() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(drop, IDLE_CLOSE_MS);
+  }
+
   return {
     send(chunk: Buffer) {
       if (failed) return;
@@ -284,8 +310,16 @@ export function createDeepgramStream(opts: DeepgramOptions) {
       if (!ws) open();
       if (ws?.readyState === WebSocket.OPEN) ws.send(chunk);
       else if (pending.length < MAX_PENDING_CHUNKS) pending.push(chunk);
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(drop, IDLE_CLOSE_MS);
+      else return keepIdleTimer();
+      timeline.chunks++;
+      // Real-time audio keeps this near zero. Far from it, audio went missing (or came late in
+      // a burst): move the origin by that much so word times follow the clock again.
+      const lag =
+        now() - timeline.origin - shiftedBy(timeline, Infinity) - timeline.chunks * CHUNK_MS;
+      if (Math.abs(lag) > MAX_LAG_MS) {
+        timeline.shifts.push({ atMs: (timeline.chunks - 1) * CHUNK_MS, shiftMs: lag });
+      }
+      keepIdleTimer();
     },
     close() {
       clearTimeout(recoverTimer);

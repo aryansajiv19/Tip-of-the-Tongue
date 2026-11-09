@@ -145,6 +145,95 @@ describe('a connection that closes at once', () => {
   });
 });
 
+// Deepgram counts time in the audio it was given. If audio went missing on the way, its times
+// fall behind the clock, and every later word would look older than it is.
+describe('audio that went missing before Deepgram', () => {
+  const wordAt = (chunk: number) =>
+    JSON.stringify({
+      type: 'Results',
+      is_final: true,
+      channel: {
+        alternatives: [
+          {
+            words: [
+              {
+                word: `w${chunk}`,
+                punctuated_word: `w${chunk}`,
+                start: chunk * 0.1,
+                end: (chunk + 1) * 0.1,
+              },
+            ],
+          },
+        ],
+      },
+    });
+  const START = 10_000;
+
+  async function setup() {
+    const sockets: WebSocket[] = [];
+    const dg = await standIn({}, (ws) => sockets.push(ws));
+    const clock = { t: START };
+    const c = client(dg.url, clock);
+    const ends = () =>
+      c.events.map((e) => (e as unknown as { words: { endMs: number }[] }).words[0]?.endMs);
+    // One chunk of live audio, answered at once, 100 ms after the one before.
+    let sent = 0;
+    const live = async (chunks: number) => {
+      for (let i = 0; i < chunks; i++) {
+        c.stream.send(audio);
+        await expect.poll(() => sockets.length).toBe(1);
+        sockets[0]?.send(wordAt(sent++));
+        await expect.poll(() => c.events.length).toBe(sent);
+        clock.t += 100;
+      }
+    };
+    return { c, clock, sockets, ends, live, sent: () => sent };
+  }
+
+  it('words after a gap keep the clock, and earlier words are not moved', async () => {
+    const t = await setup();
+    await t.live(5);
+    t.clock.t += 2000; // 20 chunks never arrived
+    await t.live(1);
+    // Word i was said when chunk i arrived: START + 100 i, and the one after the gap at the clock.
+    expect(t.ends()).toEqual(
+      [0, 1, 2, 3, 4].map((i) => START + i * 100).concat(START + 500 + 2000),
+    );
+  });
+
+  it('keeps the time of a word from before the gap that is reported after it', async () => {
+    const t = await setup();
+    // Chunks 0 to 4 are sent, but Deepgram has only answered the first three.
+    for (let i = 0; i < 5; i++) {
+      t.c.stream.send(audio);
+      if (i < 3) await expect.poll(() => t.sockets.length).toBe(1);
+      t.sockets[0]?.send(i < 3 ? wordAt(i) : '{}');
+      t.clock.t += 100;
+    }
+    await expect.poll(() => t.c.events.length).toBe(3);
+    t.clock.t += 2000; // the gap, then the next chunk (audio position 500)
+    t.c.stream.send(audio);
+    // Now the late answer for chunk 4, then the one for the chunk after the gap.
+    t.sockets[0]?.send(wordAt(4));
+    t.sockets[0]?.send(wordAt(5));
+    await expect.poll(() => t.c.events.length).toBe(5);
+    expect(t.ends().slice(3)).toEqual([START + 400, START + 500 + 2000]);
+  });
+
+  it('leaves words alone when audio is only a little early or late', async () => {
+    const t = await setup();
+    let sent = 0;
+    for (const jitter of [0, 150, -150, 200, -200, 0]) {
+      t.c.stream.send(audio);
+      await expect.poll(() => t.sockets.length).toBe(1);
+      t.sockets[0]?.send(wordAt(sent++));
+      await expect.poll(() => t.c.events.length).toBe(sent);
+      t.clock.t += 100 + jitter;
+    }
+    expect(t.ends()).toEqual([0, 1, 2, 3, 4, 5].map((i) => START + i * 100));
+  });
+});
+
 describe('after giving up', () => {
   const giveUp = async (c: ReturnType<typeof client>, clock: { t: number }) => {
     c.stream.send(audio);
