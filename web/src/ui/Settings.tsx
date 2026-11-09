@@ -11,6 +11,9 @@ import {
 } from '../settings/sensitivity';
 import { modifierLabel } from './commands';
 import { Privacy } from './Privacy';
+import { KeysForm } from './KeysForm';
+import type { DesktopBridge } from './desktop';
+import type { Presence, Provider } from '../settings/keys';
 import { useReturnFocus } from './useReturnFocus';
 import './settings.css';
 
@@ -31,6 +34,12 @@ interface Props {
   onDownloadTrace: () => void;
   // Forgets everything kept on this device (the page also drops the loaded meeting notes).
   onForgetAll: () => void;
+  // The desktop app's keys; null in a browser (there the server reads its own environment).
+  keys: {
+    bridge: NonNullable<DesktopBridge['keys']>;
+    status: Record<Provider, Presence>;
+    refresh: () => void;
+  } | null;
 }
 
 const ICON = { size: 16, strokeWidth: 1.5, 'aria-hidden': true } as const;
@@ -165,6 +174,13 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
           ))}
         </select>
       </label>
+
+      {p.keys && (
+        <fieldset>
+          <legend>Keys</legend>
+          <KeysForm keys={p.keys.bridge} presence={p.keys.status} onSaved={p.keys.refresh} />
+        </fieldset>
+      )}
 
       <Privacy onForgetAll={p.onForgetAll} />
 

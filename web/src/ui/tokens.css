@@ -48,6 +48,7 @@
   --pill-height: 56px;
   --target: 44px; /* the smallest button or hit target, both ways */
   --drawer-max-height: 400px; /* the prep drawer scrolls inside beyond this */
+  --settings-max-height: 520px; /* so does the settings panel */
   --icon: 20px;
   --icon-stroke: 1.5;
   --keycap-height: 24px;

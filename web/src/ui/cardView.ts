@@ -8,8 +8,19 @@ export function confidenceDots(confidence: number): 1 | 2 | 3 {
 }
 
 // The one line shown when something is wrong, most important first. null when all is well.
-export function statusLine(s: { connection: SocketStatus; guesserDown: boolean }): string | null {
+export function statusLine(s: {
+  connection: SocketStatus;
+  guesserDown: boolean;
+  // Why the guesser is down, when the server knows: a refused key, or a busy service.
+  guesserReason?: 'key' | 'busy' | undefined;
+}): string | null {
   if (s.connection === 'reconnecting') return 'Not connected. Reconnecting…';
-  if (s.guesserDown) return 'Suggestions are unavailable right now. Listening continues.';
+  if (s.guesserDown) {
+    if (s.guesserReason === 'key')
+      return 'Your Anthropic key isn\u2019t working. Check it in Settings.';
+    if (s.guesserReason === 'busy')
+      return 'Suggestions paused for a moment; the AI service is busy.';
+    return 'Suggestions are unavailable right now. Listening continues.';
+  }
   return null;
 }

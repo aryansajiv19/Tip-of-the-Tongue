@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import type { Check, Presence } from '../settings/keys';
 import { commandForKey, type Command } from './commands';
 
 // What the desktop app's preload script exposes. Absent in a normal browser.
@@ -10,6 +11,13 @@ export interface DesktopBridge {
   // gives them back.
   captureCardKeys(picks: number, cb: (key: 'escape' | 1 | 2 | 3) => void): () => void;
   report(state: { listening: boolean }): void;
+  // The user's own provider keys. Absent before the keys backend exists, and in a browser.
+  keys?: {
+    status(): Promise<{ anthropic: Presence; deepgram: Presence }>;
+    // An omitted field keeps its key, an empty string removes it; the server restarts.
+    save(keys: { anthropic?: string; deepgram?: string }): Promise<void>;
+    test(): Promise<{ anthropic: Check; deepgram: Check }>;
+  };
 }
 
 export const desktop = (window as unknown as { tott?: DesktopBridge }).tott;
