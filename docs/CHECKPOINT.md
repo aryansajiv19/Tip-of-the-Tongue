@@ -2,7 +2,7 @@
 
 Single source of current status. Updated by the lead session when a branch lands or a decision changes.
 
-_Last updated: 2026-11-08_
+_Last updated: 2026-11-09_
 
 ## Now
 
@@ -24,9 +24,13 @@ Goal: a working MVP with a nice UI. The full loop runs live: Deepgram Nova-3 (ke
 | Checkpoint refresh, design tokens, `ai.md`   | #34–#36       | lead, 4c | merged      |
 | Scenario suite of whole conversations, fixes | #37           | c1       | merged      |
 | Context hygiene: docs, dead code             | #38           | c1       | merged      |
-| Desktop overlay shell (`app/`)               | next          | 4c       | in progress |
-| Overlay suggestion card                      | next          | 93       | in progress |
-| Speaker separation (Deepgram diarisation)    | this PR       | c1       | in review   |
+| Overlay pill, Electron shell, card, settings | #39, #41      | 4c, 93   | merged      |
+| Speaker labels; re-pick on new stream        | #40, #42      | c1       | merged      |
+| Meeting-prep drawer (PDF/md/txt), source     | #43           | 4c       | merged      |
+| First-run UX (hints, labels, mic denial)     | next          | 4c       | in progress |
+| Overlay polish: vibrancy, contrast, Esc      | next          | 93       | in progress |
+| About you + remembered words (profile in UI) | next          | c1       | queued      |
+| Live-audio scenarios (macOS voices)          | next          | c1, lead | in review   |
 
 ## Decisions
 
@@ -41,4 +45,4 @@ Goal: a working MVP with a nice UI. The full loop runs live: Deepgram Nova-3 (ke
 
 ## Next
 
-Measure speaker separation on the holdout and on real two-person audio, PDF "Prepare for a meeting" upload (builds on the glossary), then the owner's live checks to tune the voice-activity thresholds and sensitivity.
+First-run UX, overlay polish and 8-state screenshots, profile from the UI, README run instructions for the overlay, then the owner's live checks. Waiting on the owner for the Hiya logo file (placeholder `app/assets/trayTemplate.png`).
