@@ -11,6 +11,7 @@ import { useCardClock } from './ui/useCardClock';
 import { saveDebug, savedDebug } from './settings/debug';
 import { isFirstRun, markStarted } from './settings/firstRun';
 import { saveHelp, savedHelp, type HelpLevel } from './settings/help';
+import { applyTextSize, savedTextSize, type TextSize } from './settings/textSize';
 import { saveMicId, savedMicId } from './settings/mic';
 import { useManualKey } from './audio/useManualKey';
 import { useMic } from './audio/useMic';
@@ -40,6 +41,12 @@ import { useSessionClock } from './ui/useSessionClock';
 const MAX_WORDS = 60;
 const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
 
+const CONNECTION_LABEL = {
+  connecting: 'Connecting…',
+  connected: 'Connected',
+  reconnecting: 'Not connected. Reconnecting…',
+} as const;
+
 const text = (words: Word[]) => words.map((w) => w.text).join(' ');
 
 export function App() {
@@ -47,6 +54,7 @@ export function App() {
   const gate = useRef(createResetGate()).current;
   const [micId, setMicId] = useState<string | null>(savedMicId);
   const [debugOn, setDebugOn] = useState(() => DEBUG && savedDebug());
+  const [textSize, setTextSize] = useState<TextSize>(savedTextSize);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [heard, setHeard] = useState<string[]>([]);
   const [visible, setVisible] = useState(true);
@@ -215,9 +223,7 @@ export function App() {
   const [held, setHeld] = useState(false);
   useCardClock(card.view !== null, held, dispatchCard);
   const cardShown = card.view !== null;
-  useEffect(() => {
-    if (!cardShown) setHeld(false);
-  }, [cardShown]);
+  if (!cardShown && held) setHeld(false);
   const problem = statusLine({ connection: status, guesserDown });
 
   const changeHelp = (level: HelpLevel) => {
@@ -234,6 +240,10 @@ export function App() {
   const changeSensitivity = (value: Sensitivity) => {
     setSensitivity(value);
     saveSensitivity(value);
+  };
+  const changeTextSize = (size: TextSize) => {
+    setTextSize(size);
+    applyTextSize(size);
   };
   const changeMic = (id: string | null) => {
     setMicId(id);
@@ -302,7 +312,7 @@ export function App() {
   return (
     <>
       <p role="status" className="sr-only">
-        Server: {status}
+        {CONNECTION_LABEL[status]}
       </p>
 
       {visible && (
@@ -328,6 +338,8 @@ export function App() {
               onHelp={changeHelp}
               sensitivity={sensitivity}
               onSensitivity={changeSensitivity}
+              textSize={textSize}
+              onTextSize={changeTextSize}
               micId={micId}
               onMic={changeMic}
               showDebug={DEBUG}

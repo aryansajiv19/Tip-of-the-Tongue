@@ -23,7 +23,7 @@ async function launch(page: Page, level?: string) {
     });
   const server = await fakeServer(page);
   await page.goto('/');
-  await expect(status(page)).toHaveText('Server: connected');
+  await expect(status(page)).toHaveText('Connected');
   return server;
 }
 const helpFrames = (server: Awaited<ReturnType<typeof fakeServer>>) =>
@@ -55,7 +55,7 @@ test.describe('the first-run question', () => {
     expect(await page.evaluate(() => localStorage.getItem('tott.help'))).toBe('sound');
 
     await page.reload();
-    await expect(status(page)).toHaveText('Server: connected');
+    await expect(status(page)).toHaveText('Connected');
     await expect(question(page)).toHaveCount(0);
     await expect
       .poll(() => helpFrames(server).at(-1))
@@ -168,7 +168,7 @@ test.describe('whole word and the default', () => {
     server.send(offered('a', THREE));
     await expect(primary(page)).toHaveText('renewal');
     await page.reload();
-    await expect(status(page)).toHaveText('Server: connected');
+    await expect(status(page)).toHaveText('Connected');
   });
 
   test('before the question is answered the whole word shows', async ({ page }) => {

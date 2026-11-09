@@ -10,7 +10,7 @@ export async function say(page: Page, phrase: string) {
 
 export async function open(page: Page) {
   await page.goto('/?debug=1');
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(page.getByRole('status').first()).toHaveText('Connected');
 }
 
 // Remember if an offer was ever shown, even briefly.

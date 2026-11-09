@@ -38,7 +38,7 @@ export function useCommands(handler: (command: Command) => void) {
 // The desktop app has no browser speech service of its own (Electron has no Google speech key),
 // so there the only fix is a Deepgram key.
 export const SPEECH_UNREACHABLE = desktop
-  ? 'Add DEEPGRAM_API_KEY to .env to use speech in the desktop app, then restart it.'
+  ? 'Speech needs a Deepgram key in the desktop app. Add one in Settings, then press Start.'
   : 'Speech recognition cannot reach its service. Check your connection; I keep trying.';
 
 // Where the user turns the microphone back on differs between the app and a browser tab.

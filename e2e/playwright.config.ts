@@ -30,6 +30,7 @@ export default defineConfig({
   use: {
     baseURL: WEB,
     browserName: 'chromium',
+    colorScheme: 'dark',
     storageState: {
       cookies: [],
       origins: [{ origin: WEB, localStorage: [{ name: 'tott.help', value: 'word' }] }],

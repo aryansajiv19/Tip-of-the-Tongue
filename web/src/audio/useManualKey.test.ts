@@ -19,3 +19,12 @@ describe('isTypingTarget', () => {
     expect(isTypingTarget({})).toBe(false);
   });
 });
+
+describe('isTypingTarget by role', () => {
+  const withRole = (role: string) => ({ tagName: 'DIV', getAttribute: () => role });
+  it.each(['button', 'radio', 'checkbox', 'switch', 'tab', 'link'])(
+    'role=%s keeps its Space',
+    (r) => expect(isTypingTarget(withRole(r))).toBe(true),
+  );
+  it('a plain role lets Space ask', () => expect(isTypingTarget(withRole('group'))).toBe(false));
+});

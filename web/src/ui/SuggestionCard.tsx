@@ -150,14 +150,14 @@ function Body({
       return <p className="card-thinking">Finding the word</p>;
     case 'problem':
       return (
-        <p className="card-problem" role="alert">
+        <p className="card-problem">
           <CircleAlert size={16} strokeWidth={1.5} aria-hidden="true" />
           {content.line}
         </p>
       );
     case 'accepted':
       return (
-        <p className="card-accepted">
+        <p className="card-accepted" dir="auto">
           <Check size={16} strokeWidth={1.5} aria-hidden="true" />
           {content.word}
         </p>
@@ -171,6 +171,7 @@ function Body({
               <button
                 type="button"
                 className="card-primary"
+                dir="auto"
                 aria-keyshortcuts={`${SHORTCUT}+1`}
                 {...(masked
                   ? { 'aria-label': `Show the word that starts ${cue(content.primary.word)}` }
@@ -197,6 +198,7 @@ function Body({
               {content.alternatives.map((c, i) => (
                 <li key={c.word}>
                   <button
+                    dir="auto"
                     type="button"
                     aria-keyshortcuts={`${SHORTCUT}+${i + 2}`}
                     {...(masked

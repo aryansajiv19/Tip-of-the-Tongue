@@ -71,7 +71,7 @@ test('the chosen microphone is used by the level meter in browser mode', async (
   await installFakeSpeech(page);
   const server = await fakeServer(page);
   await page.goto('/');
-  await expect(status(page)).toHaveText('Server: connected');
+  await expect(status(page)).toHaveText('Connected');
   server.send({ type: 'session.ready', stt: 'browser' });
   await gear(page).click();
   await panel(page).getByLabel('Microphone').selectOption('mic-a');
@@ -87,7 +87,7 @@ test('the chosen microphone is used by both capture paths when the server does t
   await installMics(page);
   const server = await fakeServer(page);
   await page.goto('/');
-  await expect(status(page)).toHaveText('Server: connected');
+  await expect(status(page)).toHaveText('Connected');
   server.send({ type: 'session.ready', stt: 'deepgram' });
   await gear(page).click();
   await panel(page).getByLabel('Microphone').selectOption('mic-b');
@@ -114,7 +114,7 @@ test('without ?debug=1 there are no debug controls, even with a stale saved choi
   const server = await fakeServer(page);
   await page.addInitScript(() => localStorage.setItem('tott.debug', '1'));
   await page.goto('/');
-  await expect(status(page)).toHaveText('Server: connected');
+  await expect(status(page)).toHaveText('Connected');
   await gear(page).click();
   await expect(panel(page)).toBeVisible();
   await expect(panel(page).getByLabel('Debug')).toHaveCount(0);
@@ -127,7 +127,7 @@ test('debug (?debug=1) is off by default, remembered, and sends session.debug', 
   await installMics(page);
   const server = await fakeServer(page);
   await page.goto('/?debug=1');
-  await expect(status(page)).toHaveText('Server: connected');
+  await expect(status(page)).toHaveText('Connected');
   expect(server.count('session.debug')).toBe(0);
   await gear(page).click();
   await expect(panel(page).getByRole('button', { name: 'Open debug view' })).toHaveCount(0);

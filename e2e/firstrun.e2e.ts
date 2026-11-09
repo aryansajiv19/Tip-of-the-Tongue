@@ -4,7 +4,7 @@ import { failRecognition, installFakeSpeech, instanceCount, say } from './fakeSp
 // Not through open(): that adds ?debug=1, and a first-time user has no such thing.
 async function launch(page: Page) {
   await page.goto('/');
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(page.getByRole('status').first()).toHaveText('Connected');
 }
 
 const pill = (page: Page) => page.getByRole('group', { name: 'Listening controls' });
@@ -40,7 +40,7 @@ test('a first-time user is asked how to help first; Play and the hint come after
   ).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole('status').first()).toHaveText('Server: connected');
+  await expect(page.getByRole('status').first()).toHaveText('Connected');
   await expect(line(page, /Press play and talk/)).toHaveCount(0);
 });
 
@@ -132,8 +132,8 @@ test('nothing in the pill overlaps: the label, chevron and keycaps stay apart an
 test('each keycap says what it does, to a screen reader and as a tooltip', async ({ page }) => {
   await launch(page);
   const caps = pill(page).locator('.keycap');
-  await expect(caps.nth(0)).toHaveAccessibleName(/start or pause listening/);
-  await expect(caps.nth(0)).toHaveAttribute('title', 'Start or pause listening');
+  await expect(caps.nth(0)).toHaveAccessibleName(/show or hide this overlay/);
+  await expect(caps.nth(0)).toHaveAttribute('title', 'Show or hide this overlay');
   await expect(caps.nth(1)).toHaveAccessibleName(/stuck/);
   await expect(caps.nth(1)).toHaveAttribute('title', /stuck/);
 });

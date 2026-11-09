@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Settings as GearIcon } from 'lucide-react';
 import { HELP_KEYS, HELP_LABELS, helpHint, type HelpLevel } from '../settings/help';
+import { TEXT_SIZES, TEXT_SIZE_LABELS, type TextSize } from '../settings/textSize';
 import { micOptions, type MicOption } from '../settings/mic';
 import {
   SENSITIVITIES,
@@ -10,6 +11,7 @@ import {
 } from '../settings/sensitivity';
 import { modifierLabel } from './commands';
 import { Privacy } from './Privacy';
+import { useReturnFocus } from './useReturnFocus';
 import './settings.css';
 
 interface Props {
@@ -17,6 +19,8 @@ interface Props {
   onHelp: (value: HelpLevel) => void;
   sensitivity: Sensitivity | null;
   onSensitivity: (value: Sensitivity) => void;
+  textSize: TextSize;
+  onTextSize: (value: TextSize) => void;
   micId: string | null;
   onMic: (id: string | null) => void;
   // Debug controls exist only on a page opened with ?debug=1.
@@ -53,6 +57,7 @@ export function SettingsGear(p: { open: boolean; onToggle: () => void }) {
 export function SettingsPanel(p: Props & { onClose: () => void }) {
   const [mics, setMics] = useState<MicOption[]>([]);
   const { onClose } = p;
+  const panel = useReturnFocus<HTMLDivElement>();
 
   // Microphone names are only known once the user has allowed the microphone, so look again
   // each time the popover opens.
@@ -83,7 +88,14 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <div id={PANEL_ID} className="settings-panel glass" role="group" aria-label="Settings">
+    <div
+      id={PANEL_ID}
+      ref={panel}
+      tabIndex={-1}
+      className="settings-panel glass"
+      role="group"
+      aria-label="Settings"
+    >
       <fieldset>
         <legend>How I help</legend>
         <div className="settings-segments">
@@ -122,6 +134,24 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
           ))}
         </div>
         <p className="settings-hint">{sensitivityHint(p.sensitivity ?? 'balanced')}</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Text size</legend>
+        <div className="settings-segments">
+          {TEXT_SIZES.map((key) => (
+            <label key={key}>
+              <input
+                type="radio"
+                name="text-size"
+                value={key}
+                checked={p.textSize === key}
+                onChange={() => p.onTextSize(key)}
+              />
+              <span>{TEXT_SIZE_LABELS[key]}</span>
+            </label>
+          ))}
+        </div>
       </fieldset>
 
       <label className="settings-field">
