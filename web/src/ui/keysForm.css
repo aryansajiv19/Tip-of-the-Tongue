@@ -1,0 +1,87 @@
+.keys-form {
+  display: grid;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+.keys-field {
+  display: grid;
+  gap: var(--space-1);
+}
+.keys-field label {
+  display: grid;
+  gap: var(--space-1);
+}
+.keys-label {
+  color: var(--text);
+}
+.keys-job {
+  color: var(--text-muted);
+}
+.keys-form input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--target);
+  padding: 0 var(--space-2);
+  font: inherit;
+  color: var(--text);
+  background: var(--hover);
+  border: var(--surface-border);
+  border-radius: var(--space-2);
+}
+.keys-form :focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.keys-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+.keys-links a,
+.keys-links button {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.keys-result {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+.keys-ok {
+  color: var(--text);
+}
+.keys-bad {
+  color: var(--error);
+}
+.keys-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.keys-actions button {
+  min-height: var(--target);
+  padding: 0 var(--space-3);
+  font: inherit;
+  color: var(--text);
+  background: transparent;
+  border: var(--surface-border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.keys-actions button:hover:not(:disabled) {
+  background: var(--hover);
+}
+.keys-actions button:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}

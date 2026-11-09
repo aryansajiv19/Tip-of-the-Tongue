@@ -39,4 +39,13 @@ describe('statusLine', () => {
   it('says nothing while the first connection is still being made', () => {
     expect(statusLine({ ...ok, connection: 'connecting' })).toBeNull();
   });
+
+  it('says in plain words when the key is refused or the service is busy', () => {
+    expect(statusLine({ ...ok, guesserDown: true, guesserReason: 'key' })).toBe(
+      'Your Anthropic key isn\u2019t working. Check it in Settings.',
+    );
+    expect(statusLine({ ...ok, guesserDown: true, guesserReason: 'busy' })).toBe(
+      'Suggestions paused for a moment; the AI service is busy.',
+    );
+  });
 });
