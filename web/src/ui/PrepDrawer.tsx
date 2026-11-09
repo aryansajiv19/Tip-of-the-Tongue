@@ -172,6 +172,11 @@ export function PrepDrawer({ docName, terms, recent, onLoad, onClear, onClose }:
           />
         </label>
         <p className="prep-why">Saved on this device only.</p>
+        {(about.name || about.role || about.words) && (
+          <button type="button" className="prep-choose" onClick={aboutYou.clearAbout}>
+            Clear About you
+          </button>
+        )}
       </div>
 
       {remembered.length > 0 && (

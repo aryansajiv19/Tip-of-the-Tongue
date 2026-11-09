@@ -119,6 +119,12 @@ export function createAboutYou(storage: Store | null) {
       if (remembered.join('\n') !== state.remembered.join('\n')) set({ ...state, remembered });
     },
     forget: () => set({ ...state, remembered: [] }),
+    removeRemembered: (word: string) => {
+      const remembered = state.remembered.filter((w) => w !== word);
+      if (remembered.length !== state.remembered.length) set({ ...state, remembered });
+    },
+    clearAbout: () => set({ ...state, about: emptyAbout.about }),
+    forgetAll: () => set(emptyAbout),
   };
 }
 
