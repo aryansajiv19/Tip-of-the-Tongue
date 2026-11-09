@@ -84,9 +84,7 @@ export async function buildApp(deps: AppDeps = {}) {
     };
     const deepgramOpts =
       deps.deepgram ??
-      (config.deepgramApiKey
-        ? { apiKey: config.deepgramApiKey, language: config.deepgramLanguage }
-        : undefined);
+      (config.deepgramApiKey ? { apiKey: config.deepgramApiKey, language: 'en' } : undefined);
     let sttMode: 'deepgram' | 'browser' = deepgramOpts ? 'deepgram' : 'browser';
     // The stream and the session refer to each other, but only after both exist.
     const stt = deepgramOpts
@@ -115,6 +113,7 @@ export async function buildApp(deps: AppDeps = {}) {
     const session = createSession(send, {
       sttMode: () => sttMode,
       onKeytermsChange: () => stt?.updateKeyterms(),
+      onLanguageChange: (language) => stt?.setLanguage(language),
       guess,
       buildGlossary,
       pauseMs: config.stuckPauseMs,

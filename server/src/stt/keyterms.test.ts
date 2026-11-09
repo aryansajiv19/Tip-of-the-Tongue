@@ -3,6 +3,22 @@ import { ProfileSchema } from '../guess/profile.js';
 import { deepgramUrl } from './deepgram.js';
 import { selectKeyterms, termsFromText } from './keyterms.js';
 
+describe('termsFromText, in other languages', () => {
+  it('finds names with accents and non-Latin capitals, whole', () => {
+    expect(termsFromText('Hablé con José García sobre el Café Müller y la ÉCOLE.')).toEqual([
+      'José García',
+      'Café Müller',
+      'ÉCOLE',
+    ]);
+    // The first word of a sentence is skipped, as in English.
+    expect(termsFromText('Встреча с Иваном Петровым про Q3')).toEqual(['Иваном Петровым', 'Q3']);
+  });
+  it('finds nothing in a script without capitals, and does not split a word at a letter', () => {
+    expect(termsFromText('मुझे वो चीज़ चाहिए')).toEqual([]);
+    expect(termsFromText('naïve résumé')).toEqual([]);
+  });
+});
+
 describe('termsFromText', () => {
   it('finds names, acronyms and figures with digits', () => {
     const text = 'We meet Henley Health about the SOC 2 report and Q3 numbers with Priya.';

@@ -19,13 +19,14 @@ const urlCharsOf = (term: string): number => encodeURIComponent(term).length + 9
 // acronyms, and anything with a digit ("SOC 2", "Q3"). A word capitalised only because it starts
 // a sentence is skipped, unless the next word is capitalised too.
 export function termsFromText(text: string): string[] {
-  const tokens = [...text.matchAll(/[A-Za-z][A-Za-z0-9-]*|\d+/g)].map((m) => ({
+  const tokens = [...text.matchAll(/\p{L}[\p{L}\p{N}-]*|\d+/gu)].map((m) => ({
     word: m[0],
     start: m.index,
     end: m.index + m[0].length,
   }));
-  const isCapital = (w: string) => /^[A-Z]|^\d+$/.test(w);
-  const standsOut = (w: string) => /\d/.test(w) || /^[A-Z]{2,}/.test(w) || /[A-Z].*[A-Z]/.test(w);
+  const isCapital = (w: string) => /^\p{Lu}|^\d+$/u.test(w);
+  const standsOut = (w: string) =>
+    /\d/.test(w) || /^\p{Lu}{2,}/u.test(w) || /\p{Lu}.*\p{Lu}/u.test(w);
   const joined = (i: number) => {
     const next = tokens[i + 1];
     return next !== undefined && /^ $/.test(text.slice(tokens[i]?.end ?? 0, next.start));

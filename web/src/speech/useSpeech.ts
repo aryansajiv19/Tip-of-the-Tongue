@@ -59,6 +59,9 @@ interface Handlers {
   onFinal: (words: Word[]) => void;
   // Record raw recognition events so they can be downloaded (?debug=1).
   debug?: boolean;
+  // BCP 47 tag of the language spoken (the browser's own when not given). A change while
+  // listening restarts recognition in the new language.
+  lang?: string;
 }
 
 export interface TraceEntry {
@@ -69,7 +72,7 @@ export interface TraceEntry {
   error?: string;
 }
 
-export function useSpeech({ onPartial, onFinal, debug = false }: Handlers) {
+export function useSpeech({ onPartial, onFinal, debug = false, lang }: Handlers) {
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const wanted = useRef(false);
@@ -82,6 +85,7 @@ export function useSpeech({ onPartial, onFinal, debug = false }: Handlers) {
     },
     [debug],
   );
+  const langRef = useRef(lang);
   const handlers = useRef({ onPartial, onFinal });
   useEffect(() => {
     handlers.current = { onPartial, onFinal };
@@ -107,7 +111,7 @@ export function useSpeech({ onPartial, onFinal, debug = false }: Handlers) {
     const r = new Ctor();
     r.continuous = true;
     r.interimResults = true;
-    r.lang = navigator.language || 'en-GB';
+    r.lang = langRef.current || navigator.language || 'en-GB';
     r.onstart = () => {
       touch();
       record({ event: 'start' });
@@ -189,6 +193,12 @@ export function useSpeech({ onPartial, onFinal, debug = false }: Handlers) {
     old?.stop();
     begin();
   }, [begin, flush]);
+
+  useEffect(() => {
+    if (langRef.current === lang) return;
+    langRef.current = lang;
+    restart();
+  }, [lang, restart]);
 
   // Chrome can stop recognition without telling us, and stops it when the tab is hidden.
   useEffect(() => {

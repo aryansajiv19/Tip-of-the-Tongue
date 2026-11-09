@@ -10,9 +10,22 @@ describe('session.settings', () => {
   });
 
   it('rejects out-of-range and non-number values', () => {
-    expect([799, 5001, 0, -1, '1500', null, undefined, {}].map(settings)).toEqual(
-      Array(8).fill(false),
-    );
+    expect([799, 5001, 0, -1, '1500', null, {}].map(settings)).toEqual(Array(7).fill(false));
+  });
+
+  it('takes any one field alone, so the page can send just the language', () => {
+    const parse = (rest: object) =>
+      ClientEventSchema.safeParse({ type: 'session.settings', ...rest }).success;
+    expect(parse({ language: 'es' })).toBe(true);
+    expect(parse({ pauseMs: 1500 })).toBe(true);
+    expect(parse({})).toBe(true);
+  });
+
+  it('accepts the six languages and nothing else', () => {
+    const language = (l: unknown) =>
+      ClientEventSchema.safeParse({ type: 'session.settings', language: l }).success;
+    expect(['en', 'multi', 'es', 'fr', 'de', 'hi'].map(language)).toEqual(Array(6).fill(true));
+    expect(['xx', 'EN', 'en-GB', '', 5, null].map(language)).toEqual(Array(6).fill(false));
   });
 });
 
