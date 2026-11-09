@@ -69,6 +69,9 @@ const VOICED_MAX_MS = 10_000;
 // How much of the call the guesser reads: about eight minutes of speech, so a name from early in
 // the call is still in view.
 const CONVERSATION_WORDS = 1200;
+// How long speculative calls stop after the API refuses or rate-limits us.
+const BACKOFF_MIN_MS = 5_000;
+const BACKOFF_MAX_MS = 30_000;
 // How long an offered word stays off the list.
 const REPEAT_BLOCK_MS = 180_000;
 // The stretch the guesser is told the user is stuck in.
@@ -113,6 +116,9 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   // The guesser counts as down after two failures in a row, and up again on the next success.
   let guessFailures = 0;
   let guesserDown = false;
+  // After a 401/403/429/529 no speculative call starts until then.
+  let backoffUntilMs = -Infinity;
+  let downReason: 'key' | 'busy' | undefined;
 
   // Who the user is: the voice of their first words, then corrected by evidence (a pop-up they
   // accepted, or a word they asked for by hand).
@@ -217,12 +223,25 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     closeOffer();
   }
 
-  function noteGuess(failed: boolean) {
-    guessFailures = failed ? guessFailures + 1 : 0;
-    const down = guessFailures >= 2;
-    if (down !== guesserDown) {
+  // A refused key is reported at once (it will not fix itself); other failures after two in a row.
+  function noteGuess(result: GuessResult) {
+    const { status } = result;
+    const reason =
+      status === 401 || status === 403
+        ? 'key'
+        : status === 429 || status === 529
+          ? 'busy'
+          : undefined;
+    if (reason) {
+      const wait = Math.min(Math.max(result.retryAfterMs ?? 0, BACKOFF_MIN_MS), BACKOFF_MAX_MS);
+      backoffUntilMs = now() + wait;
+    }
+    guessFailures = result.error ? guessFailures + 1 : 0;
+    const down = reason === 'key' || guessFailures >= 2;
+    if (down !== guesserDown || (down && reason !== downReason && reason)) {
       guesserDown = down;
-      send({ type: 'guesser.status', ok: !down });
+      downReason = down ? reason : undefined;
+      send({ type: 'guesser.status', ok: !down, ...(downReason ? { reason: downReason } : {}) });
     }
   }
 
@@ -286,7 +305,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         // Stale (new words arrived, or closed): nothing to do, not even count a failure.
         if (stale) return;
         mine.result = result;
-        noteGuess(result.error === true);
+        noteGuess(result);
         if (mine.confirmed) offerFrom(mine, result);
       })
       .catch((err: unknown) => opts.onError?.(err));
@@ -417,7 +436,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
     const earlyMs =
       baseEarlyMs > 0 ? Math.max(baseEarlyMs, typicalStepMs(words, isOwnWord) ?? 0) : 0;
     // "Ask only" starts nothing early either.
-    if (earlyMs > 0 && !spec && !askOnly) {
+    if (earlyMs > 0 && !spec && !askOnly && now() >= backoffUntilMs) {
       const early = detectStuck(words, now(), { pauseMs: pause, earlyMs, ...voiceOpt() });
       if (early.stuck) startGuess(last.endMs, early.sinceMs, false, false, early.rejected);
     }

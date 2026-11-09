@@ -278,7 +278,7 @@ describe('server with Deepgram', () => {
     const { app, ws, events } = await connectClient({
       deepgram: { apiKey: 'k', language: 'en', connect: dg.connect },
     });
-    await expect.poll(() => events[0]).toEqual({ type: 'session.ready', stt: 'deepgram' });
+    await expect.poll(() => events[0]).toMatchObject({ type: 'session.ready', stt: 'deepgram' });
     ws.send(Buffer.alloc(3200));
     await expect.poll(() => events.some((e) => e.type === 'transcript.partial')).toBe(true);
     ws.close();
@@ -357,7 +357,7 @@ describe('server with Deepgram', () => {
   it('ignores audio and says "browser" when Deepgram is not configured', async () => {
     const { app, ws, events } = await connectClient({});
     ws.send(Buffer.alloc(3200));
-    await expect.poll(() => events[0]).toEqual({ type: 'session.ready', stt: 'browser' });
+    await expect.poll(() => events[0]).toMatchObject({ type: 'session.ready', stt: 'browser' });
     ws.close();
     await app.close();
   });

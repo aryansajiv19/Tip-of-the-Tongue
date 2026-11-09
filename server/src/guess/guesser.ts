@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic, { APIError } from '@anthropic-ai/sdk';
 import { mockGuesser } from './mock.js';
 import { firstObjectEnd, parseGuess } from './parse.js';
 import { profileForPrompt } from './profile.js';
@@ -71,8 +71,27 @@ export function modelOptions(model: string): {
   return { max_tokens: MAX_TOKENS, thinking: { type: 'disabled' } };
 }
 
+// What a failed call tells us: its status and, for 429/529, how long the API asked us to wait.
+// Never the message: it can echo the request.
+export function failureInfo(err: unknown): { status?: number; retryAfterMs?: number } {
+  if (!(err instanceof APIError) || err.status === undefined) return {};
+  const seconds = Number(err.headers?.get?.('retry-after'));
+  return {
+    status: err.status,
+    ...(Number.isFinite(seconds) && seconds >= 0 ? { retryAfterMs: seconds * 1000 } : {}),
+  };
+}
+
+export const errorName = (err: unknown) => (err instanceof Error ? err.name : 'unknown');
+
 export function createGuesser(
-  cfg: { apiKey?: string; model: string; timeoutMs: number },
+  cfg: {
+    apiKey?: string;
+    model: string;
+    timeoutMs: number;
+    // Receives the status of a failed call (no words), for the server log.
+    onFailure?: (info: { status?: number; error: string }) => void;
+  },
   // Injectable so tests never touch the network.
   client?: Pick<Anthropic, 'messages'>,
 ): Guesser {
@@ -81,11 +100,12 @@ export function createGuesser(
 
   return async (input, signal): Promise<GuessResult> => {
     const started = Date.now();
-    const abstain = (error?: true): GuessResult => ({
+    const abstain = (error?: true, info: object = {}): GuessResult => ({
       candidates: [],
       abstain: true,
       latencyMs: Date.now() - started,
       ...(error ? { error } : {}),
+      ...info,
     });
     const controller = new AbortController();
     let timer: NodeJS.Timeout | undefined;
@@ -109,8 +129,10 @@ export function createGuesser(
       if (text === null) return abstain(true); // timed out
       if (text === undefined) return abstain(); // refused
       return { ...parseGuess(text), latencyMs: Date.now() - started };
-    } catch {
-      return abstain(true);
+    } catch (err) {
+      const info = failureInfo(err);
+      cfg.onFailure?.({ ...(info.status ? { status: info.status } : {}), error: errorName(err) });
+      return abstain(true, info);
     } finally {
       clearTimeout(timer);
     }

@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { modelOptions } from './guesser.js';
+import { errorName, failureInfo, modelOptions } from './guesser.js';
 
 // A brief longer than this is not sent whole: the guesser gets a glossary plus the start.
 export const LONG_BRIEF_CHARS = 3000;
@@ -41,7 +41,12 @@ export function briefForGuesser(doc: string, glossary?: string): string {
 export type GlossaryBuilder = (doc: string) => Promise<string | undefined>;
 
 export function createGlossaryBuilder(
-  cfg: { apiKey?: string; model: string; timeoutMs: number },
+  cfg: {
+    apiKey?: string;
+    model: string;
+    timeoutMs: number;
+    onFailure?: (info: { status?: number; error: string }) => void;
+  },
   // Injectable so tests never touch the network.
   client?: Pick<Anthropic, 'messages'>,
 ): GlossaryBuilder {
@@ -61,7 +66,9 @@ export function createGlossaryBuilder(
         { timeout: cfg.timeoutMs },
       );
       return parseGlossary(reply.content.map((b) => (b.type === 'text' ? b.text : '')).join(''));
-    } catch {
+    } catch (err) {
+      const { status } = failureInfo(err);
+      cfg.onFailure?.({ ...(status ? { status } : {}), error: errorName(err) });
       return undefined;
     }
   };

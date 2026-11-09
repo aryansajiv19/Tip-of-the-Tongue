@@ -127,7 +127,7 @@ export type ServerEvent =
   // Sent on connect, and again with 'browser' if server-side speech-to-text fails.
   // 'deepgram': the browser streams raw audio as binary frames (16 kHz mono 16-bit PCM).
   // 'browser': the browser runs its own speech recognition and sends transcript events.
-  | { type: 'session.ready'; stt: 'deepgram' | 'browser' }
+  | { type: 'session.ready'; stt: 'deepgram' | 'browser'; guesser: 'claude' | 'mock' }
   // Server-side transcript (Deepgram only), so the page can show what was heard.
   | { type: 'transcript.partial' | 'transcript.final'; words: Word[] }
   | { type: 'stuck.detected'; reason: StuckReason; contextWindow: string }
@@ -142,7 +142,8 @@ export type ServerEvent =
   // conversation; the page ignores it.
   | { type: 'session.cleared' }
   // The guesser is failing (ok: false) or working again (ok: true). Sent only on a change.
-  | { type: 'guesser.status'; ok: boolean }
+  // reason: 'key' = the API key was refused (401/403), 'busy' = rate limited or overloaded.
+  | { type: 'guesser.status'; ok: boolean; reason?: 'key' | 'busy' }
   // The key terms of the loaded brief (at most 60), sent when they are ready and again if the
   // list changes. Empty when the brief is cleared.
   | { type: 'brief.terms'; terms: string[] }

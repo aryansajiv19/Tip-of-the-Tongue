@@ -74,7 +74,7 @@ describe('a browser that vanishes', () => {
     expect(logs.filter((l) => /"level":(50|60)/.test(l))).toEqual([]);
 
     const b = await open();
-    expect(b.events[0]?.type).toBe('session.ready');
+    expect(b.events[0]).toMatchObject({ type: 'session.ready', guesser: 'claude' });
     b.ws.close();
     await app.close();
   });
