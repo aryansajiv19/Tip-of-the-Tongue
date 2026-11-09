@@ -139,7 +139,12 @@ function stallMarkerEnd(recent: readonly Word[], pauseMs: number): number | unde
   for (const word of recent) {
     const own = tokens([word]);
     const first = own[0];
-    if (previous !== undefined && word.startMs - previous.endMs > pauseMs) {
+    // A gap between two voices is someone else's turn, not a search for a word.
+    const turnChange =
+      previous?.speaker !== undefined &&
+      word.speaker !== undefined &&
+      previous.speaker !== word.speaker;
+    if (previous !== undefined && !turnChange && word.startMs - previous.endMs > pauseMs) {
       markerEndMs = previous.endMs;
       afterMarker = [];
     } else if (first !== undefined && first === lastToken && DETERMINERS.has(first)) {

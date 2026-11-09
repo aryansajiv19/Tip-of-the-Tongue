@@ -347,6 +347,22 @@ describe('sinceMs: where the search for the missing word starts', () => {
     const r = detectStuck(words, 2900 + 800, opts);
     expect(r.stuck && r.sinceMs).toBe(300);
   });
+  describe('a long gap between two voices is a turn change, not a stall marker', () => {
+    const turns = (second: number): Word[] => [
+      { text: 'a', startMs: 0, endMs: 100, speaker: 0 },
+      { text: 'little', startMs: 200, endMs: 300, speaker: 0 },
+      { text: 'each', startMs: 2500, endMs: 2600, speaker: second },
+      { text: 'day', startMs: 2800, endMs: 2900, speaker: second },
+      { text: 'slowly', startMs: 3100, endMs: 3200, speaker: 0 },
+    ];
+    it('the same voice going quiet for 2 s and carrying on still is a marker', () => {
+      const r = detectStuck(turns(0), 3200 + 800, opts);
+      expect(r.stuck && r.reason).toBe('describing');
+    });
+    it('the other voice answering in the gap is not', () => {
+      expect(detectStuck(turns(1), 3200 + 800, opts)).toEqual({ stuck: false });
+    });
+  });
   it('a stall that the speaker repaired ("yes", "sorry") does not fire', () => {
     expect(afterGap('I left it in the the car yes the car', 800)).toEqual({ stuck: false });
   });
