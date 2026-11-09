@@ -16,6 +16,8 @@ export interface GateContext {
   lastOfferAtMs?: number;
   // Words already offered, with the time of the offer. Keys are compared after normalizing.
   recentlyOffered: ReadonlyMap<string, number>;
+  // Words they said and took back: never offered.
+  rejected?: string[];
 }
 
 export type GateDecision =
@@ -46,14 +48,21 @@ export function decideOffer(
 
   const fresh = ranked.filter((c) => {
     if (findPhrase(ctx.saidSinceStuck, c.word) !== -1) return false;
+    if (
+      ctx.rejected?.some((r) => normalizePhrase(r).join(' ') === normalizePhrase(c.word).join(' '))
+    )
+      return false;
     const tokens = normalizePhrase(c.word);
-    return offered.every(
-      (o) =>
-        // A longer form of an offered word is the same repeat ("onboarding team" after
-        // "onboarding"). A shorter one is the model correcting itself towards the exact word
-        // ("SOC 2" after "SOC 2 report"), which the user should see.
-        !contains(tokens, o.tokens) || ctx.nowMs - o.at >= (opts.repeatMs ?? opts.cooldownMs),
-    );
+    return offered.every((o) => {
+      const age = ctx.nowMs - o.at;
+      if (age >= (opts.repeatMs ?? opts.cooldownMs)) return true;
+      // A longer form of an offered word is the same repeat ("onboarding team" after
+      // "onboarding"). A shorter one soon after is the model correcting itself towards the exact
+      // word ("SOC 2" after "SOC 2 report"), which the user should see; much later it is a repeat
+      // again ("time-of-use" after a finished sentence, long after "time-of-use tariff").
+      if (contains(tokens, o.tokens)) return false;
+      return !(contains(o.tokens, tokens) && age >= opts.cooldownMs);
+    });
   });
   const best = fresh[0];
   if (!best) return { offer: false, reason: 'already-offered' };

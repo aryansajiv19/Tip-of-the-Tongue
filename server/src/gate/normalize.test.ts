@@ -45,4 +45,12 @@ describe('findPhrase', () => {
   it('does not match a phrase longer than the speech', () => {
     expect(findPhrase(words('bread'), 'bread knife')).toBe(-1);
   });
+
+  it('treats British and American spellings of -ise / -ize words as one word', () => {
+    expect(normalizeWord('organizer')).toBe(normalizeWord('organiser'));
+    expect(normalizeWord('Organisation')).toBe(normalizeWord('organization'));
+    expect(normalizeWord('prioritizing')).toBe(normalizeWord('prioritising'));
+    expect(normalizeWord('size')).toBe('size');
+    expect(normalizeWord('pizza')).toBe('pizza');
+  });
 });

@@ -94,6 +94,8 @@ export interface Candidate {
 // What the server reports while debug is on: what it heard, what the detector decided, each
 // guesser call, each gate decision, and how speech-to-text is set up. Contains what was said.
 export type DebugInfo =
+  // The pause that counts as a stall for how this user talks (the setting scaled to their pace).
+  | { kind: 'pace'; pauseMs: number }
   | { kind: 'transcript'; final: boolean; text: string }
   | { kind: 'detector'; stuck: boolean; reason?: StuckReason; silenceMs: number; sinceMs?: number }
   | {

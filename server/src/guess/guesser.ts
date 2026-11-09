@@ -17,6 +17,10 @@ export function buildPrompt(input: GuessInput): string {
   if (input.profile) parts.push(`Their personal words: ${profileForPrompt(input.profile)}`);
   parts.push(`Conversation so far:\n${input.conversation}`);
   parts.push(`Just said (they are stuck here):\n${input.stuckPhrase}`);
+  if (input.rejected?.length)
+    parts.push(
+      `They said ${input.rejected.map((w) => `"${w}"`).join(', ')} and took it back, so it is not the word.`,
+    );
   return parts.join('\n\n');
 }
 

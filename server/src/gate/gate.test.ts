@@ -177,10 +177,30 @@ describe('decideOffer', () => {
       expect(r).toEqual({ offer: false, reason: 'already-offered' });
     });
 
-    it('lets a shorter, more exact form through: "SOC 2" after "SOC 2 report" is a correction', () => {
+    it('lets a shorter, more exact form through soon after: "SOC 2" after "SOC 2 report" is a correction', () => {
       const recentlyOffered = new Map([['SOC 2 report', 99_000]]);
       const r = decideOffer(guess(['SOC 2', 0.93]), ctx({ recentlyOffered }), opts);
       expect(r.offer).toBe(true);
+    });
+
+    it('blocks the shorter form once the cooldown has passed: "time-of-use" after a finished sentence is a repeat', () => {
+      // "time-of-use tariff" was offered 13.7 s ago; the user has gone on to say thank you.
+      const recentlyOffered = new Map([['time-of-use tariff', 86_300]]);
+      const r = decideOffer(guess(['time-of-use', 0.9]), ctx({ recentlyOffered }), {
+        ...opts,
+        repeatMs: 180_000,
+      });
+      expect(r).toEqual({ offer: false, reason: 'already-offered' });
+      // and the correction window is the cooldown, to the millisecond
+      const long = { ...opts, repeatMs: 180_000 };
+      const edge = new Map([['SOC 2 report', 90_001]]);
+      expect(decideOffer(guess(['SOC 2', 0.9]), ctx({ recentlyOffered: edge }), long).offer).toBe(
+        true,
+      );
+      const late = new Map([['SOC 2 report', 90_000]]);
+      expect(decideOffer(guess(['SOC 2', 0.9]), ctx({ recentlyOffered: late }), long).offer).toBe(
+        false,
+      );
     });
 
     it('blocks "waiting list" after only "list" was offered, on purpose: it is the same repeat, and a hand ask can still repeat', () => {

@@ -25,6 +25,8 @@ export function formatDebug(info: DebugInfo): string {
       return info.me === undefined
         ? `voice forgotten (${info.why}); picking again from the next words`
         : `you are voice ${info.me} (${info.why})`;
+    case 'pace':
+      return `a pause counts as a stall after ${(info.pauseMs / 1000).toFixed(1)} s, for how you talk`;
     case 'transcript':
       return `heard: ${info.text}`;
   }
