@@ -44,10 +44,10 @@ Keep your keys private. The app stores them on your computer, encrypted with you
 <p align="center"><img src="assets/state-suggestion.png" width="420" alt="A suggested word with two alternatives"></p>
 
 - When you pause on a word, say a phrase like "what's it called", or describe the thing instead of naming it, the app asks Claude for likely words and shows up to three. The main word is large; the others are underneath. The dots show how sure the guess is.
-- **Pick a word** by clicking it, pressing **⌘1, ⌘2 or ⌘3** (Ctrl on Windows and Linux), or simply saying it. The card shows a tick and goes away.
+- **Pick a word** by clicking it, pressing **⌘1, ⌘2 or ⌘3**, or simply saying it. The card shows a tick and goes away.
 - **Dismiss** it with **Esc**. It also fades after about 6 seconds, but **stays while you hover over it or have it focused**.
 - It stays **silent** when you are speaking fluently, when you find the word yourself, when someone else is talking (with Deepgram the app tells voices apart, but it chooses yours from your first words after Start and can choose wrong), during a stutter or block, and when it is not confident enough. Staying silent is on purpose.
-- If you reject a word, it does not offer it again for a few minutes.
+- A word it has offered is kept off the list for about 3 minutes, so you are not shown the same word again and again.
 
 ## 5. Shortcuts
 
@@ -59,7 +59,7 @@ Keep your keys private. The app stores them on your computer, encrypted with you
 | **⌘ 1, 2, 3** | Pick the first, second or third word while a card shows |
 | **Esc**       | Dismiss the card                                        |
 
-On Windows and Linux, use Ctrl in place of ⌘. In a browser tab, **Space** also asks for a word, unless a button or a box has focus. The menu-bar icon has the same actions, plus **Settings** and **Recent words**.
+The app is for macOS. If you try the page in a browser on Windows or Linux, Ctrl takes the place of ⌘, and **Space** also asks for a word unless a button or a box has focus. The menu-bar icon has Show or Hide, Pause or Start listening, New conversation and Quit, and is getting Settings and Recent words.
 
 ## 6. Settings
 
