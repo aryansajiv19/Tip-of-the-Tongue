@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { floatToInt16 } from './pcm';
+import { MIC_BLOCKED } from '../ui/desktop';
 
 const SAMPLE_RATE = 16000;
 
@@ -64,7 +65,7 @@ export function useMic(onChunk: (pcm: Int16Array<ArrayBuffer>) => void, deviceId
       const denied = err instanceof DOMException && err.name === 'NotAllowedError';
       setError(
         denied
-          ? 'Microphone access was blocked. Allow it in the browser address bar, then press Start.'
+          ? MIC_BLOCKED
           : 'Could not start the microphone. Check that one is connected, then press Start.',
       );
     }

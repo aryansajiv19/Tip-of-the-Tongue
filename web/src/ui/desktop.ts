@@ -30,3 +30,8 @@ export function useCommands(handler: (command: Command) => void) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 }
+
+// Where the user turns the microphone back on differs between the app and a browser tab.
+export const MIC_BLOCKED = `Microphone access was blocked. Allow it in ${
+  desktop ? 'System Settings > Privacy & Security > Microphone' : 'the browser address bar'
+}, then press Start.`;
