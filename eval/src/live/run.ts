@@ -11,8 +11,9 @@ import { dataPath } from '../dataset.js';
 import type { Offer } from '../replay.js';
 import { scoreScenario } from '../score.js';
 import { loadScenarios, type Scenario } from '../scenarios.js';
-import { durationMs, FRAME_MS, toFrames } from './audio.js';
+import { durationMs, FRAME_MS, mixAtSnr, toFrames } from './audio.js';
 import { renderLiveReport, type LiveRun } from './liveReport.js';
+import { BABBLE_VOICES, makeNoise, NOISE_KINDS, type NoiseKind } from './noise.js';
 import { installedVoices, otherVoiceFor, renderLine, USER_VOICES } from './say.js';
 import {
   buildTrack,
@@ -27,14 +28,29 @@ import {
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-async function renderScenario(sc: Scenario, userVoice: string, otherVoice: string) {
+// How the audio is made: speaking speed in words per minute, and background noise at a level
+// `snrDb` below the speech.
+export interface AudioOpts {
+  rate?: number;
+  noise?: { kind: NoiseKind; snrDb: number };
+}
+
+async function renderScenario(
+  sc: Scenario,
+  userVoice: string,
+  otherVoice: string,
+  { rate, noise }: AudioOpts = {},
+) {
   const pauseMs = sc.stallMs ?? 2000;
   const lines = [];
   for (const line of sc.lines) {
-    const pcm = await renderLine(line.s === 'me' ? userVoice : otherVoice, line.t, pauseMs);
+    const pcm = await renderLine(line.s === 'me' ? userVoice : otherVoice, line.t, pauseMs, rate);
     lines.push({ line, pcm });
   }
-  return buildTrack(lines);
+  const track = buildTrack(lines);
+  if (!noise) return track;
+  const bed = await makeNoise(noise.kind, durationMs(track.pcm));
+  return { ...track, pcm: mixAtSnr(track.pcm, bed, noise.snrDb) };
 }
 
 // Sends the audio the way the page does: a 100 ms frame each 100 ms, sent when its audio has
@@ -69,8 +85,9 @@ export async function runLive(
   pauseResume: boolean,
   // Replaces parts of the real server, for tests.
   appDeps: Parameters<typeof buildApp>[0] = {},
+  audio: AudioOpts = {},
 ): Promise<LiveRun> {
-  const { pcm, placed } = await renderScenario(sc, userVoice, otherVoice);
+  const { pcm, placed } = await renderScenario(sc, userVoice, otherVoice, audio);
   const app = await buildApp({ ...(sc.profile ? { profile } : {}), ...appDeps });
   try {
     await app.listen({ port: 0, host: '127.0.0.1' });
@@ -165,17 +182,36 @@ async function main(): Promise<void> {
       parallel: { type: 'string', default: '1' },
       'dry-run': { type: 'boolean', default: false },
       'pause-resume': { type: 'boolean', default: false },
+      rate: { type: 'string' },
+      noise: { type: 'string' },
+      snr: { type: 'string', default: '10' },
     },
   });
   const split = values.split;
   if (split !== 'dev' && split !== 'holdout' && split !== 'all')
     throw new Error('--split must be dev, holdout or all');
+  const rate = values.rate === undefined ? undefined : Number(values.rate);
+  if (rate !== undefined && !(rate >= 50 && rate <= 500))
+    throw new Error('--rate is words per minute, 50 to 500 (say speaks about 175)');
+  const noiseKind = NOISE_KINDS.find((k) => k === values.noise);
+  if (values.noise !== undefined && !noiseKind)
+    throw new Error(`--noise must be one of ${NOISE_KINDS.join(', ')}`);
+  const snrDb = Number(values.snr);
+  if (!Number.isFinite(snrDb)) throw new Error('--snr is a number of dB, such as 10');
+  const audio: AudioOpts = {
+    ...(rate === undefined ? {} : { rate }),
+    ...(noiseKind ? { noise: { kind: noiseKind, snrDb } } : {}),
+  };
   const voices = values.voices
     .split(',')
     .map((v) => v.trim())
     .filter(Boolean);
   const installed = await installedVoices();
-  for (const v of [...voices, ...voices.map(otherVoiceFor)]) {
+  for (const v of [
+    ...voices,
+    ...voices.map(otherVoiceFor),
+    ...(noiseKind === 'cafe' ? BABBLE_VOICES : []),
+  ]) {
     if (!installed.has(v)) throw new Error(`the macOS voice "${v}" is not installed (say -v '?')`);
   }
   const wanted = values.scenario?.split(',').map((s) => s.trim());
@@ -186,7 +222,7 @@ async function main(): Promise<void> {
   if (values['dry-run']) {
     let total = 0;
     for (const { sc, voice } of jobs) {
-      const { pcm } = await renderScenario(sc, voice, otherVoiceFor(voice));
+      const { pcm } = await renderScenario(sc, voice, otherVoiceFor(voice), audio);
       const s = (durationMs(pcm) - TAIL_MS) / 1000;
       total += s + TAIL_MS / 1000;
       console.log(`${sc.id} ${voice}/${otherVoiceFor(voice)}: ${s.toFixed(0)} s of speech`);
@@ -212,6 +248,8 @@ async function main(): Promise<void> {
           otherVoiceFor(job.voice),
           profile,
           values['pause-resume'],
+          {},
+          audio,
         );
         runs.push(result);
         console.error(
@@ -225,7 +263,14 @@ async function main(): Promise<void> {
   const md = renderLiveReport({ split, voices }, runs);
   const outDir = fileURLToPath(new URL('../../../eval-results/', import.meta.url));
   await mkdir(outDir, { recursive: true });
-  const tag = `live-scenarios-${split}${values['pause-resume'] ? '-pause' : ''}`;
+  const tag = [
+    `live-scenarios-${split}`,
+    values['pause-resume'] ? 'pause' : '',
+    rate === undefined ? '' : `rate${rate}`,
+    noiseKind ? `${noiseKind}${snrDb}dB` : '',
+  ]
+    .filter(Boolean)
+    .join('-');
   await writeFile(
     `${outDir}${tag}.json`,
     `${JSON.stringify(
