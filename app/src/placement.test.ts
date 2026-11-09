@@ -3,6 +3,8 @@ import {
   MIN_HEIGHT,
   activeDisplay,
   clampHeight,
+  fitOnScreen,
+  parseSavedPosition,
   maxHeight,
   placeOverlay,
   topRight,
@@ -125,5 +127,56 @@ describe('maxHeight', () => {
 
   it('never goes below the pill, even on an absurdly small screen', () => {
     expect(maxHeight(rect(0, 0, 400, 20))).toBe(MIN_HEIGHT);
+  });
+});
+
+describe('remembered position', () => {
+  const left: DisplayInfo = {
+    id: 1,
+    bounds: { x: 0, y: 0, width: 1440, height: 900 },
+    workArea: { x: 0, y: 25, width: 1440, height: 875 },
+  };
+  const right: DisplayInfo = {
+    id: 2,
+    bounds: { x: 1440, y: 0, width: 1920, height: 1080 },
+    workArea: { x: 1440, y: 0, width: 1920, height: 1080 },
+  };
+  const size = { width: 420, height: 100 };
+
+  it('reads only two finite numbers', () => {
+    expect(parseSavedPosition({ x: 10.4, y: 20 })).toEqual({ x: 10, y: 20 });
+    for (const bad of [
+      null,
+      undefined,
+      5,
+      'x',
+      {},
+      { x: 1 },
+      { x: '1', y: 2 },
+      { x: NaN, y: 1 },
+      { x: 1, y: Infinity },
+    ]) {
+      expect(parseSavedPosition(bad)).toBeUndefined();
+    }
+  });
+
+  it('keeps a position that is on a screen', () => {
+    expect(fitOnScreen({ x: 600, y: 300 }, size, [left, right])).toEqual({ x: 600, y: 300 });
+    expect(fitOnScreen({ x: 1600, y: 200 }, size, [left, right])).toEqual({ x: 1600, y: 200 });
+  });
+
+  it('pulls a window that sticks out back inside its screen', () => {
+    expect(fitOnScreen({ x: 1100, y: 10 }, size, [left, right])).toEqual({ x: 1020, y: 25 });
+    expect(fitOnScreen({ x: 600, y: 700 }, { width: 420, height: 300 }, [left, right])).toEqual({
+      x: 600,
+      y: 600,
+    });
+  });
+
+  it('gives up when the screen it was on is gone', () => {
+    expect(fitOnScreen({ x: 2000, y: 300 }, size, [left])).toBeUndefined();
+    expect(fitOnScreen({ x: 0, y: 0 }, size, [])).toBeUndefined();
+    // Dragged so far off that its centre is outside every screen.
+    expect(fitOnScreen({ x: 600, y: 880 }, size, [left])).toBeUndefined();
   });
 });

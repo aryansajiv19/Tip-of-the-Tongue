@@ -46,8 +46,12 @@ export function startChildren(
   };
 }
 
-// Resolves once `url` answers, or rejects after `timeoutMs`.
-export function waitForUrl(url: string, timeoutMs: number): Promise<void> {
+// Resolves once `url` answers, or rejects after `timeoutMs` or once `giveUp()` says so.
+export function waitForUrl(
+  url: string,
+  timeoutMs: number,
+  giveUp: () => boolean = () => false,
+): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   return new Promise((resolve, reject) => {
     const attempt = () => {
@@ -56,7 +60,8 @@ export function waitForUrl(url: string, timeoutMs: number): Promise<void> {
         resolve();
       });
       req.on('error', () => {
-        if (Date.now() > deadline) reject(new Error(`${url} did not start in time`));
+        if (giveUp()) reject(new Error('gave up waiting'));
+        else if (Date.now() > deadline) reject(new Error('The server did not start in time.'));
         else setTimeout(attempt, 300);
       });
     };

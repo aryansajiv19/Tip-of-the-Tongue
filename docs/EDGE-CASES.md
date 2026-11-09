@@ -78,3 +78,16 @@ What happens when the environment misbehaves, with the test that reproduces it. 
 | Start and Pause pressed 40 times, or Start double-clicked                                         | One capture or none; nothing left open.                                                                                                                                                                                                                          | `robust.e2e.ts`                                   |
 
 **Not covered.** A hidden or throttled browser tab (the level meter slows down; the desktop overlay is never hidden). A real Bluetooth profile switch (only the "track ended" path is tested). A real Mac sleep (simulated with a clock jump and a suspended audio context). Real Deepgram and Anthropic outages (tests use stand-in servers). The quiet-input thresholds (0.03 RMS, 10 s) are measured guesses and need real recordings to tune. A brief in a script without capital letters gets no keyterms from a short brief (a long brief still gets the model's glossary).
+
+## Desktop app start-up
+
+| Situation                      | What happens                                                                                                                                                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Launched a second time         | The running app comes forward (or shows its menu if it is still starting); no second server.                                                                                                                        |
+| Server slow to start           | The tray menu shows "Starting…" at once; after 60 s it shows "Couldn't start: …" with Retry.                                                                                                                        |
+| Port 47821 held by another app | Checked before the server starts: "Couldn't start: port 47821 is in use by another app". The page, which carries the token in its address, is never loaded from a port we do not hold.                              |
+| Server stops                   | Started once more automatically (the page reconnects and resends brief, settings and profile); a second stop soon after shows "Couldn't start" with Retry. A server that ran 5 minutes first gets its restart back. |
+| Uncaught error in the app      | Written to `userData/logs/app.log` (rotated at 1 MB, 2 old files); the app keeps running. No transcript text is logged.                                                                                             |
+| Microphone refused in macOS    | A dialog explains and opens System Settings › Privacy & Security › Microphone.                                                                                                                                      |
+
+Not covered: the failure states are tested as logic (supervisor, port check, log) but not clicked through in a packaged app.
