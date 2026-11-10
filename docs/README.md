@@ -1,5 +1,6 @@
 # Docs
 
+- `USER-GUIDE.md`: for people using the app: install, keys, settings, privacy, troubleshooting.
 - `BRIEF.md`: what the product is, why voice, and the honest framing. Read first.
 - `ARCHITECTURE.md`: how it works (events, speech, stall detector, guesser, gate) and how it is evaluated.
 - `EDGE-CASES.md`: what happens in awkward cases, and what the evals found.
