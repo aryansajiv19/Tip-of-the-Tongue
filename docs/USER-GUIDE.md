@@ -111,4 +111,6 @@ Open it with the gear button.
 
 **The app says a port is in use, or does not start.** Another copy of the app, or another program, is using a port it needs. Choose **Quit** from the menu-bar icon (also check there is no second copy), then open the app again. If it still fails, restart your computer.
 
+**On a call, it offers words when the other person is the one stuck, or hears the wrong voice.** If you use laptop speakers, the other person's voice can leak into your microphone. Wear headphones for best results. The computer's echo cancellation does not remove other apps' audio on every system.
+
 **Still stuck?** Tell us what you saw and what you were doing; please do not send your keys.
