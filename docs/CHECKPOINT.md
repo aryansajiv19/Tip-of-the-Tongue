@@ -88,6 +88,8 @@ What works today:
 
 ## Evidence now
 
+- Accuracy pass #95 (2026-11-10): dev 93–96% in three runs (wrong 2–4/71, fluent 0–1/165); holdout once 94% (17/18), 1 wrong.
+
 - Dev replay, 20 conversations, real Haiku, three runs on the #64 code: 82–86% correct, 2–3 wrong (always the same three hard items), 1–2 fluent pop-ups out of 165, 0–1 on the other speaker out of 251. Slow, self-correcting and breathy speakers: 9–11 of 11 stalls. The original 17 scenarios average 83%, against an 84% baseline.
 - Live (macOS voices, Deepgram + Claude, s01): 6/8, 0 wrong, 0/22 fluent pop-ups.
 - Live s01, six voices, stable network: clean 20/24 (1 wrong), café 10 dB 14/24 (2 wrong). Language-aware prompt: dev 90% twice, s19 4/4 and 3/4 with no foreign word. Details in write-up.md.
@@ -95,9 +97,9 @@ What works today:
 
 ## Next
 
-Scope (owner, 2026-11-10): a runnable, decent prototype, not a perfect product. Two tries, then park it.
+Scope (owner, 2026-11-10): a runnable, decent prototype, not a perfect product. Two tries, then park it. For now it is demoed from the owner's Mac with the `.env` keys (`npm run demo`); user accounts and own keys come later.
 
-1. The owner: the hand-check above. Anything broken goes to a worker as a small fix.
+1. The owner: a morning test, speaking normal English with `npm run demo` (keys in `.env`; no setup screen), then the hand-check above. Anything broken goes to a worker as a small fix.
 2. The owner: publish a GitHub release with the .dmg when ready; send the Hiya logo file (the tray icon and app icon are placeholders); rotate keys; delete stale remote branches from rebases (`feat/stt-languages`, `feat/guess-cap`, `feat/heartbeat`, `feat/language-setting`, `fix/deepgram-recovery`, `feat/ux-ship`, `feat/ux-ship-2`, `fix/timing-drift`, …).
 3. Parked: café-noise accuracy; other-speaker pop-ups without speaker labels; one holdout run before any final write-up; code signing and notarisation; a Windows build; a Deepgram "Could not reach" seen once on the first key check (not reproduced).
 
