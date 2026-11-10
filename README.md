@@ -25,11 +25,11 @@ Entry for the **Hiya Voice AI Challenge, Accessibility track**.
 
 ## Try it
 
-You need Node 22 (`nvm use`) and a Mac for the desktop overlay.
+You need Node 22 (`nvm use`) and a Mac for the desktop overlay. On Windows or Linux, use the web version (`npm run dev`) in Chrome or Edge.
 
 1. `npm install`
 2. Copy `.env.example` to `.env` and add `ANTHROPIC_API_KEY` and `DEEPGRAM_API_KEY`.
-3. `npm run demo`, allow the microphone, press play, and pause mid-sentence: "I need to book the… the thing you fly in".
+3. `npm run demo`, allow the microphone, press play, and pause mid-sentence: "I need to book the… the thing you fly in". The first launch downloads the Electron runtime once (about 30 s).
 
 No keys? `npm run dev` runs the web version from a clean clone with a mock guesser and the browser's speech recognition (Chrome or Edge) at http://localhost:5173.
 
