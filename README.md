@@ -28,6 +28,8 @@ New to the app? Read the [user guide](docs/USER-GUIDE.md): install, getting your
 
 ## Quick start
 
+**Demo (live):** put `ANTHROPIC_API_KEY` and `DEEPGRAM_API_KEY` in `.env` (copy `.env.example`), run `npm run demo`, press play, and pause mid-sentence. The overlay opens with live speech and live guesses: no setup screen, no demo banner.
+
 You need Node 22 (`nvm use`). It runs from a clean clone with **no API keys**: you get a mock guesser and the browser's speech recognition (Chrome or Edge).
 
 ```bash
