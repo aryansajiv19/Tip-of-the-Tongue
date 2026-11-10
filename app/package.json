@@ -1,5 +1,6 @@
 {
   "name": "app",
+  "productName": "Tip of the Tongue",
   "version": "0.1.0",
   "description": "Live word-finding companion: a small overlay that offers the word on the tip of your tongue.",
   "author": "Aryan Sajiv",
