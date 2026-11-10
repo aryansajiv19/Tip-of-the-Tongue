@@ -162,20 +162,19 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
   }
 
   // Deepgram sometimes gives one word in the middle of someone's speech a voice number nobody else
-  // has, and one such word must not make the user look like someone else. A voice is a real
-  // person's once it has said a few words; a newcomer also counts if it starts after a gap, as a
-  // turn does (a stray label sits right against the word before it).
+  // has, and one such word must not make the user look like someone else (their stall pause
+  // always leaves a gap before it). A voice is a real person's once it has said a few words; a
+  // newcomer's turn has begun once it has said that many in a row.
   const REAL_VOICE_WORDS = 3;
-  const TURN_GAP_MS = 300;
   const isRealVoice = (speaker: number) =>
     buffer.words().filter((w) => w.speaker === speaker).length >= REAL_VOICE_WORDS;
   function startedTurn(words: readonly Word[]): boolean {
-    const last = words.at(-1);
-    if (!last || last.speaker === undefined) return false;
-    const before = words.at(-2);
+    const speaker = words.at(-1)?.speaker;
+    if (speaker === undefined) return false;
+    const run = words.slice(-REAL_VOICE_WORDS);
     return (
-      isRealVoice(last.speaker) ||
-      (before !== undefined && last.startMs - before.endMs >= TURN_GAP_MS)
+      isRealVoice(speaker) ||
+      (run.length === REAL_VOICE_WORDS && run.every((w) => w.speaker === speaker))
     );
   }
   // The evidence for "this voice is the user" (an accepted pop-up, a hand ask) counts only from a

@@ -120,6 +120,21 @@ describe('who is speaking', () => {
     session.close();
   });
 
+  it('lets a stall through when one word of the user is labelled with another voice', async () => {
+    const { session, say, stalls, introduce } = setup();
+    introduce();
+    await vi.advanceTimersByTimeAsync(3000);
+    const before = stalls();
+    say(0, 'I need to go to the place where you get the');
+    vi.advanceTimersByTime(900);
+    // Deepgram labels the next word, after the pause, with a voice nobody else has.
+    say(2, 'tablets');
+    await vi.advanceTimersByTimeAsync(3000);
+    // One stall after the word the user said before the odd label, one after the odd-labelled word.
+    expect(stalls()).toBe(before + 2);
+    session.close();
+  });
+
   it('does not guess early for the other voice either', async () => {
     const guess = vi.fn(mockGuesser);
     const session = createSession(() => undefined, {
@@ -144,7 +159,12 @@ describe('who is speaking', () => {
     const later = Date.now();
     session.handle({
       type: 'transcript.final',
-      words: [{ text: 'the', startMs: later, endMs: later + 250, speaker: 1 }],
+      words: ['the', 'box', 'with'].map((t, i) => ({
+        text: t,
+        startMs: later + i * 300,
+        endMs: later + i * 300 + 250,
+        speaker: 1,
+      })),
     });
     guess.mockClear();
     await vi.advanceTimersByTimeAsync(3000);
