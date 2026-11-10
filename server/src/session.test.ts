@@ -8,7 +8,11 @@ const T0 = 1_000_000;
 
 function setup(
   guess: Guesser = mockGuesser,
-  extra: { speculateAfterMs?: number; maxCallsPerMinute?: number } = {},
+  extra: {
+    speculateAfterMs?: number;
+    maxCallsPerMinute?: number;
+    trace?: (r: Record<string, unknown>) => void;
+  } = {},
 ) {
   const events: ServerEvent[] = [];
   const session = createSession((e) => events.push(e), {
@@ -1133,6 +1137,30 @@ describe('session pipeline', () => {
     say('we need to sort out the');
     await vi.advanceTimersByTimeAsync(2000);
     expect(guess.mock.calls[0]?.[0].brief).toBe('Q3 review with Northwind');
+    session.close();
+  });
+});
+
+describe('session trace', () => {
+  it('records words with speaker and times, the detector, the guess and the gate, without debug on', async () => {
+    const records: Record<string, unknown>[] = [];
+    const { session, say } = setup(mockGuesser, { trace: (r) => records.push(r) });
+    say('I need to go to the the place where you get medicine');
+    await vi.advanceTimersByTimeAsync(2000);
+    const kinds = records.map((r) => r.kind ?? (r.event as { type: string }).type);
+    expect(kinds).toEqual(
+      expect.arrayContaining(['words', 'transcript', 'detector', 'guess', 'gate', 'guess.offered']),
+    );
+    const words = records.find((r) => r.kind === 'words')?.words as Word[];
+    expect(words[0]).toMatchObject({ text: 'I', startMs: expect.any(Number) });
+    expect(records.every((r) => typeof r.atMs === 'number')).toBe(true);
+    session.close();
+  });
+
+  it('records nothing when no trace is set', () => {
+    const { session, say, events } = setup();
+    say('hello there');
+    expect(events.some((e) => e.type === 'debug')).toBe(false);
     session.close();
   });
 });

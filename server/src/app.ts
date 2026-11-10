@@ -1,3 +1,4 @@
+import { appendFileSync } from 'node:fs';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import Fastify, { type FastifyRequest } from 'fastify';
 import websocket from '@fastify/websocket';
@@ -10,6 +11,12 @@ import type { Guesser } from './guess/types.js';
 import { serveFolder } from './static.js';
 import { createSession, type SessionOptions } from './session.js';
 import { createDeepgramStream, type DeepgramOptions } from './stt/deepgram.js';
+
+// One JSON object per line. Sync on purpose: a few lines a second, and nothing is lost on a crash.
+function traceTo(file: string) {
+  appendFileSync(file, `${JSON.stringify({ kind: 'start', at: new Date().toISOString() })}\n`);
+  return (record: Record<string, unknown>) => appendFileSync(file, `${JSON.stringify(record)}\n`);
+}
 
 // Room for a pasted brief of 50,000 characters, even if every one takes six bytes (a JSON-escaped control character).
 // The glossary is built in the background, so it can take longer than a guess.
@@ -160,6 +167,7 @@ export async function buildApp(deps: AppDeps = {}) {
       moveOnWords: config.moveOnWords,
       speculateAfterMs: config.speculateAfterMs,
       log: (info) => app.log.info(info, 'session: timing'),
+      ...(config.traceFile ? { trace: traceTo(config.traceFile) } : {}),
       onError: (err) => app.log.error({ err }, 'session: error'),
       ...(deps.profile ? { profile: deps.profile } : {}),
       ...deps.session,
