@@ -1,51 +1,74 @@
 # Tip of the Tongue
 
-A live word-finding companion. It listens to your conversation. When you stall on a word mid-sentence, a small overlay offers up to three likely words, or just the first sound if you prefer. It stays silent while you speak fluently, while you are still finding the word yourself, and while someone else is talking.
+**A live word-finding companion.** When a word escapes you mid-sentence, it offers it in about a second and a half, and stays silent the rest of the time.
 
-It's for anyone who loses words mid-conversation: in meetings, interviews and calls, or day to day. That includes people with anomic aphasia, brain fog or a stammer, older speakers, and people speaking a second language.
+<p align="center">
+  <a href="docs/assets/demo.mp4"><img src="docs/assets/demo.gif" width="760" alt="Demo: the speaker stalls on 'the thing you fly in', the overlay offers 'plane', and nothing pops up during fluent speech"></a>
+  <br>
+  <sub><a href="docs/assets/demo.mp4">Watch the 25-second demo with sound</a></sub>
+</p>
+
+<p align="center">
+  <a href="#try-it">Try it</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#evidence">Evidence</a> ·
+  <a href="docs/USER-GUIDE.md">User guide</a> ·
+  <a href="#limitations">Limitations</a>
+</p>
+
+It listens to your conversation. When you stall on a word, a small overlay offers up to three likely words, or just the first sound if you prefer. It stays quiet while you speak fluently, while you are still finding the word yourself, and while someone else is talking.
+
+It's for anyone who loses words mid-conversation, in meetings, interviews, calls or day to day. That includes people with anomic aphasia, brain fog or a stammer, older speakers, and people speaking a second language.
 
 Entry for the **Hiya Voice AI Challenge, Accessibility track**.
 
-<p align="center">
-  <img src="docs/assets/state-suggestion.png" width="420" alt="Overlay showing a suggested word with two alternatives">
-</p>
+## Try it
+
+You need Node 22 (`nvm use`) and a Mac for the desktop overlay.
+
+1. `npm install`
+2. Copy `.env.example` to `.env` and add `ANTHROPIC_API_KEY` and `DEEPGRAM_API_KEY`.
+3. `npm run demo`, allow the microphone, press play, and pause mid-sentence: "I need to book the… the thing you fly in".
+
+No keys? `npm run dev` runs the web version from a clean clone with a mock guesser and the browser's speech recognition (Chrome or Edge) at http://localhost:5173.
+
+| Variable            | What it enables                                                                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY` | Real word guessing with Claude (default model `claude-haiku-5-5`). Without it, a mock guesser runs.                                                   |
+| `DEEPGRAM_API_KEY`  | Streaming speech-to-text (Nova-3) with word timings, filler words and speaker labels. Without it, browser speech is used. The desktop app needs this. |
+
+Optional settings are in `.env.example`: a personal profile file, sensitivity and the allowed browser origins.
 
 ## Features
 
-- **Spots stalls in any kind of speech.** It triggers on a pause, a filler, a cue phrase ("what's it called") or a description of the thing ("the place where you get medicine"). The pause threshold adapts to each speaker's pace. It stays quiet during stutters and blocks, and it never offers a word you have just rejected ("the fork, no, the…").
-- **Only your stalls count.** Deepgram tells the voices apart, so the other person's pauses never trigger it.
-- **Fast.** Guessing starts while you are still pausing. The pop-up typically appears 1.4–1.7 s after your last word.
-- **Uses context.** Drop in a meeting document (PDF, Markdown or text) and it uses that document's names and terms. "About you" adds your name, your role and words you often need. Words you accept are remembered on this device, as words only and never transcripts, so the next meeting already knows them.
-- **You decide how much help you get.** First sound only, the whole word, or only when you ask. "How quickly I offer words" runs from Calm to Eager. Light or dark follows your system, Large text is one click, and Settings > Privacy lists everything kept on your device with a Forget everything button. Pick your language in Settings. The desktop app asks for your own Anthropic and Deepgram keys on first launch, or you can try the demo, which says plainly that its suggestions are examples.
-- **Desktop overlay.** An always-on-top macOS window with a menu-bar icon. It never takes focus and stays visible when you share your screen.
-- **Recovers from everyday failures.** It reconnects after a network drop or Mac sleep, recovers when a mic is unplugged or switched, and warns about muted or very quiet input.
+**Notices when you're stuck**
+
+- Triggers on a pause, a filler, a cue phrase ("what's it called") or a description of the thing ("the place where you get medicine").
+- The pause it waits for adapts to your pace. It stays quiet during stutters and blocks and never finishes a word you have started.
+- It never offers a word you just rejected ("the fork, no, the…"), and only your own stalls count: Deepgram tells the voices apart.
+
+**Offers the right word, fast**
+
+- Guessing starts while you are still pausing; the pop-up typically appears 1.4–1.7 s after your last word.
+- It prefers the specific word and keeps phrases whole ("phone cable", "car park"). Say the word, click it, or press ⌘1/⌘2/⌘3.
+- Meeting notes (PDF, Markdown or text), "About you" and words you have accepted before give it context. Words are remembered on this device only, never transcripts.
+
+**Fits how you want to be helped**
+
+- First sound only, the whole word, or only when you ask; and how quickly it offers words, from Calm to Eager.
+- English, Spanish, French, German, Hindi or mixed. With English selected, a foreign word in your sentence gets its English word.
+- Large text, light or dark following your system, keyboard and screen-reader friendly, reduced motion respected.
+
+**Stays out of the way**
+
+- An always-on-top macOS overlay with a menu-bar icon. It never takes focus, can be dragged anywhere, and stays visible when you share your screen.
+- Settings › Privacy lists everything kept on your device, with Forget everything.
+- It reconnects after a network drop or sleep, recovers when a mic is unplugged or switched, and warns about a muted or very quiet mic.
 
 | Listening                                     | Thinking                                    | Accepted                                    | Help settings                               |
 | --------------------------------------------- | ------------------------------------------- | ------------------------------------------- | ------------------------------------------- |
 | ![Listening](docs/assets/state-listening.png) | ![Thinking](docs/assets/state-thinking.png) | ![Accepted](docs/assets/state-accepted.png) | ![Settings](docs/assets/state-settings.png) |
-
-New to the app? Read the [user guide](docs/USER-GUIDE.md): install, getting your keys, settings, privacy and troubleshooting.
-
-## Quick start
-
-**Demo (live):** put `ANTHROPIC_API_KEY` and `DEEPGRAM_API_KEY` in `.env` (copy `.env.example`), run `npm run demo`, press play, and pause mid-sentence. The overlay opens with live speech and live guesses: no setup screen, no demo banner.
-
-You need Node 22 (`nvm use`). It runs from a clean clone with **no API keys**: you get a mock guesser and the browser's speech recognition (Chrome or Edge).
-
-```bash
-npm install
-npm run dev     # server on :3000, web app on http://localhost:5173
-npm run app     # desktop overlay (macOS); needs DEEPGRAM_API_KEY for speech
-```
-
-For real use, copy `.env.example` to `.env` and add:
-
-| Variable            | What it enables                                                                                                                                                                  |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY` | Real word guessing with Claude (default model `claude-haiku-5-5`). Without it, a mock guesser runs.                                                                              |
-| `DEEPGRAM_API_KEY`  | Streaming speech-to-text (Nova-3) with real word timings, filler words and speaker labels. Without it, the browser's speech recognition is used. The desktop app needs this key. |
-
-Optional settings are in `.env.example`: a personal profile file, sensitivity and the allowed browser origins.
 
 ### Keyboard shortcuts (desktop overlay)
 
@@ -59,9 +82,9 @@ Optional settings are in `.env.example`: a personal profile file, sensitivity an
 
 On Windows and Linux use Ctrl instead of ⌘. In the browser, add `?debug=1` for developer tools.
 
-## Install the desktop app (macOS)
+### Build the installer (optional)
 
-`npm run dist` builds two installers in `release/`: `Tip of the Tongue-0.1.0-arm64.dmg` (Apple silicon) and `Tip of the Tongue-0.1.0.dmg` (Intel). Open one and drag the app to Applications. The app is **not signed yet**, so the first time, right-click it and choose Open, then Open again (or allow it in System Settings › Privacy & Security). It asks for the microphone on first use. Paste your own keys in the app; they are stored encrypted in the macOS keychain, and no `.env` is needed.
+`npm run dist` builds `.dmg` installers in `release/` (Apple silicon and Intel). The installed app asks for your own keys on first launch and stores them encrypted in the macOS Keychain. It is unsigned, so open it the first time with right-click › Open.
 
 ## How it works
 
