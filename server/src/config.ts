@@ -43,6 +43,9 @@ export const config = {
   token: process.env.TOTT_TOKEN || undefined,
   // Write the log to this file (appended) instead of stdout.
   logFile: process.env.LOG_FILE || undefined,
+  // Append a JSONL trace of each session here, to see why it did or did not help. It contains
+  // what was said. Off by default.
+  traceFile: process.env.TRACE_FILE || undefined,
   stuckPauseMs: num('STUCK_PAUSE_MS', 1500),
   gateMinConfidence: num('GATE_MIN_CONFIDENCE', 0.6),
   guessTimeoutMs: num('GUESS_TIMEOUT_MS', 2500),

@@ -39,6 +39,10 @@ export interface SessionOptions {
   maxCallsPerMinute?: number;
   // Timing and cost numbers (stall to offer, speculative calls wasted).
   log?: (info: Record<string, unknown>) => void;
+  // Local trace for diagnosing a live session: gets every debug event and every event sent to the
+  // page (not heartbeats or partials), plus each final's words with speaker and times. Contains
+  // what was said.
+  trace?: (record: Record<string, unknown>) => void;
   // Called when the guesser or a timer tick fails; the session carries on.
   onError?: (err: unknown) => void;
 }
@@ -85,8 +89,18 @@ const REPEAT_BLOCK_MS = 180_000;
 // The stretch the guesser is told the user is stuck in.
 const STUCK_WORDS = 60;
 
-export function createSession(send: (event: ServerEvent) => void, opts: SessionOptions) {
+export function createSession(sendToPage: (event: ServerEvent) => void, opts: SessionOptions) {
   const now = opts.now ?? Date.now;
+  const send = (event: ServerEvent) => {
+    sendToPage(event);
+    if (
+      opts.trace &&
+      event.type !== 'heartbeat' &&
+      event.type !== 'debug' &&
+      event.type !== 'transcript.partial'
+    )
+      opts.trace({ atMs: now(), event });
+  };
   const buffer = new TranscriptBuffer();
   const recentlyOffered = new Map<string, number>();
   let brief: string | undefined;
@@ -173,6 +187,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
   // Debug events carry what was said, so nothing is built or sent unless the client asked.
   function debug(info: () => DebugInfo) {
     if (debugOn) send({ type: 'debug', atMs: now(), info: info() });
+    if (opts.trace) opts.trace({ atMs: now(), ...info() });
   }
 
   function refreshKeyterms() {
@@ -582,6 +597,7 @@ export function createSession(send: (event: ServerEvent) => void, opts: SessionO
         }));
         if (event.type === 'transcript.partial') buffer.applyPartial(words);
         else {
+          opts.trace?.({ atMs: now(), kind: 'words', words });
           buffer.applyFinal(words);
           const first = me === undefined ? speakerOfFirstUtterance(words) : undefined;
           if (first !== undefined) setMe(first, 'first words');
