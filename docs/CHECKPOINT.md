@@ -2,13 +2,28 @@
 
 Single source of current status. Updated by the lead session when a branch lands or a decision changes.
 
-_Last updated: 2026-11-10 (ship round done)_
+_Last updated: 2026-11-10, end of the ship round_
 
 ## Now
 
-Goal now: a product a real user can install and use (owner, 2026-11-09 evening). Users paste their own keys (encrypted with the macOS Keychain); the .dmg is unsigned for now (right-click → Open the first time). The plan: `~/.claude/plans/deadlines-deadlines-fine-removing-prancy-dusk.md` in the lead's home.
+**Prototype status: runnable, and about 90% of the way to "a stranger can install and use it".** Everything planned for the ship round is merged (#67–#91). What remains is hand-checking by a person at the Mac (list below) and the parked items.
 
-The loop: The full loop runs live: Deepgram Nova-3 (keyterms from the profile and brief) or browser speech → stall detector (any pause, cue phrases, sound signals) → Haiku guess started 300 ms into a pause → gate → pop-up. A guess takes about 0.8 s; in the scenario tests the pop-up appears about 1.4 s after the last word.
+What works today:
+
+- `npm run dist` builds an unsigned macOS .dmg. The installed app needs no repo and no `.env`: the user pastes their own Anthropic and Deepgram keys on a setup screen (stored with the macOS Keychain, checked live), or tries demo mode (clearly labelled).
+- Checked by a worker on the packaged app (2026-11-10): launch, setup screen, demo banner, bad-key message, socket token, logs free of words and tokens, single instance, clean quit.
+- The loop: Deepgram Nova-3 (or browser speech) → stall detector (adaptive pause, cues in en/es/fr/de/hi, stutter-aware) → Haiku guess started early → gate → pop-up about 1.4–1.7 s after the last word. Help level, speed, language, light/dark, Large text, Privacy (forget words), meeting notes, About you, tray menu, start at login, draggable overlay, user guide.
+- Failure handling: bad key / busy service in plain words, 60 calls a minute cap, reconnects after network loss or sleep, Deepgram recovery, one listening tab, mic switch and Firefox capture.
+
+**How to resume (new sessions):** read this file, then `CLAUDE.md` (rules, including the scope rule) and the folder `CLAUDE.md` for the area you touch. `git worktree list` shows active worktrees; only `~/voice-airlock-hiya` (main) and `~/tott-eval` (the lead's eval checkout) are expected. Keys live only in `~/voice-airlock-hiya/.env`.
+
+### Hand-check (needs a person at the Mac)
+
+1. `npm run dist`, open the .dmg, drag to Applications, right-click › Open.
+2. Paste both keys, "Save and check": two ticks.
+3. Allow the microphone, press play, say "I need to book the… the thing you fly in": a suggestion appears.
+4. Tray: listening icon, Settings…, Recent words, Start at login. "Get a key" opens the browser. Drag the overlay, quit, reopen: same place.
+5. Shortcuts: ⌘\ show/hide, ⌘↵ ask now, ⌘1/2/3 pick, Esc dismiss, ⌘⇧N new conversation.
 
 | Area                                                                                          | PR                 | Owner    | State  |
 | --------------------------------------------------------------------------------------------- | ------------------ | -------- | ------ |
@@ -50,6 +65,7 @@ The loop: The full loop runs live: Deepgram Nova-3 (keyterms from the profile an
 | Language-aware guessing; es/fr/de/hi cues                                                     | #79                | c1       | merged |
 | Start-up hardening (single instance, tray-first, restart once, mic help); tray, login, drag   | #87                | 93       | merged |
 | Tray commands, drag region, USER-GUIDE.md                                                     | #89                | 4c       | merged |
+| Packaged-app fixes from the install check (userData folder name)                              | #91                | 93       | merged |
 | Segmenter for CJK and Thai; capture: noise suppression off, resampler, device switch, errors  | #86, #88           | 75       | merged |
 
 ## Decisions
@@ -75,15 +91,14 @@ The loop: The full loop runs live: Deepgram Nova-3 (keyterms from the profile an
 - Dev replay, 20 conversations, real Haiku, three runs on the #64 code: 82–86% correct, 2–3 wrong (always the same three hard items), 1–2 fluent pop-ups out of 165, 0–1 on the other speaker out of 251. Slow, self-correcting and breathy speakers: 9–11 of 11 stalls. The original 17 scenarios average 83%, against an 84% baseline.
 - Live (macOS voices, Deepgram + Claude, s01): 6/8, 0 wrong, 0/22 fluent pop-ups.
 - Live s01, six voices, stable network: clean 20/24 (1 wrong), café 10 dB 14/24 (2 wrong). Language-aware prompt: dev 90% twice, s19 4/4 and 3/4 with no foreign word. Details in write-up.md.
-- Known weak spots: code-switching (1/4: it offers the foreign word), the slow speaker s25 (2/4 in one run, under diagnosis), descriptions with no visible gap (h41).
+- Known weak spots: background noise (58% vs 83% clean, mostly missed stalls); descriptions with no visible gap (h41); without speaker labels the other person's stalls can trigger a guess. s25's earlier dip was API timeouts plus one borderline guess; its fluent pop-up was fixed in #75 (with speaker labels).
 
 ## Next
 
-The owner (2026-11-10): a runnable, decent prototype, not a perfect product; park anything that fails after two tries.
+Scope (owner, 2026-11-10): a runnable, decent prototype, not a perfect product. Two tries, then park it.
 
-1. 93: real install check of the .dmg with no repo and no `.env`. Small fixes only.
-2. The lead: one real-key check in the installed app.
-3. Parked for later: café noise (58% vs 83% clean); other-speaker pop-ups without speaker labels (variance, needs labels); holdout run; signing; Windows build.
-4. The owner: publish a release when ready; send the Hiya logo file; rotate keys; delete stale remote branches from rebases (`feat/stt-languages`, `feat/guess-cap`, `feat/heartbeat`, `feat/language-setting`, `fix/deepgram-recovery`, `feat/ux-ship`, `feat/ux-ship-2`, `fix/timing-drift`, …).
+1. The owner: the hand-check above. Anything broken goes to a worker as a small fix.
+2. The owner: publish a GitHub release with the .dmg when ready; send the Hiya logo file (the tray icon and app icon are placeholders); rotate keys; delete stale remote branches from rebases (`feat/stt-languages`, `feat/guess-cap`, `feat/heartbeat`, `feat/language-setting`, `fix/deepgram-recovery`, `feat/ux-ship`, `feat/ux-ship-2`, `fix/timing-drift`, …).
+3. Parked: café-noise accuracy; other-speaker pop-ups without speaker labels; one holdout run before any final write-up; code signing and notarisation; a Windows build; a Deepgram "Could not reach" seen once on the first key check (not reproduced).
 
-Workers: c1, 4c, 93, 75 (`aryansajiv-75`). One `~/tott-*` worktree each. Rules for the shared machine are in CLAUDE.md. Code map: `graphify-out/` in the lead's checkout.
+Workers (all idle at the end of the round): c1 (detector, guesser, session), 4c (web UI), 93 (desktop app, packaging), 75 (`aryansajiv-75`, speech-to-text, audio, languages). One `~/tott-*` worktree each, removed after merge. Rules for the shared machine are in CLAUDE.md. Code map: `graphify-out/` in the lead's checkout.
