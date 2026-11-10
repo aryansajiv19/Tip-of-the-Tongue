@@ -74,7 +74,7 @@ Optional settings are in `.env.example`: a personal profile file, sensitivity an
 
 <p align="center"><img src="docs/assets/state-accepted.png" width="800" alt="Accepted: the word you said is confirmed"><br><b>Accepted</b>: the word you said is confirmed</p>
 
-<p align="center"><img src="docs/assets/state-settings.png" width="800" alt="Settings: help level, speed, language, text size, privacy"><br><b>Settings</b>: help level, speed, language, text size, privacy</p>
+<p align="center"><img src="docs/assets/state-settings.png" width="448" alt="Settings: help level, speed, language, text size, privacy"><br><b>Settings</b>: help level, speed, language, text size, privacy</p>
 
 <p align="center"><img src="docs/assets/state-first-run.png" width="800" alt="First run: how should I help when you are stuck?"><br><b>First run</b>: how should I help when you are stuck?</p>
 
