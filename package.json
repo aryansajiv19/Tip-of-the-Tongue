@@ -22,6 +22,7 @@
     "eval": "npm run eval -w eval --",
     "e2e:live": "playwright test -c e2e/live/playwright.live.config.ts",
     "app": "npm run start -w app",
+    "demo": "npm run app",
     "scenarios:live": "npm run scenarios:live -w eval --",
     "dist": "npm run build -w web -w server && node scripts/bundle-server.mjs && npm run dist -w app"
   },

@@ -36,6 +36,15 @@ import {
 } from './placement';
 
 const ROOT = path.resolve(__dirname, '../..');
+// From the repo, the keys live in .env (as they do for the server), so the setup screen knows
+// they are there. Real environment variables win.
+if (!app.isPackaged) {
+  try {
+    process.loadEnvFile(path.join(ROOT, '.env'));
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+  }
+}
 const PORTS = {
   server: Number(process.env.TOTT_SERVER_PORT ?? 3000),
   web: Number(process.env.TOTT_WEB_PORT ?? 5173),
