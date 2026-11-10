@@ -2,9 +2,11 @@
 
 Single source of current status. Updated by the lead session when a branch lands or a decision changes.
 
-_Last updated: 2026-11-10, end of the ship round_
+_Last updated: 2026-11-10, close of day_
 
 ## Now
+
+**Close of day 2026-11-10:** main is at the accuracy pass (#95) and its docs (#96); no PRs are open; all four workers are idle with their worktrees removed. The only worktrees left are main and the lead's `~/tott-eval`. Next is the owner's morning test with `npm run demo`, then small fixes from what it shows.
 
 **Prototype status: runnable, and about 90% of the way to "a stranger can install and use it".** Everything planned for the ship round is merged (#67–#91). What remains is hand-checking by a person at the Mac (list below) and the parked items.
 
@@ -66,6 +68,9 @@ What works today:
 | Start-up hardening (single instance, tray-first, restart once, mic help); tray, login, drag   | #87                | 93       | merged |
 | Tray commands, drag region, USER-GUIDE.md                                                     | #89                | 4c       | merged |
 | Packaged-app fixes from the install check (userData folder name)                              | #91                | 93       | merged |
+| Hand-off docs, realtime-loop project skill                                                    | #92, #93           | lead     | merged |
+| `npm run demo`; the desktop app reads the repo `.env` (no setup screen with keys there)       | #94                | 93       | merged |
+| Accuracy pass: the word the description defines, specific and whole (dev 93–96%, holdout 94%) | #95, #96           | c1, lead | merged |
 | Segmenter for CJK and Thai; capture: noise suppression off, resampler, device switch, errors  | #86, #88           | 75       | merged |
 
 ## Decisions
