@@ -66,20 +66,17 @@ Optional settings are in `.env.example`: a personal profile file, sensitivity an
 - Settings › Privacy lists everything kept on your device, with Forget everything.
 - It reconnects after a network drop or sleep, recovers when a mic is unplugged or switched, and warns about a muted or very quiet mic.
 
-<table>
-  <tr>
-    <td align="center"><img src="docs/assets/state-listening.png" width="430" alt="Listening: the pill with a live level meter"><br><b>Listening</b></td>
-    <td align="center"><img src="docs/assets/state-thinking.png" width="430" alt="Thinking: the card while it finds the word"><br><b>Thinking</b></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/assets/state-suggestion.png" width="430" alt="A suggested word with two alternatives and their shortcuts"><br><b>Suggestion</b></td>
-    <td align="center"><img src="docs/assets/state-accepted.png" width="430" alt="Accepted: the word you said is confirmed"><br><b>Accepted</b></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/assets/state-settings.png" width="430" alt="Settings: help level, speed, language, text size"><br><b>Settings</b></td>
-    <td align="center"><img src="docs/assets/state-first-run.png" width="430" alt="First run: how should I help when you're stuck?"><br><b>First run</b></td>
-  </tr>
-</table>
+<p align="center"><img src="docs/assets/state-listening.png" width="800" alt="Listening: the pill with a live level meter"><br><b>Listening</b>: the pill with a live level meter</p>
+
+<p align="center"><img src="docs/assets/state-thinking.png" width="800" alt="Thinking: it noticed a pause and is finding the word"><br><b>Thinking</b>: it noticed a pause and is finding the word</p>
+
+<p align="center"><img src="docs/assets/state-suggestion.png" width="800" alt="Suggestion: the word, two alternatives and their shortcuts"><br><b>Suggestion</b>: the word, two alternatives and their shortcuts</p>
+
+<p align="center"><img src="docs/assets/state-accepted.png" width="800" alt="Accepted: the word you said is confirmed"><br><b>Accepted</b>: the word you said is confirmed</p>
+
+<p align="center"><img src="docs/assets/state-settings.png" width="800" alt="Settings: help level, speed, language, text size, privacy"><br><b>Settings</b>: help level, speed, language, text size, privacy</p>
+
+<p align="center"><img src="docs/assets/state-first-run.png" width="800" alt="First run: how should I help when you are stuck?"><br><b>First run</b>: how should I help when you are stuck?</p>
 
 ### Keyboard shortcuts (desktop overlay)
 
