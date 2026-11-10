@@ -1,5 +1,6 @@
 import Anthropic, { APIError } from '@anthropic-ai/sdk';
 import { mockGuesser } from './mock.js';
+import type { Language } from '../events.js';
 import { firstObjectEnd, parseGuess } from './parse.js';
 import { profileForPrompt } from './profile.js';
 import type { GuessInput, GuessResult, Guesser } from './types.js';
@@ -11,10 +12,22 @@ Reply with JSON only: {"candidates":[{"word":"...","confidence":0.0}],"abstain":
 // 3 candidates of a few words each is about 70 tokens of JSON.
 const MAX_TOKENS = 100;
 
+const LANGUAGE_NAMES = { es: 'Spanish', fr: 'French', de: 'German', hi: 'Hindi' } as const;
+
+// Which language the words come in. English speakers who drop in a foreign word get the English one.
+export function languageLine(language: Language = 'en'): string {
+  if (language === 'en')
+    return 'They speak English. If they use a word or phrase from another language, offer the English word for it, never the foreign word.';
+  if (language === 'multi')
+    return 'They switch between languages. Offer the word in the language of the sentence they are in.';
+  return `They speak ${LANGUAGE_NAMES[language]}. Offer words in ${LANGUAGE_NAMES[language]}, not English.`;
+}
+
 export function buildPrompt(input: GuessInput): string {
   const parts: string[] = [];
   if (input.brief) parts.push(`Meeting brief:\n${input.brief}`);
   if (input.profile) parts.push(`Their personal words: ${profileForPrompt(input.profile)}`);
+  parts.push(languageLine(input.language));
   parts.push(`Conversation so far:\n${input.conversation}`);
   parts.push(`Just said (they are stuck here):\n${input.stuckPhrase}`);
   if (input.rejected?.length)

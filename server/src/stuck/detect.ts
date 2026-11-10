@@ -1,5 +1,6 @@
-import type { StuckReason, Word } from '../events.js';
+import type { Language, StuckReason, Word } from '../events.js';
 import { disfluency, inStutterMode } from './disfluency.js';
+import { cuesFor, fold, type Cues } from './languages.js';
 
 export type StuckResult =
   | { stuck: false }
@@ -31,37 +32,13 @@ const SENTENCE_CLOSERS = new Set([
   'cheers',
 ]);
 
-const FILLER_SOUNDS = new Set(['um', 'uh', 'er', 'erm', 'umm', 'uhh', 'hmm']);
-const DETERMINERS = new Set(['the', 'a', 'an', 'my', 'your', 'his', 'her', 'our', 'their']);
-
-// "the thing is, ..." and "the thing about ..." are ordinary speech, not a stall.
-const NOT_A_STALL_AFTER_THING = 'is|was|are|were|about|here|there|has|had|will|would';
-
-const FILLER_PHRASES = [
-  /\bwhat(?:s| is| was)? (?:it|that) called\b/,
-  /\bwhat (?:do )?you call (?:it|that|them)\b/,
-  /\bwhat (?:its|it is) name\b/,
-  /\bwhatchamacallit\b|\bwhatsit\b|\bthingamajig\b|\bthingy\b|\bthingummy\b/,
-  new RegExp(`\\bthe (?:thing|stuff)(?! (?:${NOT_A_STALL_AFTER_THING})\\b)`),
-];
-
-const DESCRIBING_PATTERNS = [
-  /\bthe (?:thing|stuff) (?:you|i|for|to|where|which|with)\b/,
-  /\bthe (?:place|man|person|woman|guy|lady|one|people) (?:who|where|that|which|you)\b/,
-  /\bthe (?:\w+ )?one (?:you|that|who|where|with)\b/,
-  /\bthe \w+ (?:we|you|i) use for\b/,
-  /\bthe \w+ where (?:all|you|they|people)\b/,
-  /\b\w+ thing (?:you|i|that)\b/,
-  /\bits like (?:a|an|the)\b/,
-];
-
 // Lowercase, no punctuation, no apostrophes: Web Speech gives plain words, other STT adds punctuation.
 function tokens(words: readonly Word[]): string[] {
   return words.flatMap((w) =>
     w.text
       .toLowerCase()
       .replace(/['’]/g, '')
-      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ')
       .split(/\s+/)
       .filter(Boolean),
   );
@@ -89,34 +66,39 @@ const tokenAt = (text: string, charIndex: number): number =>
 // (a cue early in a long fluent sentence) does not fire.
 const CUE_NEAR_END_WORDS = 10;
 
-// Index of the token that marks a filler, or undefined.
-function fillerAt(t: string[], text: string, stutter: boolean): number | undefined {
+// Index of the token that marks a filler, or undefined. `t` and `text` are accent-folded.
+function fillerAt(
+  t: string[],
+  text: string,
+  stutter: boolean,
+  cues: readonly Cues[],
+  determiners: ReadonlySet<string>,
+): number | undefined {
   const n = t.length;
-  const sound = t.findIndex((x, i) => i >= n - 3 && FILLER_SOUNDS.has(x));
+  const sound = t.findIndex((x, i) => i >= n - 3 && cues.some((c) => c.sounds.has(x)));
   if (sound >= 0) return sound;
   // "the the": a determiner said twice, with at most two words after it.
   // Not for someone who is stuttering: for them it is a repetition, not a search.
   for (let i = Math.max(1, n - 3); i < n && !stutter; i++) {
     const w = t[i] as string;
-    if (w === t[i - 1] && DETERMINERS.has(w)) return i;
+    if (w === t[i - 1] && determiners.has(w)) return i;
   }
-  // "you know" as a stall ends the phrase; "do you know ..." or "you know what" do not.
-  if (n >= 2 && t[n - 2] === 'you' && t[n - 1] === 'know') {
-    const before = t[n - 3];
-    if (!before || !['do', 'did', 'if', 'as', 'dont', 'would', 'how'].includes(before))
-      return n - 2;
-  }
-  for (const re of FILLER_PHRASES) {
-    const at = re.exec(text)?.index;
-    if (at !== undefined && t.length - tokenAt(text, at) <= CUE_NEAR_END_WORDS) {
-      return tokenAt(text, at);
-    }
-  }
-  return undefined;
+  return firstCue(
+    t,
+    text,
+    cues.flatMap((c) => c.filler),
+  );
 }
 
-function describingAt(t: string[], text: string): number | undefined {
-  for (const re of DESCRIBING_PATTERNS) {
+const describingAt = (t: string[], text: string, cues: readonly Cues[]) =>
+  firstCue(
+    t,
+    text,
+    cues.flatMap((c) => c.describing),
+  );
+
+function firstCue(t: string[], text: string, patterns: readonly RegExp[]): number | undefined {
+  for (const re of patterns) {
     const at = re.exec(text)?.index;
     if (at === undefined) continue;
     const index = tokenAt(text, at);
@@ -131,7 +113,11 @@ function describingAt(t: string[], text: string): number | undefined {
 // Returns the end time of the latest marker.
 const RECOVERY = /\b(?:yes|sorry|oh|thats it|there it is|got it)\b/;
 
-function stallMarkerEnd(recent: readonly Word[], pauseMs: number): number | undefined {
+function stallMarkerEnd(
+  recent: readonly Word[],
+  pauseMs: number,
+  determiners: ReadonlySet<string>,
+): number | undefined {
   let markerEndMs: number | undefined;
   let afterMarker: string[] = [];
   let previous: Word | undefined;
@@ -147,7 +133,7 @@ function stallMarkerEnd(recent: readonly Word[], pauseMs: number): number | unde
     if (previous !== undefined && !turnChange && word.startMs - previous.endMs > pauseMs) {
       markerEndMs = previous.endMs;
       afterMarker = [];
-    } else if (first !== undefined && first === lastToken && DETERMINERS.has(first)) {
+    } else if (first !== undefined && first === lastToken && determiners.has(first)) {
       markerEndMs = word.endMs;
       afterMarker = [];
     }
@@ -165,7 +151,7 @@ const TAKEBACK_TWO = [
   ['i', 'mean'],
   ['not', 'that'],
 ];
-function rejectedWord(t: readonly string[]): string | undefined {
+function rejectedWord(t: readonly string[], determiners: ReadonlySet<string>): string | undefined {
   const lastStart = t.length - 6;
   for (let i = Math.max(1, lastStart); i < t.length; i++) {
     const two = TAKEBACK_TWO.some(([a, b]) => t[i] === a && t[i + 1] === b);
@@ -173,9 +159,9 @@ function rejectedWord(t: readonly string[]): string | undefined {
     const after = t[i + (two ? 2 : 1)];
     const before = t[i - 1] as string;
     if (
-      (after === undefined || DETERMINERS.has(after)) &&
+      (after === undefined || determiners.has(after)) &&
       before.length >= 3 &&
-      !DETERMINERS.has(before)
+      !determiners.has(before)
     )
       return before;
   }
@@ -202,7 +188,7 @@ export function detectStuck(
   nowMs: number,
   // earlyMs: ask "would this be a stall after only earlyMs of silence?", for speculative
   // guessing. It replaces both silence requirements; the stall markers still use pauseMs.
-  opts: { pauseMs: number; earlyMs?: number; voice?: VoiceInfo },
+  opts: { pauseMs: number; earlyMs?: number; voice?: VoiceInfo; language?: Language },
 ): StuckResult {
   if (words.length === 0) return { stuck: false };
   const ordered = [...words].sort((a, b) => a.startMs - b.startMs);
@@ -212,7 +198,8 @@ export function detectStuck(
     .slice(-CONTEXT_WORDS)
     .map((w) => w.text)
     .join(' ');
-  const rejected = rejectedWord(tokens(ordered.slice(-TAIL_WORDS)));
+  const active = cuesFor(opts.language ?? 'en');
+  const rejected = rejectedWord(tokens(ordered.slice(-TAIL_WORDS)), active.determiners);
   const hit = (reason: StuckReason, sinceMs: number): StuckResult => ({
     stuck: true,
     reason,
@@ -233,7 +220,7 @@ export function detectStuck(
 
   // Stuttering: a pause after a repeated or begun word is a block, not a search. Only a cue
   // ("what's the word", a description) or a manual ask starts a guess then.
-  const stutter = inStutterMode(disfluency(ordered, nowMs));
+  const stutter = inStutterMode(disfluency(ordered, nowMs, active));
   // Past TAIL_MS nobody is searching for a word any more: the conversation has moved on.
   const paused =
     !stutter &&
@@ -249,16 +236,21 @@ export function detectStuck(
   const recent = ordered.slice(-TAIL_WORDS).filter((w) => w.endMs >= nowMs - TAIL_MS);
   const t = tokens(recent).slice(-TAIL_WORDS);
   const ends = tokenEnds(recent).slice(-TAIL_WORDS);
-  const text = t.join(' ');
 
-  const describing = describingAt(t, text);
-  const filler = fillerAt(t, text, stutter);
-  const marker = stutter ? undefined : stallMarkerEnd(recent, opts.pauseMs);
-  const cueSince = [
-    describing === undefined ? undefined : ends[describing],
-    filler === undefined ? undefined : ends[filler],
-    marker,
-  ].filter((x): x is number => x !== undefined);
+  const folded = t.map(fold);
+  const foldedText = folded.join(' ');
+  const { strong, weak, determiners } = active;
+  const describing = describingAt(folded, foldedText, strong);
+  const filler = fillerAt(folded, foldedText, stutter, strong, determiners);
+  const marker = stutter ? undefined : stallMarkerEnd(recent, opts.pauseMs, determiners);
+  // Cues in the other languages do not start a guess by themselves, but when the pause does they
+  // say where the search began.
+  const weakDescribing = describingAt(folded, foldedText, weak);
+  const weakFiller = fillerAt(folded, foldedText, stutter, weak, determiners);
+  const cueSince = [describing, filler, weakDescribing, weakFiller]
+    .map((i) => (i === undefined ? undefined : ends[i]))
+    .concat(marker)
+    .filter((x): x is number => x !== undefined);
 
   // The search for the missing word starts at the earliest cue, or at the last word, which
   // counts as already said: "... the car" then silence must not offer "car".

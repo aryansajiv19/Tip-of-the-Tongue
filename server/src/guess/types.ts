@@ -1,4 +1,4 @@
-import type { Candidate } from '../events.js';
+import type { Candidate, Language } from '../events.js';
 import type { Profile } from './profile.js';
 
 export interface GuessInput {
@@ -6,6 +6,8 @@ export interface GuessInput {
   stuckPhrase: string;
   // Words they said and took back ("the fork, no, the..."): not to be offered.
   rejected?: string[];
+  // What they speak (default English). Sets the language the offered words are in.
+  language?: Language;
   brief?: string;
   profile?: Profile;
 }

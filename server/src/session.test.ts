@@ -777,6 +777,43 @@ describe('session pipeline', () => {
     });
   });
 
+  describe('language', () => {
+    it('is English until the user chooses one, then goes to the guesser', async () => {
+      for (const [chosen, expected] of [
+        [undefined, 'en'],
+        ['es', 'es'],
+        ['multi', 'multi'],
+      ] as const) {
+        const guess = vi.fn<Guesser>(mockGuesser);
+        const { session, say } = setup(guess);
+        if (chosen) session.handle({ type: 'session.settings', language: chosen });
+        say('I need to go to the the place where you get medicine');
+        await vi.advanceTimersByTimeAsync(2000);
+        expect(guess.mock.calls.at(-1)?.[0].language).toBe(expected);
+        session.close();
+      }
+    });
+
+    it('"cómo se dice" asks at once in Spanish and not in English', async () => {
+      const guess = vi.fn<Guesser>(mockGuesser);
+      const es = setup(guess);
+      es.session.handle({ type: 'session.settings', language: 'es' });
+      es.say('necesito el cómo se dice');
+      await vi.advanceTimersByTimeAsync(50);
+      expect(es.events.some((e) => e.type === 'stuck.detected' && e.reason === 'manual')).toBe(
+        true,
+      );
+      es.session.close();
+      const en = setup(guess);
+      en.say('necesito el cómo se dice');
+      await vi.advanceTimersByTimeAsync(50);
+      expect(en.events.some((e) => e.type === 'stuck.detected' && e.reason === 'manual')).toBe(
+        false,
+      );
+      en.session.close();
+    });
+  });
+
   describe('call cap', () => {
     const stall = 'can you pass me the thing';
     it('asks Claude at most the cap per minute, then stays silent until the minute passes', async () => {
