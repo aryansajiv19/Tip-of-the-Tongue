@@ -80,7 +80,9 @@ All numbers come from our own scripted conversations, which are not real users. 
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | 20 whole conversations (dev split), real Claude, three runs | 82–86% of stalls get the right word. 1–2 pop-ups in 165 fluent lines. 0–1 on the other speaker in 251 lines. |
 | Slow, breathy and self-correcting speakers                  | Right word on 9–11 of 11 stalls. A rejected word is never offered.                                           |
-| Live audio (macOS voices through real Deepgram and Claude)  | 6/8 stalls, 0 wrong, 0/22 fluent pop-ups                                                                     |
+| Live audio (macOS voices through real Deepgram and Claude)  | One sales call in six voices: 20/24 stalls, 1 wrong, 1/66 fluent pop-ups.                                    |
+| Same, with café noise 10 dB below the speech                | 14/24 stalls, 2 wrong, 0/66 fluent pop-ups. Noise mostly costs missed stalls, not wrong words.               |
+| Mixing in Spanish (language-aware prompt, two runs)         | 4/4 and 3/4, and the Spanish word is never offered (1/4 before, offering "factura").                         |
 
 Hard and holdout sets, the methods and the caveats are in [docs/write-up.md](docs/write-up.md). Research on how people speak, and the design choices it led to, is in [docs/RESEARCH.md](docs/RESEARCH.md).
 
@@ -116,7 +118,9 @@ CI runs lint, typecheck, unit tests and the build on Linux, macOS and Windows wi
 - **Not tested with people with aphasia**, and we make no clinical claim. The evidence comes from scripted conversations and synthetic voices.
 - Speech-to-text can mishear atypical speech. Severe dysarthria is a known weak spot for every recogniser.
 - With browser speech there are no speaker labels, so the other person's pauses can trigger a guess.
-- When you mix languages, it can offer the foreign word itself rather than the English one. A language setting is in progress.
+- Background noise lowers how often it catches a stall (83% clean, 58% with café noise in the live test). Use a headset in noisy places; on laptop speakers the other person's voice can also leak into the microphone.
+- The language setting covers English, Spanish, French, German and Hindi, plus a mixed mode. Only the Spanish code-switching case is measured.
+- macOS only for the desktop app, and it is not signed yet.
 
 See [docs/EDGE-CASES.md](docs/EDGE-CASES.md) for the full list.
 
