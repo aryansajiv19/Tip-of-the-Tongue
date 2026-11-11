@@ -158,10 +158,24 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
   // The voice of the first words is only a first guess: loudness may replace it readily.
   let firstGuess = false;
   let numbersFromMs = -Infinity;
+  let voicesHeard = 0;
+  function reportVoices() {
+    const words = new Map<number, number>();
+    for (const w of buffer.words()) {
+      if (w.speaker !== undefined && w.startMs >= numbersFromMs) {
+        words.set(w.speaker, (words.get(w.speaker) ?? 0) + 1);
+      }
+    }
+    const heard = [...words.values()].filter((n) => n >= REAL_VOICE_WORDS).length;
+    if (heard === voicesHeard) return;
+    voicesHeard = heard;
+    send({ type: 'speaker.count', n: heard });
+  }
   function forgetMe(why: 'new stream' | 'new conversation') {
     pinned = false;
     firstGuess = false;
     numbersFromMs = now();
+    reportVoices();
     if (me === undefined) return;
     me = undefined;
     debug(() => ({ kind: 'speaker', me: undefined, why }));
@@ -630,6 +644,7 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
                 firstGuess ? undefined : me,
               );
           if (loud !== undefined) setMe(loud, 'loudest');
+          reportVoices();
         }
       }
       check();

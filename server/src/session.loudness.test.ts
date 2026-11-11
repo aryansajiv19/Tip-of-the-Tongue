@@ -89,3 +89,20 @@ describe('the user is the loudest voice at the microphone', () => {
     session.close();
   });
 });
+
+describe('how many voices have been heard', () => {
+  const counts = (events: ServerEvent[]) =>
+    events.flatMap((e) => (e.type === 'speaker.count' ? [e.n] : []));
+
+  it('reports a second voice once it has said three words, and zero after a new conversation', () => {
+    const { session, events, say } = setup();
+    say(0, 10, undefined);
+    say(1, 2, undefined);
+    expect(counts(events)).toEqual([1]);
+    say(1, 3, undefined);
+    expect(counts(events)).toEqual([1, 2]);
+    session.handle({ type: 'session.reset' });
+    expect(counts(events)).toEqual([1, 2, 0]);
+    session.close();
+  });
+});
