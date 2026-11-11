@@ -4,6 +4,7 @@ import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck, type VoiceInfo } from './stuck/detect.js';
 import { endsWithAskForWord } from './stuck/manual.js';
 import { effectivePauseMs, typicalStepMs } from './stuck/pace.js';
+import { LevelLog, pickByLevel } from './stuck/loudness.js';
 import { speakerOfFirstUtterance } from './stuck/speaker.js';
 import { mergeProfiles, type Profile, type UiProfile } from './guess/profile.js';
 import { briefForGuesser, LONG_BRIEF_CHARS, type GlossaryBuilder } from './guess/glossary.js';
@@ -150,13 +151,35 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
   // accepted, or a word they asked for by hand).
   // Whose voice is the user's is learned again: after a new Deepgram stream (it numbers voices from
   // 0 again) and after a new conversation.
+  // The user's own choice (an accepted pop-up, a hand ask) stands: loudness no longer changes it.
+  // A new stream numbers voices afresh, so only words from after it say anything about loudness.
+  const levels = new LevelLog();
+  let pinned = false;
+  let numbersFromMs = -Infinity;
+  let voicesHeard = 0;
+  function reportVoices() {
+    const words = new Map<number, number>();
+    for (const w of buffer.words()) {
+      if (w.speaker !== undefined && w.startMs >= numbersFromMs) {
+        words.set(w.speaker, (words.get(w.speaker) ?? 0) + 1);
+      }
+    }
+    const heard = [...words.values()].filter((n) => n >= REAL_VOICE_WORDS).length;
+    if (heard === voicesHeard) return;
+    voicesHeard = heard;
+    send({ type: 'speaker.count', n: heard });
+  }
   function forgetMe(why: 'new stream' | 'new conversation') {
+    pinned = false;
+    numbersFromMs = now();
+    reportVoices();
     if (me === undefined) return;
     me = undefined;
     debug(() => ({ kind: 'speaker', me: undefined, why }));
   }
 
-  function setMe(speaker: number, why: 'first words' | 'accepted' | 'manual') {
+  function setMe(speaker: number, why: 'first words' | 'loudest' | 'accepted' | 'manual') {
+    if (why === 'accepted' || why === 'manual') pinned = true;
     if (speaker === me) return;
     me = speaker;
     debug(() => ({ kind: 'speaker', me: speaker, why }));
@@ -431,9 +454,9 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
     // New words since the early guess started: the speaker went on, so its result is stale.
     if (spec && spec.lastEndMs !== last.endMs) discardSpeculation();
     if (last.endMs <= handledUpToMs) return;
-    if (endsWithAskForWord(words, language)) return askNow();
-
-    // The other person is the one who paused: not the user's stall, whatever they say next.
+    // The other person is the one who paused: not the user's stall, whatever they say next. This
+    // comes first so that their "what's the word" is not taken for the user asking, which would
+    // also make them the user.
     if (
       me !== undefined &&
       last.speaker !== undefined &&
@@ -443,6 +466,7 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
       discardSpeculation();
       return;
     }
+    if (endsWithAskForWord(words, language)) return askNow();
 
     const pause = paceFor(words);
     const stuck = detectStuck(words, now(), { pauseMs: pause, language, ...voiceOpt() });
@@ -588,7 +612,11 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
         debug(sttInfo);
       } else if (event.type === 'guess.picked') pick(event.id, event.word);
       else if (event.type === 'voice.activity') onVoice(event.voiced, event.atMs);
-      else if (event.type === 'stuck.manual') askNow();
+      else if (event.type === 'voice.level') levels.add(event.atMs, event.levels);
+      else if (event.type === 'speaker.mine') {
+        const last = buffer.words().at(-1)?.speaker;
+        if (last !== undefined) setMe(last, 'manual');
+      } else if (event.type === 'stuck.manual') askNow();
       else if (event.type === 'session.reset') reset();
       else {
         const words = afterReset(event.words);
@@ -605,6 +633,15 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
           buffer.applyFinal(words);
           const first = me === undefined ? speakerOfFirstUtterance(words) : undefined;
           if (first !== undefined) setMe(first, 'first words');
+          const loud = pinned
+            ? undefined
+            : pickByLevel(
+                buffer.words().filter((w) => w.startMs >= numbersFromMs),
+                levels,
+                me,
+              );
+          if (loud !== undefined) setMe(loud, 'loudest');
+          reportVoices();
         }
       }
       check();

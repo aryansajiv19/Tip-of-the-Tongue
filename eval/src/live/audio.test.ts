@@ -4,6 +4,7 @@ import {
   durationMs,
   bandLimit,
   FRAME_BYTES,
+  levelsOf,
   mixAtSnr,
   scaleDb,
   silence,
@@ -174,5 +175,15 @@ describe('bandLimit', () => {
     expect(level(1000)).toBeGreaterThan(-1.5);
     expect(level(100)).toBeLessThan(-20);
     expect(level(6500)).toBeLessThan(-20);
+  });
+});
+
+describe('levelsOf', () => {
+  it('gives the level of each 50 ms as a share of full scale', () => {
+    const half = Buffer.alloc(50 * BYTES_PER_MS);
+    for (let i = 0; i < half.length; i += 2) half.writeInt16LE(16384, i);
+    const levels = levelsOf(Buffer.concat([half, silence(50)]));
+    expect(levels[0]).toBeCloseTo(0.5, 3);
+    expect(levels[1]).toBe(0);
   });
 });

@@ -21,6 +21,8 @@ export interface LiveRun {
   transcriptLag: { atMs: number; lagMs: number }[];
   // The voice number the session settled on as the user's, if it chose one.
   chosen: number | undefined;
+  // The voice number on the last word of each interim result, and who was really talking.
+  partials: { role: 'me' | 'other'; speaker?: number }[];
 }
 
 export type PickResult = 'right' | 'wrong' | 'none';
@@ -127,6 +129,28 @@ export function lagSummary(runs: Pick<LiveRun, 'transcriptLag'>[]): string {
   return `Transcript delay (arrival minus end of the last word), ${all.length} transcripts: p50 ${quantile(all, 0.5)} ms, p95 ${quantile(all, 0.95)} ms, max ${Math.max(...all)} ms. Second half of each conversation minus its first half (median): worst ${Math.max(...slope)} ms.`;
 }
 
+// What the session sees while someone is mid-sentence: how often an interim result's last word
+// carries the user's voice number when the user was talking, and when somebody else was.
+export function partialSummary(runs: Pick<LiveRun, 'partials' | 'labels'>[]): string {
+  const share = (role: 'me' | 'other') => {
+    let asUser = 0;
+    let none = 0;
+    let total = 0;
+    for (const r of runs) {
+      for (const p of r.partials.filter((q) => q.role === role)) {
+        total++;
+        if (p.speaker === undefined) none++;
+        else if (p.speaker === r.labels.userLabel) asUser++;
+      }
+    }
+    return { asUser, none, total };
+  };
+  const me = share('me');
+  const other = share('other');
+  const pct = (n: number, t: number) => (t === 0 ? 'n/a' : `${Math.round((n / t) * 100)}%`);
+  return `Interim results (voice number on the last word): while the user talks, ${pct(me.asUser, me.total)} carry the user's number and ${pct(me.none, me.total)} none (${me.total}); while others talk, ${pct(other.asUser, other.total)} carry the user's number and ${pct(other.none, other.total)} none (${other.total}).`;
+}
+
 export function renderLiveReport(
   meta: { split: string; voices: string[]; solo?: boolean },
   runs: LiveRun[],
@@ -150,6 +174,8 @@ export function renderLiveReport(
     '',
     ...(meta.solo ? drift(runs) : []),
     lagSummary(runs),
+    '',
+    partialSummary(runs),
     '',
     '## Failures',
     '',
