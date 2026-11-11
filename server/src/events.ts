@@ -178,6 +178,9 @@ export type ServerEvent =
   // A stall was confirmed but no suggestion followed (not confident enough, or the speaker went
   // on): whatever the page shows for "looking for the word" can stop.
   | { type: 'guess.idle' }
+  // How many different voices have been heard (each with at least three words) since the last
+  // new stream or conversation. Sent only when it changes; the page can offer "That's me" from 2.
+  | { type: 'speaker.count'; n: number }
   // Answers session.reset. Everything the server sent before this belongs to the old
   // conversation; the page ignores it.
   | { type: 'session.cleared' }
