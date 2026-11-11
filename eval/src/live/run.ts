@@ -148,6 +148,19 @@ export async function runLive(
         ? [{ atMs: trackTime(perfMs - start.perfMs, start.pause), info: event.info }]
         : [],
     );
+    // How late each transcript arrived: wall time of the event minus the end of its last word
+    // (Deepgram's times are on the server's clock, the same machine's here).
+    const transcriptLag = events.flatMap(({ perfMs, event }) => {
+      if (event.type !== 'transcript.final' && event.type !== 'transcript.partial') return [];
+      const last = event.words.at(-1);
+      if (!last) return [];
+      return [
+        {
+          atMs: trackTime(perfMs - start.perfMs, start.pause),
+          lagMs: Math.round(start.epochMs + (perfMs - start.perfMs) - last.endMs),
+        },
+      ];
+    });
     const chosen = events
       .flatMap(({ event }) =>
         event.type === 'debug' && event.info.kind === 'speaker' ? [event.info.me] : [],
@@ -167,6 +180,7 @@ export async function runLive(
         ...(w.speaker === undefined ? {} : { speaker: w.speaker }),
       })),
       trace,
+      transcriptLag,
       chosen,
     };
   } finally {
@@ -287,6 +301,7 @@ async function main(): Promise<void> {
         chosen: r.chosen,
         words: r.words,
         trace: r.trace,
+        transcriptLag: r.transcriptLag,
         lines: r.placed.map((p) => ({ s: p.line.s, startMs: p.startMs, endMs: p.endMs })),
       })),
       null,

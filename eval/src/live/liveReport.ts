@@ -17,6 +17,8 @@ export interface LiveRun {
   // track's clock.
   words: { text: string; startMs: number; endMs: number; speaker?: number }[];
   trace: { atMs: number; info: DebugInfo }[];
+  // How long after a word ended its transcript reached the session's client, over the track.
+  transcriptLag: { atMs: number; lagMs: number }[];
   // The voice number the session settled on as the user's, if it chose one.
   chosen: number | undefined;
 }
@@ -109,6 +111,22 @@ function drift(runs: LiveRun[]): string[] {
   ];
 }
 
+const quantile = (xs: number[], p: number): number =>
+  [...xs].sort((a, b) => a - b)[Math.floor((xs.length - 1) * p)] ?? 0;
+
+// Wall time of each transcript minus the end of its last word: the delay of audio, Deepgram and
+// the server together. A figure that climbs along the track means audio is piling up somewhere.
+export function lagSummary(runs: Pick<LiveRun, 'transcriptLag'>[]): string {
+  const all = runs.flatMap((r) => r.transcriptLag.map((l) => l.lagMs));
+  if (all.length === 0) return 'No transcripts arrived.';
+  const slope = runs.map((r) => {
+    const lags = r.transcriptLag.map((l) => l.lagMs);
+    const half = Math.floor(lags.length / 2);
+    return quantile(lags.slice(half), 0.5) - quantile(lags.slice(0, half), 0.5);
+  });
+  return `Transcript delay (arrival minus end of the last word), ${all.length} transcripts: p50 ${quantile(all, 0.5)} ms, p95 ${quantile(all, 0.95)} ms, max ${Math.max(...all)} ms. Second half of each conversation minus its first half (median): worst ${Math.max(...slope)} ms.`;
+}
+
 export function renderLiveReport(
   meta: { split: string; voices: string[]; solo?: boolean },
   runs: LiveRun[],
@@ -131,6 +149,8 @@ export function renderLiveReport(
     'The other person is spoken by a contrasting voice. Label accuracy is the share of words labelled with their speaker\'s usual voice number. "End of speech to pop-up" is measured from the end of the last word before the pop-up.',
     '',
     ...(meta.solo ? drift(runs) : []),
+    lagSummary(runs),
+    '',
     '## Failures',
     '',
     ...(f.length > 0 ? f : ['None.']),
