@@ -45,16 +45,10 @@ describe('pickByLevel', () => {
     const close = loudness([0, 10, 0.1], [4000, 10, 0.11]);
     expect(pickByLevel([...quiet, ...loud], close, undefined)).toBeUndefined();
   });
-  it('changes an existing pick only for 15 words, 6 dB louder', () => {
-    const words = [...quiet, ...voice(0, 14, 4000)];
-    const l = loudness([0, 10, 0.02], [4000, 14, 0.2]);
-    expect(pickByLevel(words, l, 1)).toBeUndefined();
-    expect(
-      pickByLevel([...quiet, ...voice(0, 15, 4000)], loudness([0, 10, 0.02], [4000, 15, 0.2]), 1),
-    ).toBe(0);
-    expect(
-      pickByLevel([...quiet, ...voice(0, 15, 4000)], loudness([0, 10, 0.02], [4000, 15, 0.03]), 1),
-    ).toBeUndefined();
+  it('changes an existing pick only for a voice at least 3 dB louder than it', () => {
+    const l = (user: number) => loudness([0, 10, user], [4000, 10, 0.2]);
+    expect(pickByLevel([...quiet, ...loud], l(0.02), 1)).toBe(0);
+    expect(pickByLevel([...quiet, ...loud], l(0.18), 1)).toBeUndefined(); // about 1 dB apart
   });
   it('ignores words with no voice label or no reading', () => {
     const unlabelled = loud.map((w) => ({ text: w.text, startMs: w.startMs, endMs: w.endMs }));

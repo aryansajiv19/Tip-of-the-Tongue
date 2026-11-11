@@ -106,3 +106,36 @@ describe('how many voices have been heard', () => {
     session.close();
   });
 });
+
+describe('what the others say does not decide who the user is', () => {
+  it('does not take the other person\'s "what\'s the word" for the user asking', () => {
+    const { session, events, say } = setup();
+    say(0, 10, LOUD);
+    say(1, 10, QUIET);
+    const words = "did you get the what's the word".split(' ');
+    const start = Date.now();
+    vi.advanceTimersByTime(3000);
+    session.handle({
+      type: 'transcript.final',
+      words: words.map((text, i) => ({
+        text,
+        startMs: start + i * 300,
+        endMs: start + i * 300 + 250,
+        speaker: 1,
+      })),
+    });
+    expect(events.some((e) => e.type === 'stuck.detected' && e.reason === 'manual')).toBe(false);
+    expect(session.speaker()).toBe(0);
+    session.close();
+  });
+
+  it('corrects a pick made when only the others had spoken, once the user is heard louder', () => {
+    const { session, say } = setup();
+    say(1, 10, QUIET);
+    say(2, 10, QUIET * 2); // 6 dB louder than voice 1: the loudest so far, but not the user
+    expect(session.speaker()).toBe(2);
+    say(0, 10, LOUD);
+    expect(session.speaker()).toBe(0);
+    session.close();
+  });
+});

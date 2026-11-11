@@ -155,8 +155,6 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
   // A new stream numbers voices afresh, so only words from after it say anything about loudness.
   const levels = new LevelLog();
   let pinned = false;
-  // The voice of the first words is only a first guess: loudness may replace it readily.
-  let firstGuess = false;
   let numbersFromMs = -Infinity;
   let voicesHeard = 0;
   function reportVoices() {
@@ -173,7 +171,6 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
   }
   function forgetMe(why: 'new stream' | 'new conversation') {
     pinned = false;
-    firstGuess = false;
     numbersFromMs = now();
     reportVoices();
     if (me === undefined) return;
@@ -184,7 +181,6 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
   function setMe(speaker: number, why: 'first words' | 'loudest' | 'accepted' | 'manual') {
     if (why === 'accepted' || why === 'manual') pinned = true;
     if (speaker === me) return;
-    firstGuess = why === 'first words';
     me = speaker;
     debug(() => ({ kind: 'speaker', me: speaker, why }));
   }
@@ -458,9 +454,9 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
     // New words since the early guess started: the speaker went on, so its result is stale.
     if (spec && spec.lastEndMs !== last.endMs) discardSpeculation();
     if (last.endMs <= handledUpToMs) return;
-    if (endsWithAskForWord(words, language)) return askNow();
-
-    // The other person is the one who paused: not the user's stall, whatever they say next.
+    // The other person is the one who paused: not the user's stall, whatever they say next. This
+    // comes first so that their "what's the word" is not taken for the user asking, which would
+    // also make them the user.
     if (
       me !== undefined &&
       last.speaker !== undefined &&
@@ -470,6 +466,7 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
       discardSpeculation();
       return;
     }
+    if (endsWithAskForWord(words, language)) return askNow();
 
     const pause = paceFor(words);
     const stuck = detectStuck(words, now(), { pauseMs: pause, language, ...voiceOpt() });
@@ -641,7 +638,7 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
             : pickByLevel(
                 buffer.words().filter((w) => w.startMs >= numbersFromMs),
                 levels,
-                firstGuess ? undefined : me,
+                me,
               );
           if (loud !== undefined) setMe(loud, 'loudest');
           reportVoices();
