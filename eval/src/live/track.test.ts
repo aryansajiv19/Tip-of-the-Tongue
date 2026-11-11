@@ -20,6 +20,17 @@ const rendered = (lines: [Line, number][]) =>
 const me = (t = 'x', extra: Partial<Line> = {}): Line => ({ s: 'me', t, ...extra });
 const other = (t = 'x', extra: Partial<Line> = {}): Line => ({ s: 'other', t, ...extra });
 
+describe('buildTrack with the others first', () => {
+  it('keeps the lines before the first one of the user when the call began with them', () => {
+    const lines = rendered([
+      [other(), 500],
+      [me(), 500],
+    ]);
+    expect(buildTrack(lines).placed).toHaveLength(1);
+    expect(buildTrack(lines, true).placed.map((p) => p.line.s)).toEqual(['other', 'me']);
+  });
+});
+
 describe('buildTrack', () => {
   it('places lines with the same gaps as the text replay', () => {
     const { placed, pcm } = buildTrack(

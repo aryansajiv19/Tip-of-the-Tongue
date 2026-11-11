@@ -11,10 +11,10 @@ import { dataPath } from '../dataset.js';
 import type { Offer } from '../replay.js';
 import { scoreScenario } from '../score.js';
 import { loadScenarios, type Scenario } from '../scenarios.js';
-import { durationMs, FRAME_MS, mixAtSnr, toFrames } from './audio.js';
+import { bandLimit, durationMs, FRAME_MS, mixAtSnr, scaleDb, toFrames } from './audio.js';
 import { renderLiveReport, type LiveRun } from './liveReport.js';
 import { BABBLE_VOICES, makeNoise, NOISE_KINDS, type NoiseKind } from './noise.js';
-import { installedVoices, otherVoiceFor, renderLine, USER_VOICES } from './say.js';
+import { installedVoices, otherVoicesFor, renderLine, USER_VOICES } from './say.js';
 import {
   buildTrack,
   labelStats,
@@ -35,21 +35,38 @@ export interface AudioOpts {
   // Only the user's lines: one voice, so any change of speaker number is the recogniser's.
   solo?: boolean;
   noise?: { kind: NoiseKind; snrDb: number };
+  // Where the other people are: `room` is across the room from the user's microphone (quieter),
+  // `call` is their voices coming out of a speaker (quieter and band-limited).
+  others?: 'room' | 'call';
 }
+
+// How many other people a conversation has (1 to 3).
+const peopleBesidesUser = (sc: Scenario): number =>
+  Math.max(1, ...sc.lines.map((l) => (l.s === 'other' ? (l.who ?? 1) : 0)));
+export const othersOf = (sc: Scenario, user: string): string[] =>
+  otherVoicesFor(user, peopleBesidesUser(sc));
+
+// How much quieter the others are than the user, who is at the microphone.
+const OTHERS_DB = -10;
 
 async function renderScenario(
   sc: Scenario,
   userVoice: string,
-  otherVoice: string,
-  { rate, noise, solo }: AudioOpts = {},
+  otherVoices: string[],
+  { rate, noise, solo, others }: AudioOpts = {},
 ) {
   const pauseMs = sc.stallMs ?? 2000;
   const lines = [];
   for (const line of solo ? sc.lines.filter((l) => l.s === 'me') : sc.lines) {
-    const pcm = await renderLine(line.s === 'me' ? userVoice : otherVoice, line.t, pauseMs, rate);
-    lines.push({ line, pcm });
+    const voice = line.s === 'me' ? userVoice : (otherVoices[(line.who ?? 1) - 1] ?? userVoice);
+    const spoken = await renderLine(voice, line.t, pauseMs, rate);
+    const far = line.s === 'other' && others !== undefined;
+    const heard = !far
+      ? spoken
+      : scaleDb(others === 'call' ? bandLimit(spoken) : spoken, OTHERS_DB);
+    lines.push({ line, pcm: heard });
   }
-  const track = buildTrack(lines);
+  const track = buildTrack(lines, sc.othersFirst);
   if (!noise) return track;
   const bed = await makeNoise(noise.kind, durationMs(track.pcm));
   return { ...track, pcm: mixAtSnr(track.pcm, bed, noise.snrDb) };
@@ -82,14 +99,14 @@ async function stream(
 export async function runLive(
   sc: Scenario,
   userVoice: string,
-  otherVoice: string,
+  otherVoices: string[],
   profile: Awaited<ReturnType<typeof loadProfile>>,
   pauseResume: boolean,
   // Replaces parts of the real server, for tests.
   appDeps: Parameters<typeof buildApp>[0] = {},
   audio: AudioOpts = {},
 ): Promise<LiveRun> {
-  const { pcm, placed } = await renderScenario(sc, userVoice, otherVoice, audio);
+  const { pcm, placed } = await renderScenario(sc, userVoice, otherVoices, audio);
   const app = await buildApp({ ...(sc.profile ? { profile } : {}), ...appDeps });
   try {
     await app.listen({ port: 0, host: '127.0.0.1' });
@@ -155,7 +172,7 @@ export async function runLive(
       .at(-1);
     return {
       voice: userVoice,
-      otherVoice,
+      otherVoice: otherVoices[0] ?? userVoice,
       score: scoreScenario(sc.id, sc.type, placed, offers),
       placed,
       offers,
@@ -188,6 +205,7 @@ async function main(): Promise<void> {
       noise: { type: 'string' },
       snr: { type: 'string', default: '10' },
       solo: { type: 'boolean', default: false },
+      others: { type: 'string' },
     },
   });
   const split = values.split;
@@ -201,35 +219,40 @@ async function main(): Promise<void> {
     throw new Error(`--noise must be one of ${NOISE_KINDS.join(', ')}`);
   const snrDb = Number(values.snr);
   if (!Number.isFinite(snrDb)) throw new Error('--snr is a number of dB, such as 10');
+  const othersWhere = (['room', 'call'] as const).find((o) => o === values.others);
+  if (values.others !== undefined && !othersWhere) throw new Error('--others must be room or call');
   const audio: AudioOpts = {
     ...(rate === undefined ? {} : { rate }),
     ...(noiseKind ? { noise: { kind: noiseKind, snrDb } } : {}),
     ...(values.solo ? { solo: true } : {}),
+    ...(othersWhere ? { others: othersWhere } : {}),
   };
   const voices = values.voices
     .split(',')
     .map((v) => v.trim())
     .filter(Boolean);
   const installed = await installedVoices();
-  for (const v of [
-    ...voices,
-    ...(values.solo ? [] : voices.map(otherVoiceFor)),
-    ...(noiseKind === 'cafe' ? BABBLE_VOICES : []),
-  ]) {
-    if (!installed.has(v)) throw new Error(`the macOS voice "${v}" is not installed (say -v '?')`);
-  }
   const wanted = values.scenario?.split(',').map((s) => s.trim());
   const scenarios = (await loadScenarios(split)).filter((s) => !wanted || wanted.includes(s.id));
   if (scenarios.length === 0) throw new Error('no scenarios match');
 
+  for (const v of [
+    ...voices,
+    ...(values.solo ? [] : scenarios.flatMap((sc) => voices.flatMap((u) => othersOf(sc, u)))),
+    ...(noiseKind === 'cafe' ? BABBLE_VOICES : []),
+  ]) {
+    if (!installed.has(v)) throw new Error(`the macOS voice "${v}" is not installed (say -v '?')`);
+  }
   const jobs = scenarios.flatMap((sc) => voices.map((v) => ({ sc, voice: v })));
   if (values['dry-run']) {
     let total = 0;
     for (const { sc, voice } of jobs) {
-      const { pcm } = await renderScenario(sc, voice, otherVoiceFor(voice), audio);
+      const { pcm } = await renderScenario(sc, voice, othersOf(sc, voice), audio);
       const s = (durationMs(pcm) - TAIL_MS) / 1000;
       total += s + TAIL_MS / 1000;
-      console.log(`${sc.id} ${voice}/${otherVoiceFor(voice)}: ${s.toFixed(0)} s of speech`);
+      console.log(
+        `${sc.id} ${voice}/${othersOf(sc, voice).join('+')}: ${s.toFixed(0)} s of speech`,
+      );
     }
     console.log(
       `A real run streams ${jobs.length} conversations in real time: about ${(total / 60).toFixed(1)} minutes.`,
@@ -249,7 +272,7 @@ async function main(): Promise<void> {
         const result = await runLive(
           job.sc,
           job.voice,
-          otherVoiceFor(job.voice),
+          othersOf(job.sc, job.voice),
           profile,
           values['pause-resume'],
           {},
@@ -271,6 +294,7 @@ async function main(): Promise<void> {
     `live-scenarios-${split}`,
     values['pause-resume'] ? 'pause' : '',
     rate === undefined ? '' : `rate${rate}`,
+    othersWhere ?? '',
     noiseKind ? `${noiseKind}${snrDb}dB` : '',
     values.solo ? 'solo' : '',
   ]

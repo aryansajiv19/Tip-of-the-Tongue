@@ -3154,6 +3154,269 @@
           "t": "See you… next week… thank you."
         }
       ]
+    },
+    {
+      "id": "s29",
+      "type": "multi_team",
+      "split": "dev",
+      "title": "Team call, four people: the others speak first, the user stalls twice (nothing for the others)",
+      "othersFirst": true,
+      "lines": [
+        {
+          "s": "other",
+          "t": "Good morning everyone, can everybody hear me?"
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Yes, loud and clear. Morning Priya."
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "Morning all. I have the slides ready to share."
+        },
+        {
+          "s": "other",
+          "t": "Great. Let's start with the schedule for the launch."
+        },
+        {
+          "s": "me",
+          "t": "Morning. Before that, can I say something about the schedule?"
+        },
+        {
+          "s": "other",
+          "t": "Of course, go ahead."
+        },
+        {
+          "s": "me",
+          "t": "The testers found that the... the part where people type their name and password, it fails on phones",
+          "w": "login screen",
+          "a": [
+            "login screen",
+            "login page",
+            "login",
+            "sign-in page",
+            "sign in page",
+            "log in page"
+          ]
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "That is bad. How many phones does it affect?"
+        },
+        {
+          "s": "me",
+          "t": "About one in ten, mostly older ones."
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "I can look at it this afternoon."
+        },
+        {
+          "s": "me",
+          "t": "Thanks. And we still need the... the paper that says the client agrees to the price and the dates, before we can start",
+          "w": "contract",
+          "a": ["contract", "agreement", "order form"]
+        },
+        {
+          "s": "other",
+          "t": "I will chase the client for that today."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Should we move the date?"
+        },
+        {
+          "s": "me",
+          "t": "Not yet. Let's wait until Thursday."
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "Agreed. Anything else?"
+        },
+        {
+          "s": "me",
+          "t": "No, that is everything from me. Thank you all."
+        },
+        {
+          "s": "other",
+          "t": "Thanks everyone, talk tomorrow."
+        }
+      ]
+    },
+    {
+      "id": "s30",
+      "type": "multi_stalling_others",
+      "split": "dev",
+      "title": "Three people: the two others stall and describe things, the user stalls twice (nothing for the others)",
+      "lines": [
+        {
+          "s": "other",
+          "t": "Hi Tom, thanks for joining. Ben and I are trying to plan the kitchen."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Yes, we need to choose the... what's it called... the surface you cook on, with the rings."
+        },
+        {
+          "s": "me",
+          "t": "A hob? I would go for induction, it is easier to clean."
+        },
+        {
+          "s": "other",
+          "t": "Good idea. And the thing above it that takes the smoke away, the... um... the big fan."
+        },
+        {
+          "s": "me",
+          "t": "An extractor. Make sure it vents outside."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "We also want something for the floor, the... the tiles that look like wood."
+        },
+        {
+          "s": "me",
+          "t": "Wood-effect tiles are good, they are warm and easy to clean."
+        },
+        {
+          "s": "other",
+          "t": "How long will the work take?"
+        },
+        {
+          "s": "me",
+          "t": "About three weeks, if the... the person who fixes the pipes and the taps comes on time",
+          "w": "plumber",
+          "a": ["plumber"]
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Do we need a permit?"
+        },
+        {
+          "s": "me",
+          "t": "Not for this. But the... the person who checks that the wires are safe, you should book them",
+          "w": "electrician",
+          "a": ["electrician", "electrical inspector", "inspector"]
+        },
+        {
+          "s": "other",
+          "t": "Right, we will call both."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "And the budget?"
+        },
+        {
+          "s": "me",
+          "t": "Count on about twelve thousand, with some extra in case."
+        },
+        {
+          "s": "other",
+          "t": "That is fine. Thanks Tom."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Yes, thank you, very helpful."
+        }
+      ]
+    },
+    {
+      "id": "s31",
+      "type": "multi_family",
+      "split": "dev",
+      "title": "Family video call, four people: the others speak first and stall, the user stalls twice (nothing for the others)",
+      "othersFirst": true,
+      "lines": [
+        {
+          "s": "other",
+          "t": "Hello love! Can you see us?"
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Hi Mia! We are all here at Gran's."
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "Hello Mia, the picture is bad but we can hear you."
+        },
+        {
+          "s": "me",
+          "t": "Hi everyone! Yes, I can see you. Happy birthday Gran."
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "Thank you, dear. Did you get the... what's the word... the parcel we posted?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, it came yesterday. I love the... the thing you wear round your neck when it is cold, the knitted one",
+          "w": "scarf",
+          "a": ["scarf", "muffler"]
+        },
+        {
+          "s": "other",
+          "t": "Gran made it herself."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "She stayed up late for it. Now tell us about the new flat."
+        },
+        {
+          "s": "me",
+          "t": "It is small but bright. I only need to buy the... the thing you sleep on, with the springs, because the old one broke",
+          "w": "mattress",
+          "a": ["mattress", "bed"]
+        },
+        {
+          "s": "other",
+          "t": "We can help with that."
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "And what about the... um... the machine that washes the plates?"
+        },
+        {
+          "s": "me",
+          "t": "A dishwasher? The flat has one already."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Lovely. Are you coming at the weekend?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, I will take the early train on Saturday."
+        },
+        {
+          "s": "other",
+          "t": "Wonderful. We will pick you up."
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "Bring warm clothes."
+        },
+        {
+          "s": "me",
+          "t": "I will. Love you all, see you soon."
+        }
+      ]
     }
   ]
 }
