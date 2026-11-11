@@ -32,19 +32,16 @@ export class LevelLog {
   }
 }
 
-// How many words a voice needs before its loudness counts, to pick the user the first time and
-// to change a pick already made.
+// How many words a voice needs before its loudness counts, and how much louder than the voice it
+// would replace (the next loudest while nobody is picked, else the current pick: so two voices
+// of nearly the same level do not take turns).
 const PICK_WORDS = 8;
-const REPICK_WORDS = 15;
-// How much louder than the next voice (first pick) or than the current pick (change).
 const PICK_DB = 3;
-const REPICK_DB = 6;
 // Only the latest words: who is loudest now.
 const RECENT_WORDS = 200;
 
-// The voice number that is the user's by loudness, or undefined to leave things as they are:
-// with nobody picked, the loudest voice with enough words; with someone picked, another voice only
-// when it is clearly and consistently louder.
+// The voice number that is the user's by loudness, or undefined to leave things as they are: the
+// loudest voice with enough words, when it is clearly louder than the one it would replace.
 export function pickByLevel(
   words: readonly Word[],
   levels: LevelLog,
@@ -63,8 +60,6 @@ export function pickByLevel(
     .sort((a, b) => b.db - a.db);
   const [top, next] = voices.filter((v) => v.n >= PICK_WORDS);
   if (!top || top.speaker === me) return undefined;
-  if (me === undefined) return !next || top.db - next.db >= PICK_DB ? top.speaker : undefined;
-  const mine = stats.get(me);
-  if (!mine || top.n < REPICK_WORDS) return undefined;
-  return top.db - mine.sum / mine.n >= REPICK_DB ? top.speaker : undefined;
+  const rival = me === undefined ? next : voices.find((v) => v.speaker === me);
+  return !rival || top.db - rival.db >= PICK_DB ? top.speaker : undefined;
 }

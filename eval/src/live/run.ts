@@ -182,6 +182,17 @@ export async function runLive(
         },
       ];
     });
+    // The voice number on the last word of each interim result, against who was talking: interim
+    // labels are what the session sees while someone is mid-sentence.
+    const partials = events.flatMap(({ perfMs, event }) => {
+      if (event.type !== 'transcript.partial') return [];
+      const last = event.words.at(-1);
+      const role =
+        placed[lineForTime(placed, trackTime(perfMs - start.perfMs, start.pause))]?.line.s;
+      return last && role
+        ? [{ role, ...(last.speaker === undefined ? {} : { speaker: last.speaker }) }]
+        : [];
+    });
     const chosen = events
       .flatMap(({ event }) =>
         event.type === 'debug' && event.info.kind === 'speaker' ? [event.info.me] : [],
@@ -202,6 +213,7 @@ export async function runLive(
       })),
       trace,
       transcriptLag,
+      partials,
       chosen,
     };
   } finally {
@@ -330,6 +342,7 @@ async function main(): Promise<void> {
         words: r.words,
         trace: r.trace,
         transcriptLag: r.transcriptLag,
+        partials: r.partials,
         lines: r.placed.map((p) => ({ s: p.line.s, startMs: p.startMs, endMs: p.endMs })),
       })),
       null,

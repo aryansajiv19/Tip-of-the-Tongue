@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { scoreScenario } from '../score.js';
-import { lagSummary, renderLiveReport, voicePick, type LiveRun } from './liveReport.js';
+import {
+  lagSummary,
+  partialSummary,
+  renderLiveReport,
+  voicePick,
+  type LiveRun,
+} from './liveReport.js';
 
 const labels = (userLabel: number | undefined) => ({
   userLabel,
@@ -38,6 +44,7 @@ describe('renderLiveReport with one voice', () => {
       ],
       trace: [],
       transcriptLag: [],
+      partials: [],
       chosen: 0,
     } as unknown as LiveRun;
     const md = renderLiveReport({ split: 'dev', voices: ['Daniel'], solo: true }, [run]);
@@ -57,5 +64,24 @@ describe('lagSummary', () => {
   });
   it('says so when nothing arrived', () => {
     expect(lagSummary([lag()])).toBe('No transcripts arrived.');
+  });
+});
+
+describe('partialSummary', () => {
+  it("says how often interim results carry the user's number, by who was talking", () => {
+    const run = {
+      labels: labels(0),
+      partials: [
+        { role: 'me' as const, speaker: 0 },
+        { role: 'me' as const, speaker: 1 },
+        { role: 'other' as const, speaker: 0 },
+        { role: 'other' as const },
+        { role: 'other' as const, speaker: 1 },
+        { role: 'other' as const, speaker: 1 },
+      ],
+    };
+    const s = partialSummary([run]);
+    expect(s).toContain("while the user talks, 50% carry the user's number and 0% none (2)");
+    expect(s).toContain("while others talk, 25% carry the user's number and 25% none (4)");
   });
 });
