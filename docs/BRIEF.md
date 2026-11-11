@@ -1,6 +1,6 @@
 # Product brief
 
-Entry for the Hiya Voice AI Challenge, **Accessibility** track.
+Entry for the Hiya Voice AI Challenge, **Real-time Assistance** track.
 
 ## What it does
 

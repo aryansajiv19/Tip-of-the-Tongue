@@ -1,6 +1,6 @@
 # Tip of the Tongue
 
-Live word-finding companion (Hiya Voice AI Challenge, Accessibility). It listens, spots when the user is stuck on a word, and offers up to 3 likely words in a small pop-up, only when confident. Staying silent is a feature.
+Live word-finding companion (Hiya Voice AI Challenge, Real-time Assistance track). It listens, spots when the user is stuck on a word, and offers up to 3 likely words in a small pop-up, only when confident. Staying silent is a feature.
 
 Read first: `docs/CHECKPOINT.md` (status, decisions, next; **start here when resuming**), `docs/README.md` (what each doc is for), `docs/BRIEF.md` (honest framing). Each folder has its own short `CLAUDE.md`.
 

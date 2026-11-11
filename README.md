@@ -1,6 +1,6 @@
 # Tip of the Tongue
 
-**A live word-finding companion.** When a word escapes you mid-sentence, it offers it in about a second and a half, and stays silent the rest of the time.
+**Real-time help when a word escapes you.** You stall mid-sentence, and about 1.5 s later the word you were reaching for appears in a small overlay. The rest of the time it stays quiet.
 
 <p align="center">
   <a href="docs/assets/demo.mp4"><img src="docs/assets/demo.gif" width="760" alt="Demo: the speaker stalls on 'the thing you fly in', the overlay offers 'plane', and nothing pops up during fluent speech"></a>
@@ -21,7 +21,7 @@ It listens to your conversation. When you stall on a word, a small overlay offer
 
 It's for anyone who loses words mid-conversation, in meetings, interviews, calls or day to day. That includes people with anomic aphasia, brain fog or a stammer, older speakers, and people speaking a second language.
 
-Entry for the **Hiya Voice AI Challenge, Accessibility track**.
+Entry for the **Hiya Voice AI Challenge, Real-time Assistance track**.
 
 ## Try it
 

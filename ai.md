@@ -15,7 +15,7 @@ This project was built with heavy AI assistance. This file says plainly which to
 
 ## What the owner decided and did
 
-- **Problem and users.** Chose the problem and the Accessibility track. Widened the user from people with aphasia to anyone who loses a word mid-conversation (meetings, interviews, calls).
+- **Problem and users.** Chose the problem and the Real-time Assistance track. Widened the user from people with aphasia to anyone who loses a word mid-conversation (meetings, interviews, calls).
 - **Product behaviour.** Required that it stays silent on fluent speech, works after any hesitation (not only cue phrases), feels instant, and uses context (meeting briefs, documents, prior meetings).
 - **Working rules.** Set the rules for the AI sessions:
   - one lead and parallel workers, each in its own worktree;
