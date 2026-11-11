@@ -6,7 +6,7 @@ A small pop-up that listens while you talk and, when you get stuck on a word, of
 
 ## 1. Install
 
-1. Download the .dmg from the project's GitHub Releases page and open it. If there's no release yet, build it from source with `npm run dist` (see README › Install the desktop app). Pick the Apple silicon .dmg (arm64) on a Mac from 2020 or later with an M-series chip, and the other one on an Intel Mac.
+1. Build the .dmg from source with `npm run dist` (see README › Try it) and open it. Pick the Apple silicon .dmg (arm64) on a Mac from 2020 or later with an M-series chip, and the other one on an Intel Mac.
 2. Drag **Tip of the Tongue** into your Applications folder.
 3. The first time only: **right-click the app and choose Open**, then choose **Open** again in the box that appears. The app is not signed by Apple yet, so a normal double-click is refused. After this one time it opens normally.
 4. A small icon appears in the menu bar at the top of the screen. The pop-up lives at the top right of your screen.

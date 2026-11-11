@@ -1,4 +1,4 @@
-# Tip of the Tongue — one-page write-up
+# Tip of the Tongue — write-up (full evidence)
 
 > Track: Real-time Assistance. Structured around the brief's key paragraph. The evidence section is long; this is the short version.
 >
@@ -9,11 +9,11 @@
 
 ## The moment
 
-Someone is mid-conversation, in a meeting or on a video call, and can't find a word they know. It happens to everyone, and far more often with aphasia, brain fog, a stammer, a second language or age. They talk around it: "the place… where you get medicine…". The other person guesses, the conversation stalls, and confidence drops.
+Someone is mid-conversation, in a meeting or on a video call, and can't find a word they know. It happens to everyone, and more often in a second language, when tired, or with a stammer, brain fog or aphasia. They talk around it: "the place… where you get medicine…". The other person guesses, the conversation stalls, and confidence drops.
 
 ## The friction
 
-Existing word-finding tools make you stop and search (type, draw, photograph) — exactly when you can't stop. For people with aphasia, reading and writing are often affected too.
+Existing word-finding tools make you stop and search (type, draw, photograph) — exactly when you can't stop. For some people, for example with aphasia, typing is hard too.
 
 ## What the agent does
 
@@ -27,7 +27,7 @@ Listens, notices the struggle, guesses the word from context, and offers it quie
 
 ## Evidence
 
-- Scale: everyone loses a word sometimes; ~350,000 people with aphasia in the UK lose them constantly.
+- Scale: everyone loses a word sometimes; some people lose them far more often (aphasia alone affects ~350,000 people in the UK).
 - Prior study: LLM identified the intended word 91.67% of the time from text.
 - **Our results** (Claude Haiku 5.5 guessing, our detector and gate; 95% Wilson intervals in brackets). Runs 1 and 2 are full runs of the same code, because the guesser is an LLM and results vary between runs. The "final" rows are the shipped prompt, which has one extra sentence added after run 2 (keep multi-word names together), tuned on dev; the holdout was run once with it:
 
@@ -125,8 +125,8 @@ No training; speech-to-text + rules + Claude + a confidence gate. Silence is a f
 
 ## Limits (stated plainly)
 
-Not tested with people with aphasia; scripted examples; STT on atypical speech unknown; single speaker.
+Not tested with people with aphasia; scripted examples; STT on atypical speech unknown; one microphone hears everyone, and speaker labels can merge similar voices.
 
 ## Wider reach and next steps
 
-Everyday meetings and video calls, non-native speakers, older adults. Phone-call mode. Co-design with people with aphasia and speech and language therapists.
+Everyday meetings and video calls, non-native speakers, older adults. Phone-call mode. Co-design with the groups who lose words more often (for example people with aphasia) and speech and language therapists.
