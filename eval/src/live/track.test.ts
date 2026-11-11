@@ -7,6 +7,7 @@ import {
   lineForTime,
   pausePoint,
   silenceBefore,
+  speakerChanges,
   TAIL_MS,
   trackTime,
 } from './track.js';
@@ -184,5 +185,29 @@ describe('labelStats', () => {
 
   it('keeps silence out of it: a gap does not belong to a line before its start', () => {
     expect(durationMs(silence(10))).toBe(10);
+  });
+});
+
+describe('speakerChanges', () => {
+  it('lists each change of speaker number with where it happened, and skips unlabelled words', () => {
+    const w = (startMs: number, speaker?: number) => ({
+      startMs,
+      ...(speaker === undefined ? {} : { speaker }),
+    });
+    const r = speakerChanges([w(0, 0), w(100, 0), w(200), w(300, 1), w(400, 1), w(500, 0)]);
+    expect(r.labelled).toBe(5);
+    expect(r.counts).toEqual({ 0: 3, 1: 2 });
+    expect(r.changes).toEqual([
+      { atMs: 300, word: 3, from: 0, to: 1 },
+      { atMs: 500, word: 5, from: 1, to: 0 },
+    ]);
+  });
+  it('finds no change in one steady voice', () => {
+    expect(
+      speakerChanges([
+        { startMs: 0, speaker: 2 },
+        { startMs: 9, speaker: 2 },
+      ]).changes,
+    ).toEqual([]);
   });
 });

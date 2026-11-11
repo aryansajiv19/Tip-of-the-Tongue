@@ -4,7 +4,7 @@ import type { ScenarioScore } from '../score.js';
 import { summarize } from '../score.js';
 import type { PlacedLine } from '../layout.js';
 import type { Offer } from '../replay.js';
-import type { LabelStats } from './track.js';
+import { speakerChanges, type LabelStats } from './track.js';
 
 export interface LiveRun {
   voice: string;
@@ -82,8 +82,35 @@ function failures(runs: LiveRun[]): string[] {
   return out;
 }
 
+// With one voice speaking: how often, and when, the recogniser gave its words a new speaker number.
+function drift(runs: LiveRun[]): string[] {
+  const rows = runs.map((r) => {
+    const { labelled, counts, changes } = speakerChanges(r.words);
+    const numbers = Object.entries(counts)
+      .map(([n, c]) => `${n}: ${c}`)
+      .join(', ');
+    const when = changes
+      .map((c) => `${c.from}→${c.to} at ${(c.atMs / 1000).toFixed(1)} s (word ${c.word})`)
+      .join('; ');
+    return {
+      changed: changes.length > 0,
+      line: `| ${r.score.id} ${r.voice} | ${labelled} | ${numbers || 'none'} | ${changes.length} | ${when || '-'} | ${r.chosen ?? 'none'} |`,
+    };
+  });
+  return [
+    '## Speaker numbers with one voice speaking',
+    '',
+    `${rows.filter((r) => r.changed).length} of ${runs.length} runs changed the speaker number at least once.`,
+    '',
+    '| Run | Words labelled | Number: words | Changes | Where | Number the session chose |',
+    '| --- | --- | --- | --- | --- | --- |',
+    ...rows.map((r) => r.line),
+    '',
+  ];
+}
+
 export function renderLiveReport(
-  meta: { split: string; voices: string[] },
+  meta: { split: string; voices: string[]; solo?: boolean },
   runs: LiveRun[],
 ): string {
   const voices = [...new Set(runs.map((r) => r.voice))];
@@ -103,6 +130,7 @@ export function renderLiveReport(
     '',
     'The other person is spoken by a contrasting voice. Label accuracy is the share of words labelled with their speaker\'s usual voice number. "End of speech to pop-up" is measured from the end of the last word before the pop-up.',
     '',
+    ...(meta.solo ? drift(runs) : []),
     '## Failures',
     '',
     ...(f.length > 0 ? f : ['None.']),
