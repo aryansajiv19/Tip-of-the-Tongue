@@ -6,7 +6,6 @@ Electron desktop app. Two modes:
 - **Installed** (`npm run dist` at the root → `release/*.dmg`, unsigned): `scripts/bundle-server.mjs` bundles the server with esbuild; `serverProcess.ts` runs it as a `utilityProcess` on port 47821 with `WEB_DIST` (the built page), a per-launch `TOTT_TOKEN` (the page loads `/?token=…`), `LOG_FILE` and the saved keys. `supervisor.ts` restarts it once; `port.ts` checks the port first; `log.ts` writes a rotating `app.log` under userData (tokens redacted, no words). Single-instance lock; the tray shows Starting… / Couldn't start + Retry.
 - Keys: `keyStore.ts` (Electron `safeStorage`, never written in plain text) and `keyCheck.ts` (one GET to each provider); the page gets only `window.tott.keys.{status, save, test}` and can never read a key back. Saving restarts the server.
 - External links open in the system browser (https only); the window never navigates away.
-
 - Main process is CommonJS (`dist/`, built by `tsc`); `src/placement.ts` is pure and unit-tested, the rest is thin glue.
 - Never call `setContentProtection`: the overlay must show in screenshots and screen shares.
 - The window must not steal focus: show it with `showInactive()`.

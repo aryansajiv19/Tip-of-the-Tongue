@@ -63,5 +63,3 @@ export function createKeyStore(file: string, cipher: Cipher) {
     },
   };
 }
-
-export type KeyStore = ReturnType<typeof createKeyStore>;
