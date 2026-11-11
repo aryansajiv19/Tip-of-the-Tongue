@@ -31,6 +31,19 @@ You need Node 22 (`nvm use`) and a Mac for the desktop overlay. On Windows or Li
 
 No keys? `npm run dev` runs the web version at http://localhost:5173 with a mock guesser and the browser's speech recognition. Other settings are in `.env.example`.
 
+### Test it yourself
+
+With the app running and listening (press play), try these. Each should take a few seconds.
+
+1. **A stall.** Say "I need to book the… the thing you fly in" and stop. Within about 2 s a card offers **plane**. Say it or press ⌘1 and the card confirms it.
+2. **Fluent speech.** Talk normally for 20 seconds without pausing on a word. Nothing should appear.
+3. **No good guess.** Stall on something nobody could guess: "I spoke to… um… what's his name". It shows a quiet **…** or nothing, never a made-up name.
+4. **Ask on demand.** Press ⌘↵ at any time to get a guess without waiting for a pause.
+5. **A topic.** Turn on a skill in Settings › Skills (for example Medical visit) and stall on a word from that field. It should offer the field's term.
+6. **Another voice.** Play a video or call with someone else talking. Their pauses should not trigger cards. If it ever follows the wrong voice, speak, then press **That’s me**. This needs the Deepgram key.
+
+Without keys the guesser is a simple mock that knows only a few phrases. Try "I have to go to the… where you get medicine" and it offers **pharmacy**; other stalls stay silent.
+
 `npm run dist` builds unsigned `.dmg` installers in `release/`. The installed app asks for your own keys on first launch and keeps them encrypted in the macOS Keychain; open it the first time with right-click › Open.
 
 ## Features
@@ -88,7 +101,7 @@ The server holds one session per connection. It keeps the transcript in memory, 
 
 ## Evidence
 
-All numbers come from scripted conversations we wrote, not real users; LLM results vary between runs. 95% Wilson intervals in brackets.
+All numbers come from scripted conversations I wrote, not real users; LLM results vary between runs. 95% Wilson intervals in brackets.
 
 | Test                                                                | Result                                                                                                                                                                                   |
 | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -120,11 +133,11 @@ npm run bench                                                    # standard suit
 
 ## Limitations
 
-- **Not tested with people with aphasia**, and we make no clinical claim.
+- **Not tested with people with aphasia**, and I make no clinical claim.
 - Speech-to-text can mishear atypical speech; severe dysarthria is a weak spot for every recogniser.
 - Similar voices can be merged into one by Deepgram's speaker labels. With browser speech there are no labels, so other people's pauses can trigger a guess.
 - Background noise lowers how often it catches a stall (83% clean, 58% with café noise). Use a headset; on laptop speakers others' voices leak into the mic.
-- Skills showed no measurable accuracy gain in our tests, though they made fewer wrong offers. Show how to continue costs a few points of accuracy, which is why it is off by default.
+- Skills showed no measurable accuracy gain in my tests, though they made fewer wrong offers. Show how to continue costs a few points of accuracy, which is why it is off by default.
 - Only the Spanish code-switching case is measured. macOS only for the desktop app, and it is not signed yet.
 
 More in [docs/EDGE-CASES.md](docs/EDGE-CASES.md).
