@@ -17,113 +17,81 @@
   <a href="#limitations">Limitations</a>
 </p>
 
-It listens to your conversation. When you stall on a word, a small overlay offers up to three likely words, or just the first sound if you prefer. It stays quiet while you speak fluently, while you are still finding the word yourself, and while someone else is talking.
-
 It's for anyone who loses words mid-conversation, in meetings, interviews, calls or day to day. That includes people with anomic aphasia, brain fog or a stammer, older speakers, and people speaking a second language.
 
 Entry for the **Hiya Voice AI Challenge, Real-time Assistance track**.
 
 ## Try it
 
-You need Node 22 (`nvm use`) and a Mac for the desktop overlay. On Windows or Linux, use the web version (`npm run dev`) in Chrome or Edge.
+You need Node 22 (`nvm use`) and a Mac for the desktop overlay. On Windows or Linux, use the web version in Chrome or Edge.
 
 1. `npm install`
-2. Copy `.env.example` to `.env` and add `ANTHROPIC_API_KEY` and `DEEPGRAM_API_KEY`.
+2. Copy `.env.example` to `.env` and add `ANTHROPIC_API_KEY` (word guessing with Claude Haiku) and `DEEPGRAM_API_KEY` (streaming speech-to-text with word timings and speaker labels; the desktop app needs it).
 3. `npm run demo`, allow the microphone, press play, and pause mid-sentence: "I need to book the… the thing you fly in". The first launch downloads the Electron runtime once (about 30 s).
 
-No keys? `npm run dev` runs the web version from a clean clone with a mock guesser and the browser's speech recognition (Chrome or Edge) at http://localhost:5173.
+No keys? `npm run dev` runs the web version at http://localhost:5173 with a mock guesser and the browser's speech recognition. Other settings are in `.env.example`.
 
-| Variable            | What it enables                                                                                                                                       |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY` | Real word guessing with Claude (default model `claude-haiku-5-5`). Without it, a mock guesser runs.                                                   |
-| `DEEPGRAM_API_KEY`  | Streaming speech-to-text (Nova-3) with word timings, filler words and speaker labels. Without it, browser speech is used. The desktop app needs this. |
-
-Optional settings are in `.env.example`: a personal profile file, sensitivity and the allowed browser origins.
+`npm run dist` builds unsigned `.dmg` installers in `release/`. The installed app asks for your own keys on first launch and keeps them encrypted in the macOS Keychain; open it the first time with right-click › Open.
 
 ## Features
 
 **Notices when you're stuck**
 
-- Triggers on a pause, a filler, a cue phrase ("what's it called") or a description of the thing ("the place where you get medicine").
-- The pause it waits for adapts to your pace. It stays quiet during stutters and blocks and never finishes a word you have started.
-- It never offers a word you just rejected ("the fork, no, the…"), and only your own stalls count: Deepgram tells the voices apart.
-- If it follows the wrong voice, a **That's me** button appears in the control bar once a second voice has been heard. Press it right after you speak.
+- A pause, a filler, a cue phrase ("what's it called") or a description ("the place where you get medicine"). The pause it waits for adapts to your pace.
+- Stays quiet during stutters and blocks, never finishes a word you have started, and never offers a word you just rejected ("the fork, no, the…").
+- Only your stalls count, even with several people on a call: Deepgram labels the voices and it follows yours as the loudest at your microphone. If it picks the wrong one, press **That's me** right after you speak.
 
 **Offers the right word, fast**
 
-- Guessing starts while you are still pausing; the pop-up typically appears 1.4–1.7 s after your last word.
-- Optional, off by default (Settings › Show how to continue): when the next words are strongly implied, the offer carries 2–4 of them after the word ("pharmacy to collect my tablets"), to help you back into the flow; accepting still means the word alone.
-- It prefers the specific word and keeps phrases whole ("phone cable", "car park"). Say the word, click it, or press ⌘1/⌘2/⌘3.
-- Optional **Show how to continue** (Settings, off by default): the main word is followed by a few muted words that probably come next ("pharmacy to pick up my tablets"). Picking or saying it still means the word alone; it is slightly less accurate.
-- When it cannot find the word it says so with a quiet "…" for a moment, instead of just vanishing.
-- Meeting notes (PDF, Markdown or text), "About you" and words you have accepted before give it context. Words are remembered on this device only, never transcripts.
-- Skills: switch on a topic pack (Medical visit, Job interview, Software & tech, Money & finance, Everyday errands) or write your own under Settings › Skills (up to 5 on at once, kept on this device), and the speech recogniser listens for that field's words and the guesser knows the topic. Packs live in `data/skills/`.
+- Guessing starts while you are still pausing; the pop-up usually appears 1.4–1.7 s after your last word, with up to three words. Say one, click it, or press ⌘1/⌘2/⌘3.
+- It prefers the specific word and keeps phrases whole ("phone cable", "car park"). When it finds nothing it shows a quiet "…" for a moment.
+- Context from meeting notes (PDF, Markdown or text), "About you" and words you accepted before.
+- **Skills**: topic packs (Medical visit, Job interview, Software & tech, Money & finance, Everyday errands) or your own, up to 5 at once. The recogniser listens for the topic's words and the guesser knows the field.
+- Optional **Show how to continue** (off by default): a few muted words after the main word ("pharmacy to pick up my tablets"). Picking it still means the word alone.
 
 **Fits how you want to be helped**
 
-- First sound only, the whole word, or only when you ask; and how quickly it offers words, from Calm to Eager.
-- English, Spanish, French, German, Hindi or mixed. With English selected, a foreign word in your sentence gets its English word.
-- Large text, light or dark following your system, keyboard and screen-reader friendly, reduced motion respected.
+- First sound only, the whole word, or only when you ask; from Calm to Eager.
+- English, Spanish, French, German, Hindi or mixed.
+- Large text, light or dark, keyboard and screen-reader friendly, reduced motion respected.
 
 **Stays out of the way**
 
-- An always-on-top macOS overlay with a menu-bar icon. It never takes focus, can be dragged anywhere, and stays visible when you share your screen.
+- An always-on-top macOS overlay with a menu-bar icon. It never takes focus, can be dragged anywhere, and shows in screen shares.
 - Settings › Privacy lists everything kept on your device, with Forget everything.
-- It reconnects after a network drop or sleep, recovers when a mic is unplugged or switched, and warns about a muted or very quiet mic.
+- Recovers from network drops, sleep and mic changes, and warns about a muted mic.
 
-<p align="center"><img src="docs/assets/state-listening.png" width="520" alt="Listening: the pill with a live level meter"><br><b>Listening</b>: the pill with a live level meter</p>
+|                                                                                                                        |                                                                                                                             |                                                                                                                                    |
+| :--------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------: |
+| <img src="docs/assets/state-listening.png" width="260" alt="Listening: the pill with a live level meter"><br>Listening |            <img src="docs/assets/state-thinking.png" width="260" alt="Thinking: it noticed a pause"><br>Thinking            |       <img src="docs/assets/state-suggestion.png" width="260" alt="Suggestion: the word and two alternatives"><br>Suggestion       |
+|   <img src="docs/assets/state-accepted.png" width="260" alt="Accepted: the word you said is confirmed"><br>Accepted    | <img src="docs/assets/state-first-run.png" width="260" alt="First run: how should I help when you are stuck?"><br>First run | <img src="docs/assets/state-settings.png" width="180" alt="Settings: help level, speed, language, text size, privacy"><br>Settings |
 
-<p align="center"><img src="docs/assets/state-thinking.png" width="520" alt="Thinking: it noticed a pause and is finding the word"><br><b>Thinking</b>: it noticed a pause and is finding the word</p>
-
-<p align="center"><img src="docs/assets/state-suggestion.png" width="520" alt="Suggestion: the word, two alternatives and their shortcuts"><br><b>Suggestion</b>: the word, two alternatives and their shortcuts</p>
-
-<p align="center"><img src="docs/assets/state-accepted.png" width="520" alt="Accepted: the word you said is confirmed"><br><b>Accepted</b>: the word you said is confirmed</p>
-
-<p align="center"><img src="docs/assets/state-settings.png" width="340" alt="Settings: help level, speed, language, text size, privacy"><br><b>Settings</b>: help level, speed, language, text size, privacy</p>
-
-<p align="center"><img src="docs/assets/state-first-run.png" width="520" alt="First run: how should I help when you are stuck?"><br><b>First run</b>: how should I help when you are stuck?</p>
-
-### Keyboard shortcuts (desktop overlay)
-
-| Keys         | Action                                                                       |
-| ------------ | ---------------------------------------------------------------------------- |
-| ⌘\\          | Show or hide the overlay                                                     |
-| ⌘↵           | Ask for a word now                                                           |
-| ⌘1 / ⌘2 / ⌘3 | Pick a suggestion (taken from other apps only while a suggestion is showing) |
-| Esc          | Dismiss a suggestion                                                         |
-| ⌘⇧N          | New conversation (clears everything heard)                                   |
-
-On Windows and Linux use Ctrl instead of ⌘. In the browser, add `?debug=1` for developer tools.
-
-### Build the installer (optional)
-
-`npm run dist` builds `.dmg` installers in `release/` (Apple silicon and Intel). The installed app asks for your own keys on first launch and stores them encrypted in the macOS Keychain. It is unsigned, so open it the first time with right-click › Open.
+Shortcuts: ⌘\\ show or hide, ⌘↵ ask now, ⌘1/2/3 pick, Esc dismiss, ⌘⇧N new conversation (Ctrl on Windows and Linux). All settings are in the [user guide](docs/USER-GUIDE.md).
 
 ## How it works
 
 ```
 mic ─▶ speech-to-text ─▶ stall detector ─▶ Claude guesser ─▶ gate ─▶ overlay
        (Deepgram or       (pause, fillers,    (context, profile,  (confidence,
-        browser)           pace, stutter,      document; streamed, repeats,
-                           self-corrections)   abstains if unsure) cooldown)
+        browser)           pace, stutter,      skills; streamed,   repeats,
+                           whose voice)        abstains if unsure) cooldown)
 ```
 
-The server holds one session per connection. It keeps the transcript in memory, decides when you are stuck, asks Claude for candidates, and offers them only when confident. A word you then say is counted as accepted. Details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The server holds one session per connection. It keeps the transcript in memory, decides when you are stuck, asks Claude for candidates, and offers them only when confident. Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Evidence
 
-All numbers come from our own scripted conversations, which are not real users. LLM results vary between runs. 95% Wilson intervals are in brackets.
+All numbers come from scripted conversations we wrote, not real users; LLM results vary between runs. 95% Wilson intervals in brackets.
 
-| Test                                                        | Result                                                                                         |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| 20 whole conversations (dev split), real Claude, three runs | 93–96% of stalls get the right word, 2–4 wrong of 71. 0–1 pop-ups in 165 fluent lines.         |
-| 8 held-back conversations, never tuned on, one run          | 94% (17/18) [74–99%], 1 wrong, 1/65 fluent pop-ups.                                            |
-| Slow, breathy and self-correcting speakers                  | Right word on 9–11 of 11 stalls. A rejected word is never offered.                             |
-| Live audio (macOS voices through real Deepgram and Claude)  | One sales call in six voices: 20/24 stalls, 1 wrong, 1/66 fluent pop-ups.                      |
-| Same, with café noise 10 dB below the speech                | 14/24 stalls, 2 wrong, 0/66 fluent pop-ups. Noise mostly costs missed stalls, not wrong words. |
-| Mixing in Spanish (language-aware prompt, two runs)         | 4/4 and 3/4, and the Spanish word is never offered (1/4 before, offering "factura").           |
+| Test                                                                | Result                                                                                                                                                                 |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 20 conversations (dev split), real Claude, three runs               | 93–96% of stalls get the right word, 2–4 wrong of 71; 0–1 pop-ups in 165 fluent lines.                                                                                 |
+| 8 held-back conversations, never tuned on, one run                  | 94% (17/18) [74–99%], 1 wrong, 1/65 fluent pop-ups.                                                                                                                    |
+| Live audio, one sales call in six voices (real Deepgram and Claude) | 20/24 stalls, 1 wrong, 1/66 fluent pop-ups. With café noise 10 dB below: 14/24, 2 wrong.                                                                               |
+| Live audio, 3–4 voices with others on a call, 66 stalls             | 85% correct strictly, about 92% counting the right word that arrived as the next speaker began. Voice pick 14/14; 0/44 fluent pop-ups; 8/164 pop-ups on others' lines. |
+| Mixing in Spanish (two runs)                                        | 4/4 and 3/4; the Spanish word is never offered.                                                                                                                        |
 
-Hard and holdout sets, the methods and the caveats are in [docs/write-up.md](docs/write-up.md). Research on how people speak, and the design choices it led to, is in [docs/RESEARCH.md](docs/RESEARCH.md).
+The live tests use synthetic macOS voices reading scripts. Methods, the hard and holdout sets and all caveats: [docs/write-up.md](docs/write-up.md). Research on how people speak: [docs/RESEARCH.md](docs/RESEARCH.md).
 
 ## Development
 
@@ -131,40 +99,29 @@ Hard and holdout sets, the methods and the caveats are in [docs/write-up.md](doc
 npm run lint && npm run typecheck && npm test && npm run build   # required before a PR
 npm run e2e                                                      # Playwright UI tests
 npm run eval -- --set hard --split dev --guesser claude          # word-guess evaluation
-npm run eval -- --set specialist --skills match --guesser claude # topic packs on/off/wrong: --skills match|off|wrong
 npm run scenarios -w eval -- --guesser claude --split dev       # whole-conversation replay
-npm run bench                                                    # the standard suite, compared with the last run (--live adds real speech)
+npm run bench                                                    # standard suite vs the last run (--live adds real speech)
 ```
 
-```
-server/   Fastify + WebSocket pipeline (session, stall detector, guesser, gate, Deepgram)
-web/      React overlay (pill, suggestion card, prep drawer, settings)
-app/      Electron shell for the desktop overlay
-eval/     Offline evaluation, scenario replay, live-audio harness
-e2e/      Playwright tests
-data/     Evaluation sets and an example profile
-docs/     Architecture, research, edge cases, write-up, status
-```
-
-CI runs lint, typecheck, unit tests and the build on Linux, macOS and Windows with Node 22 and 24, plus the end-to-end tests.
+`server/` pipeline, `web/` overlay, `app/` Electron shell, `eval/` evaluation, `e2e/` Playwright, `data/` eval sets and skill packs, `docs/` architecture, write-up, status. CI runs lint, typecheck, unit tests and the build on Linux, macOS and Windows (Node 22 and 24), plus the end-to-end tests.
 
 ## Privacy and security
 
 - No audio is stored. With Deepgram, audio is streamed for transcription only while you are listening.
-- Transcripts live in memory for the session and go only to the configured speech-to-text and AI providers. Info-level logs never contain your words.
-- The local server accepts WebSocket connections only from `ALLOWED_ORIGINS` (and from its own port when `WEB_DIST` is set). With `TOTT_TOKEN` set, a socket must also open with `?token=<it>` or it is closed with code 4401; the token is compared in constant time and never logged. Message size, word count and word length are capped.
+- Transcripts live in memory for the session and go only to the speech-to-text and AI providers. Info-level logs never contain your words.
+- The local server accepts WebSocket connections only from `ALLOWED_ORIGINS`; with `TOTT_TOKEN` set a socket must also carry the token (compared in constant time, never logged). Message sizes are capped.
 
 ## Limitations
 
-- **Not tested with people with aphasia**, and we make no clinical claim. The evidence comes from scripted conversations and synthetic voices.
-- Speech-to-text can mishear atypical speech. Severe dysarthria is a known weak spot for every recogniser.
-- With browser speech there are no speaker labels, so the other person's pauses can trigger a guess.
-- Background noise lowers how often it catches a stall (83% clean, 58% with café noise in the live test). Use a headset in noisy places; on laptop speakers the other person's voice can also leak into the microphone.
-- The language setting covers English, Spanish, French, German and Hindi, plus a mixed mode. Only the Spanish code-switching case is measured.
-- macOS only for the desktop app, and it is not signed yet.
+- **Not tested with people with aphasia**, and we make no clinical claim.
+- Speech-to-text can mishear atypical speech; severe dysarthria is a weak spot for every recogniser.
+- Similar voices can be merged into one by Deepgram's speaker labels. With browser speech there are no labels, so other people's pauses can trigger a guess.
+- Background noise lowers how often it catches a stall (83% clean, 58% with café noise). Use a headset; on laptop speakers others' voices leak into the mic.
+- Skills showed no measurable accuracy gain in our tests, though they made fewer wrong offers. Show how to continue costs a few points of accuracy, which is why it is off by default.
+- Only the Spanish code-switching case is measured. macOS only for the desktop app, and it is not signed yet.
 
-See [docs/EDGE-CASES.md](docs/EDGE-CASES.md) for the full list.
+More in [docs/EDGE-CASES.md](docs/EDGE-CASES.md).
 
 ## Licence
 
-MIT © Aryan Sajiv. See [LICENSE](LICENSE). How AI was used to build this project is in [ai.md](ai.md).
+MIT © Aryan Sajiv. See [LICENSE](LICENSE). How AI was used: [ai.md](ai.md).
