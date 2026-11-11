@@ -87,6 +87,15 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* A very long word breaks inside the card rather than pushing past it. */
+.card-lead .card-primary {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: start;
 }
 
 /* What probably comes next: quiet, after the bold word, wrapping rather than overflowing. */

@@ -302,7 +302,7 @@ test.describe('continuation', () => {
 
   test('a long one wraps inside the 420 px card instead of overflowing', async ({ page }) => {
     const server = await start(page);
-    server.send(withContinuation('and then the rest of it goes on', 'electrocardiogram'));
+    server.send(withContinuation('and then the rest of it goes on', 'electroencephalographically'));
     await expect(offer(page).locator('.card-cont')).toBeVisible();
     const fits = await offer(page)
       .locator('.suggestion')
