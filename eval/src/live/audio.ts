@@ -84,6 +84,18 @@ export function bandLimit(pcm: Buffer, lowHz = 300, highHz = 3400): Buffer {
   );
 }
 
+// The level (RMS, 0 to 1) of each 50 ms of audio, as the page measures and sends it.
+export function levelsOf(pcm: Buffer, readingMs = 50): number[] {
+  const size = readingMs * BYTES_PER_MS;
+  const levels: number[] = [];
+  for (let at = 0; at + size <= pcm.length; at += size) {
+    let sum = 0;
+    for (let i = at; i < at + size; i += 2) sum += pcm.readInt16LE(i) ** 2;
+    levels.push(Math.sqrt(sum / (size / 2)) / 32768);
+  }
+  return levels;
+}
+
 // Splits audio into 100 ms frames; a short last frame is padded with silence.
 export function toFrames(pcm: Buffer): Buffer[] {
   const frames: Buffer[] = [];

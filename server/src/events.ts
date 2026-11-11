@@ -107,6 +107,15 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
   // on changes; atMs is when the change began. Lets the server tell a real silence from an
   // STT lag, and hear a hum that speech recognition drops.
   z.object({ type: z.literal('voice.activity'), voiced: z.boolean(), atMs: z.number().finite() }),
+  // The microphone level (RMS, 0 to 1), as consecutive 50 ms readings, the first taken at atMs.
+  // The server takes the loudest voice at the microphone to be the user's.
+  z.object({
+    type: z.literal('voice.level'),
+    atMs: z.number().finite(),
+    levels: z.array(z.number().min(0).max(1)).max(40),
+  }),
+  // "That's me": the voice that spoke last is the user's.
+  z.object({ type: z.literal('speaker.mine') }),
   // The user asks for a suggestion now (Space key), without waiting for a pause.
   z.object({ type: z.literal('stuck.manual') }),
   // A new conversation: forget what was heard and any suggestion in progress. The brief and
@@ -148,7 +157,7 @@ export type DebugInfo =
   | {
       kind: 'speaker';
       me: number | undefined;
-      why: 'first words' | 'accepted' | 'manual' | 'new stream' | 'new conversation';
+      why: 'first words' | 'loudest' | 'accepted' | 'manual' | 'new stream' | 'new conversation';
     };
 
 // Sent by the server. `id` ties an offer to its later withdrawn/accepted/expired event.

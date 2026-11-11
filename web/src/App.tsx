@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { ClientEvent, Language, ServerEvent, Word } from '../../server/src/events';
 import { HelpQuestion } from './ui/HelpQuestion';
 import { SettingsGear, SettingsPanel } from './ui/Settings';
@@ -16,6 +16,7 @@ import { saveLanguage, savedLanguage, speechLang } from './settings/language';
 import { saveMicId, savedMicId } from './settings/mic';
 import { useManualKey } from './audio/useManualKey';
 import { useMic } from './audio/useMic';
+import { levelBatcher } from './audio/levelBatch';
 import { useVoice } from './audio/useVoice';
 import { useSocket } from './socket/useSocket';
 import { speechSupported, useSpeech } from './speech/useSpeech';
@@ -188,12 +189,17 @@ export function App() {
   useEffect(() => {
     wordsArrived.current = input.words;
   }, [input.words]);
+  const sendLevel = useMemo(
+    () => levelBatcher((atMs, levels) => send({ type: 'voice.level', atMs, levels })),
+    [send],
+  );
   useVoice(
     listening,
     (voiced, atMs) => send({ type: 'voice.activity', voiced, atMs }),
     (rms) => {
       levelStore.set(rms);
       input.level(rms);
+      sendLevel(rms);
     },
     micId,
   );

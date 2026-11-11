@@ -11,7 +11,7 @@ import { dataPath } from '../dataset.js';
 import type { Offer } from '../replay.js';
 import { scoreScenario } from '../score.js';
 import { loadScenarios, type Scenario } from '../scenarios.js';
-import { bandLimit, durationMs, FRAME_MS, mixAtSnr, scaleDb, toFrames } from './audio.js';
+import { bandLimit, durationMs, FRAME_MS, levelsOf, mixAtSnr, scaleDb, toFrames } from './audio.js';
 import { renderLiveReport, type LiveRun } from './liveReport.js';
 import { BABBLE_VOICES, makeNoise, NOISE_KINDS, type NoiseKind } from './noise.js';
 import { installedVoices, otherVoicesFor, renderLine, USER_VOICES } from './say.js';
@@ -88,6 +88,10 @@ async function stream(
   for (const [i, frame] of toFrames(pcm).entries()) {
     const wait = start.perfMs + (i + 1) * FRAME_MS + (pause?.lenMs ?? 0) - performance.now();
     if (wait > 0) await sleep(wait);
+    // The microphone level of this frame, as the page sends it (stamped when its sound was made).
+    ws.send(
+      JSON.stringify({ type: 'voice.level', atMs: Date.now() - FRAME_MS, levels: levelsOf(frame) }),
+    );
     ws.send(frame);
     if (pauseAtMs !== undefined && !pause && (i + 1) * FRAME_MS >= pauseAtMs) {
       pause = { atMs: (i + 1) * FRAME_MS, lenMs: PAUSE_LEN_MS };
