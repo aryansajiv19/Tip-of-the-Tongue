@@ -51,6 +51,8 @@ describe('session pipeline', () => {
     await vi.advanceTimersByTimeAsync(2000);
     const offer = events.find((e) => e.type === 'guess.offered');
     expect(offer?.type === 'guess.offered' && offer.candidates[0]?.word).toBe('pharmacy');
+    // Off by default: no continuation on the offer.
+    expect(offer?.type === 'guess.offered' && offer.candidates[0]?.continuation).toBeUndefined();
 
     say('pharmacy');
     await vi.advanceTimersByTimeAsync(300);
@@ -1161,6 +1163,46 @@ describe('session trace', () => {
     const { session, say, events } = setup();
     say('hello there');
     expect(events.some((e) => e.type === 'debug')).toBe(false);
+    session.close();
+  });
+});
+
+describe('skills reach the guesser', () => {
+  it('passes the active skills in the guess input, and none when cleared', async () => {
+    const seen: (unknown[] | undefined)[] = [];
+    const guess: Guesser = (input) => {
+      seen.push(input.skills);
+      return Promise.resolve({ candidates: [], abstain: true, latencyMs: 0 });
+    };
+    const { session, say } = setup(guess);
+    session.handle({
+      type: 'session.skills',
+      skills: [{ name: 'Medical visit', terms: ['referral'] }],
+    });
+    say('I need to go to the the place where you get medicine');
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(seen.at(-1)).toEqual([{ name: 'Medical visit', terms: ['referral'] }]);
+    session.handle({ type: 'session.skills', skills: [] });
+    say('and then the the thing for cutting bread');
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(seen.at(-1)).toBeUndefined();
+    session.close();
+  });
+});
+
+describe('continuations setting', () => {
+  it('puts a continuation on the offer once turned on; accepting still means the word', async () => {
+    const { session, events, say, types } = setup();
+    session.handle({ type: 'session.settings', continuations: true });
+    say('I need to go to the the place where you get medicine');
+    await vi.advanceTimersByTimeAsync(2000);
+    const offer = events.find((e) => e.type === 'guess.offered');
+    expect(offer?.type === 'guess.offered' && offer.candidates[0]?.continuation).toBe(
+      'to collect my tablets',
+    );
+    say('pharmacy');
+    await vi.advanceTimersByTimeAsync(300);
+    expect(types()).toContain('guess.accepted');
     session.close();
   });
 });

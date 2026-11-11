@@ -20,6 +20,8 @@ async function main(): Promise<void> {
       guesser: { type: 'string', default: 'mock' },
       model: { type: 'string' },
       diarize: { type: 'boolean', default: false },
+      // Turn on continuations after the word (off by default, as in the app).
+      continuations: { type: 'boolean', default: false },
     },
   });
   const split = values.split;
@@ -46,7 +48,13 @@ async function main(): Promise<void> {
       for (let sc = queue.shift(); sc; sc = queue.shift()) {
         const placed = layoutScenario(sc, values.diarize);
         const startedAt = Date.now();
-        const result = await replay(sc, placed, guess, sc.profile ? profile : undefined);
+        const result = await replay(
+          sc,
+          placed,
+          guess,
+          sc.profile ? profile : undefined,
+          values.continuations,
+        );
         const errors = result.trace.guesses.filter((g) => g.error).length;
         console.error(
           `${sc.id} done in ${Math.round((Date.now() - startedAt) / 1000)} s: ${result.guessCalls} guess calls, ${errors} failed or timed out`,
@@ -68,12 +76,13 @@ async function main(): Promise<void> {
     guesser: kind,
     split,
     diarize: values.diarize,
+    continuations: values.continuations,
     ...(kind === 'claude' ? { model } : {}),
   };
   const md = renderScenarioReport(meta, runs);
   const outDir = fileURLToPath(new URL('../../eval-results/', import.meta.url));
   await mkdir(outDir, { recursive: true });
-  const tag = `scenarios-${kind}-${split}${values.model ? `-${values.model}` : ''}${values.diarize ? '-diarize' : ''}`;
+  const tag = `scenarios-${kind}-${split}${values.model ? `-${values.model}` : ''}${values.diarize ? '-diarize' : ''}${values.continuations ? '-continuations' : ''}`;
   await writeFile(
     `${outDir}${tag}.json`,
     `${JSON.stringify({ meta, runs: runs.map((r) => ({ score: r.score, offers: r.offers, trace: r.trace })) }, null, 2)}\n`,

@@ -102,6 +102,8 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
     pauseMs: z.number().min(800).max(5000).optional(),
     minConfidence: z.number().min(0.3).max(0.9).optional(),
     language: z.enum(LANGUAGES).optional(),
+    // Offer a few words that continue the sentence after the word. Off unless the user turns it on.
+    continuations: z.boolean().optional(),
   }),
   // The microphone level crossed into (voiced) or out of (silent) speech-like sound. Sent only
   // on changes; atMs is when the change began. Lets the server tell a real silence from an
@@ -120,6 +122,9 @@ export type StuckReason = 'pause' | 'filler' | 'describing' | 'hum' | 'manual';
 export interface Candidate {
   word: string;
   confidence: number;
+  // The few words likely to come next, when the sentence clearly goes on and they are predictable
+  // (at most 40 characters and 4 words, and only on a candidate of 0.8 or more). Shown after the word; accepting still means `word` only.
+  continuation?: string;
   // The name of the loaded document the word appears in, when it does.
   source?: string;
 }
@@ -141,6 +146,9 @@ export type DebugInfo =
       abstain: boolean;
       error: boolean;
       latencyMs: number;
+      // Prompt tokens read from and written to the cache (Claude only).
+      cacheRead?: number;
+      cacheWrite?: number;
     }
   | { kind: 'gate'; offered: boolean; reason?: string; words?: string[] }
   | { kind: 'stt'; mode: 'deepgram' | 'browser'; keyterms: string[] }
