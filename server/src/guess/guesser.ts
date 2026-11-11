@@ -28,12 +28,21 @@ export function languageLine(language: Language = 'en'): string {
   return `They speak ${LANGUAGE_NAMES[language]}. Offer words in ${LANGUAGE_NAMES[language]}, not English.`;
 }
 
-// What stays the same from call to call within a session: the brief, the personal words and the
-// language. It follows SYSTEM in the system prompt, and the first cache breakpoint sits after it.
+// What stays the same from call to call within a session: the brief, the personal words, the
+// topics and the language. It follows SYSTEM in the system prompt, and the first cache breakpoint sits after it.
 export function stablePrompt(input: GuessInput): string {
   const parts: string[] = [];
   if (input.brief) parts.push(`Meeting brief:\n${input.brief}`);
   if (input.profile) parts.push(`Their personal words: ${profileForPrompt(input.profile)}`);
+  if (input.skills?.length)
+    parts.push(
+      `Topics they may be talking about (use these words and fields as a hint, never as the answer unless it fits what they said):\n${input.skills
+        .map(
+          (k) =>
+            `- ${k.name}${k.description ? `: ${k.description}` : ''} Words: ${k.terms.join(', ')}`,
+        )
+        .join('\n')}`,
+    );
   parts.push(languageLine(input.language));
   return parts.join('\n\n');
 }

@@ -131,6 +131,7 @@ Hard and holdout sets, the methods and the caveats are in [docs/write-up.md](doc
 npm run lint && npm run typecheck && npm test && npm run build   # required before a PR
 npm run e2e                                                      # Playwright UI tests
 npm run eval -- --set hard --split dev --guesser claude          # word-guess evaluation
+npm run eval -- --set specialist --skills match --guesser claude # topic packs on/off/wrong: --skills match|off|wrong
 npm run scenarios -w eval -- --guesser claude --split dev       # whole-conversation replay
 ```
 

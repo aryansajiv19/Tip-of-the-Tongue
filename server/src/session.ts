@@ -296,6 +296,7 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
       ...(rejected !== undefined ? { rejected: [rejected] } : {}),
       ...(brief ? { brief: briefForGuesser(brief, glossary) } : {}),
       ...(merged ? { profile: merged } : {}),
+      ...(skills.length > 0 ? { skills } : {}),
     };
   }
 

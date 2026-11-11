@@ -1285,3 +1285,26 @@ describe('escalation to a stronger guesser', () => {
     session.close();
   });
 });
+
+describe('skills reach the guesser', () => {
+  it('passes the active skills in the guess input, and none when cleared', async () => {
+    const seen: (unknown[] | undefined)[] = [];
+    const guess: Guesser = (input) => {
+      seen.push(input.skills);
+      return Promise.resolve({ candidates: [], abstain: true, latencyMs: 0 });
+    };
+    const { session, say } = setup(guess);
+    session.handle({
+      type: 'session.skills',
+      skills: [{ name: 'Medical visit', terms: ['referral'] }],
+    });
+    say('I need to go to the the place where you get medicine');
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(seen.at(-1)).toEqual([{ name: 'Medical visit', terms: ['referral'] }]);
+    session.handle({ type: 'session.skills', skills: [] });
+    say('and then the the thing for cutting bread');
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(seen.at(-1)).toBeUndefined();
+    session.close();
+  });
+});

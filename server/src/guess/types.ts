@@ -1,4 +1,4 @@
-import type { Candidate, Language } from '../events.js';
+import type { Candidate, Language, Skill } from '../events.js';
 import type { Profile } from './profile.js';
 
 export interface GuessInput {
@@ -9,6 +9,8 @@ export interface GuessInput {
   // What they speak (default English). Sets the language the offered words are in.
   language?: Language;
   brief?: string;
+  // The topics the user turned on (topic packs and their own): a hint for specialist words.
+  skills?: Skill[];
   profile?: Profile;
 }
 

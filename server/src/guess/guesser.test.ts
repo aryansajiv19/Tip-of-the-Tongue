@@ -323,3 +323,27 @@ describe('prompt caching', () => {
     expect(r).not.toHaveProperty('cacheRead');
   });
 });
+
+describe('topics in the cached prefix', () => {
+  const skills = [
+    { name: 'Medical visit', description: 'Appointments.', terms: ['referral', 'dosage'] },
+  ];
+
+  it('lists the active skills and their words in the stable block, not the message', () => {
+    const stable = stablePrompt({ ...input, skills });
+    expect(stable).toContain('Medical visit: Appointments. Words: referral, dosage');
+    expect(buildPrompt({ ...input, skills })).not.toContain('referral');
+  });
+
+  it('adds nothing without skills', () => {
+    expect(stablePrompt({ ...input, skills: [] })).not.toContain('Topics');
+    expect(stablePrompt(input)).not.toContain('Topics');
+  });
+
+  it('puts topics after the personal words and before the language line', () => {
+    const profile = ProfileSchema.parse({ pets: { dog: 'Biscuit' } });
+    const p = stablePrompt({ ...input, profile, skills });
+    expect(p.indexOf('Biscuit')).toBeLessThan(p.indexOf('Topics'));
+    expect(p.indexOf('Topics')).toBeLessThan(p.indexOf('They speak English'));
+  });
+});
