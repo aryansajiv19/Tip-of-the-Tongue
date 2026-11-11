@@ -56,6 +56,8 @@ export async function replay(
   placed: PlacedLine[],
   guess: Guesser,
   profile?: Profile,
+  // The user turned on continuations after the word.
+  continuations = false,
 ): Promise<Replay> {
   let now = 0;
   const offers: Offer[] = [];
@@ -113,6 +115,7 @@ export async function replay(
       now: () => now,
     },
   );
+  if (continuations) session.handle({ type: 'session.settings', continuations });
   if (sc.brief) session.handle({ type: 'session.brief', text: sc.brief });
 
   const finalised = new Set<number>();

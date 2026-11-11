@@ -194,3 +194,53 @@ describe('a model that rambles or misbehaves', () => {
     expect(result).toEqual({ candidates: [], abstain: true });
   });
 });
+
+describe('continuation', () => {
+  const reply = (continuation: unknown, confidence = 0.8) =>
+    JSON.stringify({ candidates: [{ word: 'pharmacy', confidence, continuation }] });
+
+  it('keeps a short continuation, trimmed', () => {
+    expect(parseGuess(reply('  to collect my tablets '), true).candidates[0]).toEqual({
+      word: 'pharmacy',
+      confidence: 0.8,
+      continuation: 'to collect my tablets',
+    });
+  });
+
+  it('drops a continuation that is too long or not text, but keeps the word', () => {
+    for (const bad of ['one two three four five', 'x'.repeat(41), 7, null, ['a']]) {
+      expect(parseGuess(reply(bad), true).candidates).toEqual([
+        { word: 'pharmacy', confidence: 0.8 },
+      ]);
+    }
+  });
+
+  it('keeps one on a candidate of 0.8 or more only', () => {
+    expect(parseGuess(reply('to pick up', 0.79), true).candidates).toEqual([
+      { word: 'pharmacy', confidence: 0.79 },
+    ]);
+    expect(parseGuess(reply('to pick up', 0.8), true).candidates[0]).toHaveProperty('continuation');
+  });
+
+  it('allows four words and drops five', () => {
+    expect(parseGuess(reply('to pick up tablets'), true).candidates[0]).toHaveProperty(
+      'continuation',
+    );
+    expect(parseGuess(reply('to collect all my tablets'), true).candidates[0]).not.toHaveProperty(
+      'continuation',
+    );
+  });
+
+  it('drops it whatever the model sent when continuations are off (the default)', () => {
+    expect(parseGuess(reply('to collect my tablets')).candidates).toEqual([
+      { word: 'pharmacy', confidence: 0.8 },
+    ]);
+  });
+
+  it('has no continuation key when the model gave none or an empty one', () => {
+    expect(parseGuess(reply(''), true).candidates[0]).not.toHaveProperty('continuation');
+    expect(
+      parseGuess(JSON.stringify({ candidates: [{ word: 'a', confidence: 1 }] })).candidates[0],
+    ).not.toHaveProperty('continuation');
+  });
+});

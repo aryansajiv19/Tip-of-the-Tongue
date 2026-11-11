@@ -12,6 +12,11 @@ When they describe the thing instead of naming it ("the thing that…", "a place
 
 // 3 candidates of a few words each is about 70 tokens of JSON.
 const MAX_TOKENS = 100;
+// A continuation on each candidate takes more room.
+const MAX_TOKENS_WITH_CONTINUATION = 160;
+
+// Only sent when the user turned continuations on.
+const CONTINUATION_LINE = `Each candidate may also have "continuation": the next 2 to 4 words of their sentence after the word, only when they are strongly implied by what they were saying (for example {"word":"pharmacy","confidence":0.9,"continuation":"to collect my tablets"}). Never repeat or restate words already said, never start a new clause, and leave it out whenever you are not sure; most answers should have none.`;
 
 const LANGUAGE_NAMES = { es: 'Spanish', fr: 'French', de: 'German', hi: 'Hindi' } as const;
 
@@ -24,13 +29,32 @@ export function languageLine(language: Language = 'en'): string {
   return `They speak ${LANGUAGE_NAMES[language]}. Offer words in ${LANGUAGE_NAMES[language]}, not English.`;
 }
 
-export function buildPrompt(input: GuessInput): string {
+// What stays the same from call to call within a session: the brief, the personal words, the
+// topics and the language. It follows SYSTEM in the system prompt, and the first cache breakpoint sits after it.
+export function stablePrompt(input: GuessInput): string {
   const parts: string[] = [];
   if (input.brief) parts.push(`Meeting brief:\n${input.brief}`);
   if (input.profile) parts.push(`Their personal words: ${profileForPrompt(input.profile)}`);
+  if (input.skills?.length)
+    parts.push(
+      `Topics they may be talking about (use these words and fields as a hint, never as the answer unless it fits what they said):\n${input.skills
+        .map(
+          (k) =>
+            `- ${k.name}${k.description ? `: ${k.description}` : ''} Words: ${k.terms.join(', ')}`,
+        )
+        .join('\n')}`,
+    );
   parts.push(languageLine(input.language));
-  parts.push(`Conversation so far:\n${input.conversation}`);
-  parts.push(`Just said (they are stuck here):\n${input.stuckPhrase}`);
+  if (input.continuations) parts.push(CONTINUATION_LINE);
+  return parts.join('\n\n');
+}
+
+// What changes on every call.
+export function buildPrompt(input: GuessInput): string {
+  const parts = [
+    `Conversation so far:\n${input.conversation}`,
+    `Just said (they are stuck here):\n${input.stuckPhrase}`,
+  ];
   if (input.rejected?.length)
     parts.push(
       `They said ${input.rejected.map((w) => `"${w}"`).join(', ')} and took it back, so it is not the word.`,
@@ -45,12 +69,18 @@ async function readReply(
   model: string,
   input: GuessInput,
   controller: AbortController,
+  cache: { read?: number; write?: number },
 ): Promise<string | undefined> {
   const stream = await api.messages.create(
     {
       model,
-      ...modelOptions(model),
-      system: SYSTEM,
+      ...modelOptions(model, input.continuations),
+      // Cached after the stable part. The API ignores the marker on a prefix under the model's
+      // minimum, so a short prompt is simply not cached.
+      system: [
+        { type: 'text', text: SYSTEM },
+        { type: 'text', text: stablePrompt(input), cache_control: { type: 'ephemeral' } },
+      ],
       messages: [{ role: 'user', content: buildPrompt(input) }],
       stream: true,
     },
@@ -58,7 +88,10 @@ async function readReply(
   );
   let text = '';
   for await (const event of stream) {
-    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+    if (event.type === 'message_start') {
+      cache.read = event.message.usage.cache_read_input_tokens ?? 0;
+      cache.write = event.message.usage.cache_creation_input_tokens ?? 0;
+    } else if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
       text += event.delta.text;
       const end = firstObjectEnd(text);
       if (end !== undefined) {
@@ -75,14 +108,18 @@ async function readReply(
 // Newer models reject thinking: {type: 'disabled'}. Sonnet 5.5 turns thinking off with
 // 'between_tools'. Opus 5.5 cannot turn it off, so it gets the lowest effort and room for the
 // thinking tokens that count against max_tokens. Everything else (Haiku) uses 'disabled'.
-export function modelOptions(model: string): {
+export function modelOptions(
+  model: string,
+  continuations = false,
+): {
   max_tokens: number;
   thinking?: { type: 'disabled' } | { type: 'between_tools' };
   output_config?: { effort: 'low' };
 } {
   if (/opus|fable/.test(model)) return { max_tokens: 2000, output_config: { effort: 'low' } };
-  if (/sonnet/.test(model)) return { max_tokens: MAX_TOKENS, thinking: { type: 'between_tools' } };
-  return { max_tokens: MAX_TOKENS, thinking: { type: 'disabled' } };
+  const max_tokens = continuations ? MAX_TOKENS_WITH_CONTINUATION : MAX_TOKENS;
+  if (/sonnet/.test(model)) return { max_tokens, thinking: { type: 'between_tools' } };
+  return { max_tokens, thinking: { type: 'disabled' } };
 }
 
 // What a failed call tells us: its status and, for 429/529, how long the API asked us to wait.
@@ -139,10 +176,20 @@ export function createGuesser(
       );
     });
     try {
-      const text = await Promise.race([readReply(api, cfg.model, input, controller), timedOut]);
+      const cache: { read?: number; write?: number } = {};
+      const text = await Promise.race([
+        readReply(api, cfg.model, input, controller, cache),
+        timedOut,
+      ]);
       if (text === null) return abstain(true); // timed out
       if (text === undefined) return abstain(); // refused
-      return { ...parseGuess(text), latencyMs: Date.now() - started };
+      return {
+        ...parseGuess(text, input.continuations),
+        latencyMs: Date.now() - started,
+        ...(cache.read !== undefined
+          ? { cacheRead: cache.read, cacheWrite: cache.write ?? 0 }
+          : {}),
+      };
     } catch (err) {
       const info = failureInfo(err);
       cfg.onFailure?.({ ...(info.status ? { status: info.status } : {}), error: errorName(err) });

@@ -7,7 +7,7 @@ import { effectivePauseMs, typicalStepMs } from './stuck/pace.js';
 import { speakerOfFirstUtterance } from './stuck/speaker.js';
 import { mergeProfiles, type Profile, type UiProfile } from './guess/profile.js';
 import { briefForGuesser, LONG_BRIEF_CHARS, type GlossaryBuilder } from './guess/glossary.js';
-import type { GuessResult, Guesser } from './guess/types.js';
+import type { GuessInput, GuessResult, Guesser } from './guess/types.js';
 import { decideOffer } from './gate/gate.js';
 import { checkAcceptance } from './accept/accept.js';
 import { normalizePhrase } from './gate/normalize.js';
@@ -123,6 +123,7 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
   let pauseMs = opts.pauseMs;
   let minConfidence = opts.minConfidence;
   let language: Language = 'en';
+  let continuations = false;
   let offer: Offer | undefined;
   let lastOfferAtMs: number | undefined;
   let spec: Speculation | undefined;
@@ -282,6 +283,20 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
     opts.log?.({ speculated, discarded });
   }
 
+  function guessInput(rejected?: string): GuessInput {
+    const merged = profile();
+    return {
+      language,
+      conversation: buffer.markedText(CONVERSATION_WORDS),
+      stuckPhrase: buffer.markedText(STUCK_WORDS),
+      ...(rejected !== undefined ? { rejected: [rejected] } : {}),
+      ...(brief ? { brief: briefForGuesser(brief, glossary) } : {}),
+      ...(merged ? { profile: merged } : {}),
+      ...(skills.length > 0 ? { skills } : {}),
+      ...(continuations ? { continuations } : {}),
+    };
+  }
+
   // Starts a guess and keeps it in `spec`. Whoever confirms the stall later offers it.
   function startGuess(
     lastEndMs: number,
@@ -309,20 +324,9 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
     }
     callTimes.push(now());
     if (!confirmed) speculated++;
-    const merged = profile();
     const failed: GuessResult = { candidates: [], abstain: true, latencyMs: 0, error: true };
     opts
-      .guess(
-        {
-          language,
-          conversation: buffer.markedText(CONVERSATION_WORDS),
-          stuckPhrase: buffer.markedText(STUCK_WORDS),
-          ...(rejected !== undefined ? { rejected: [rejected] } : {}),
-          ...(brief ? { brief: briefForGuesser(brief, glossary) } : {}),
-          ...(merged ? { profile: merged } : {}),
-        },
-        mine.abort.signal,
-      )
+      .guess(guessInput(rejected), mine.abort.signal)
       .catch((err: unknown) => {
         // The guesser promises never to throw; if it does, stay silent rather than crash.
         opts.onError?.(err);
@@ -338,6 +342,9 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
           abstain: result.abstain,
           error: result.error === true,
           latencyMs: result.latencyMs,
+          ...(result.cacheRead !== undefined
+            ? { cacheRead: result.cacheRead, cacheWrite: result.cacheWrite ?? 0 }
+            : {}),
         }));
         // Stale (new words arrived, or closed): nothing to do, not even count a failure.
         if (stale) return;
@@ -579,6 +586,7 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
       } else if (event.type === 'session.settings') {
         if (event.pauseMs !== undefined) pauseMs = event.pauseMs;
         if (event.minConfidence !== undefined) minConfidence = event.minConfidence;
+        if (event.continuations !== undefined) continuations = event.continuations;
         if (event.language !== undefined && event.language !== language) {
           language = event.language;
           opts.onLanguageChange?.(language);

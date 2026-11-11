@@ -4,6 +4,11 @@ import type { Candidate } from '../events.js';
 const MAX_CANDIDATES = 3;
 // A word or a short name. Anything longer is the model rambling, and would not fit the pop-up.
 const MAX_WORD_CHARS = 60;
+// The words that may follow the guess: a short phrase, never a sentence.
+const MAX_CONTINUATION_CHARS = 40;
+const MAX_CONTINUATION_WORDS = 4;
+// Only a word the model is sure of gets one: a doubtful word with a made-up tail is worse than the word.
+const MIN_CONTINUATION_CONFIDENCE = 0.8;
 const abstain = (): { candidates: Candidate[]; abstain: boolean } => ({
   candidates: [],
   abstain: true,
@@ -13,6 +18,14 @@ const abstain = (): { candidates: Candidate[]; abstain: boolean } => ({
 const CandidateSchema = z.object({
   word: z.string().trim().min(1).max(MAX_WORD_CHARS),
   confidence: z.union([z.number(), z.string().trim().min(1).pipe(z.coerce.number())]),
+  // Anything that is not a short phrase is dropped; the word itself is still good.
+  continuation: z
+    .string()
+    .trim()
+    .max(MAX_CONTINUATION_CHARS)
+    .refine((t) => t.split(/\s+/).length <= MAX_CONTINUATION_WORDS)
+    .optional()
+    .catch(undefined),
 });
 const ReplySchema = z.object({
   candidates: z.array(z.unknown()).default([]),
@@ -50,7 +63,11 @@ export function firstObjectEnd(text: string): number | undefined {
   return undefined;
 }
 
-export function parseGuess(text: string): { candidates: Candidate[]; abstain: boolean } {
+export function parseGuess(
+  text: string,
+  // Keep continuations only when the user turned them on, whatever the model sent.
+  continuations = false,
+): { candidates: Candidate[]; abstain: boolean } {
   const reply = ReplySchema.safeParse(extractJson(text));
   if (!reply.success || reply.data.abstain) return abstain();
 
@@ -58,9 +75,13 @@ export function parseGuess(text: string): { candidates: Candidate[]; abstain: bo
   for (const raw of reply.data.candidates) {
     const item = CandidateSchema.safeParse(raw);
     if (!item.success || !Number.isFinite(item.data.confidence)) continue;
+    const confidence = Math.min(1, Math.max(0, item.data.confidence));
     valid.push({
       word: item.data.word,
-      confidence: Math.min(1, Math.max(0, item.data.confidence)),
+      confidence,
+      ...(continuations && item.data.continuation && confidence >= MIN_CONTINUATION_CONFIDENCE
+        ? { continuation: item.data.continuation }
+        : {}),
     });
   }
 

@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it } from 'vitest';
-import { buildPrompt, createGuesser, modelOptions } from './guesser.js';
+import { buildPrompt, createGuesser, modelOptions, stablePrompt } from './guesser.js';
 import { ProfileSchema } from './profile.js';
 
 const cfg = { model: 'test-model', timeoutMs: 50 };
@@ -35,6 +35,8 @@ describe('mock guesser (no api key)', () => {
     const r = await guess(input);
     expect(r.abstain).toBe(false);
     expect(r.candidates[0]).toEqual({ word: 'pharmacy', confidence: 0.85 });
+    const on = await guess({ ...input, continuations: true });
+    expect(on.candidates[0]?.continuation).toBe('to collect my tablets');
   });
 
   it('is deterministic', async () => {
@@ -99,7 +101,7 @@ describe('Claude guesser', () => {
       model: 'test-model',
       thinking: { type: 'disabled' },
     });
-    expect(params.max_tokens).toBeLessThanOrEqual(100);
+    expect(params.max_tokens).toBeLessThanOrEqual(160);
     expect(params.max_tokens).toBeGreaterThanOrEqual(70);
   });
 
@@ -234,14 +236,14 @@ describe('modelOptions', () => {
     expect(o.max_tokens).toBeGreaterThan(1000);
   });
   it('keeps the small output cap for the fast models', () => {
-    expect(modelOptions('claude-haiku-5-5').max_tokens).toBeLessThanOrEqual(100);
-    expect(modelOptions('claude-sonnet-5-5').max_tokens).toBeLessThanOrEqual(100);
+    expect(modelOptions('claude-haiku-5-5').max_tokens).toBeLessThanOrEqual(160);
+    expect(modelOptions('claude-sonnet-5-5').max_tokens).toBeLessThanOrEqual(160);
   });
 });
 
 describe('language in the prompt', () => {
   const line = (language?: Parameters<typeof buildPrompt>[0]['language']) =>
-    buildPrompt({ ...input, ...(language ? { language } : {}) });
+    stablePrompt({ ...input, ...(language ? { language } : {}) });
 
   it('English asks for the English word, never the foreign one', () => {
     expect(line()).toContain('offer the English word for it, never the foreign word');
@@ -262,7 +264,8 @@ describe('buildPrompt', () => {
       pets: { dog: 'Biscuit' },
       frequentlyLostWords: ['kettle'],
     });
-    const p = buildPrompt({ ...input, brief: 'Q3 review with Northwind', profile });
+    const i = { ...input, brief: 'Q3 review with Northwind', profile };
+    const p = `${stablePrompt(i)}\n${buildPrompt(i)}`;
     expect(p).toContain('Northwind');
     expect(p).toContain('Biscuit');
     expect(p).toContain('kettle');
@@ -270,8 +273,84 @@ describe('buildPrompt', () => {
   });
 
   it('leaves out the brief and profile when absent', () => {
-    const p = buildPrompt(input);
+    const p = `${stablePrompt(input)}\n${buildPrompt(input)}`;
     expect(p).not.toContain('brief');
     expect(p).not.toContain('personal');
+  });
+});
+
+describe('prompt caching', () => {
+  const json = '{"candidates":[{"word":"pharmacy","confidence":0.8}],"abstain":false}';
+
+  it('puts the brief, profile and language in a cached system block, and the conversation in the message', async () => {
+    let params: { system?: unknown; messages?: { content: string }[] } = {};
+    const guess = createGuesser(
+      cfg,
+      fakeClient((p) => {
+        params = p as typeof params;
+        return Promise.resolve(streamOf([json]));
+      }),
+    );
+    await guess({ ...input, brief: 'Q3 review with Northwind' });
+    const system = params.system as { text: string; cache_control?: unknown }[];
+    expect(system).toHaveLength(2);
+    expect(system[0]?.cache_control).toBeUndefined();
+    expect(system[1]?.text).toContain('Northwind');
+    expect(system[1]?.cache_control).toEqual({ type: 'ephemeral' });
+    expect(params.messages?.[0]?.content).toContain('the place where you get medicine');
+    expect(params.messages?.[0]?.content).not.toContain('Northwind');
+  });
+
+  it('reports the cache tokens the API says it read and wrote', async () => {
+    async function* withUsage() {
+      yield {
+        type: 'message_start',
+        message: { usage: { cache_read_input_tokens: 900, cache_creation_input_tokens: 0 } },
+      };
+      yield* streamOf([json]);
+    }
+    const r = await createGuesser(
+      cfg,
+      fakeClient(() => Promise.resolve(withUsage())),
+    )(input);
+    expect(r).toMatchObject({ cacheRead: 900, cacheWrite: 0 });
+  });
+
+  it('has no cache fields when the stream sends no usage', async () => {
+    const r = await createGuesser(cfg, streamClient([json]))(input);
+    expect(r).not.toHaveProperty('cacheRead');
+  });
+});
+
+describe('topics in the cached prefix', () => {
+  const skills = [
+    { name: 'Medical visit', description: 'Appointments.', terms: ['referral', 'dosage'] },
+  ];
+
+  it('lists the active skills and their words in the stable block, not the message', () => {
+    const stable = stablePrompt({ ...input, skills });
+    expect(stable).toContain('Medical visit: Appointments. Words: referral, dosage');
+    expect(buildPrompt({ ...input, skills })).not.toContain('referral');
+  });
+
+  it('adds nothing without skills', () => {
+    expect(stablePrompt({ ...input, skills: [] })).not.toContain('Topics');
+    expect(stablePrompt(input)).not.toContain('Topics');
+  });
+
+  it('puts topics after the personal words and before the language line', () => {
+    const profile = ProfileSchema.parse({ pets: { dog: 'Biscuit' } });
+    const p = stablePrompt({ ...input, profile, skills });
+    expect(p.indexOf('Biscuit')).toBeLessThan(p.indexOf('Topics'));
+    expect(p.indexOf('Topics')).toBeLessThan(p.indexOf('They speak English'));
+  });
+});
+
+describe('continuations in the prompt', () => {
+  it('asks for them only when on, in the cached block, with more room for the reply', () => {
+    expect(stablePrompt(input)).not.toContain('continuation');
+    expect(stablePrompt({ ...input, continuations: true })).toContain('"continuation"');
+    expect(modelOptions('claude-haiku-5-5').max_tokens).toBeLessThanOrEqual(100);
+    expect(modelOptions('claude-haiku-5-5', true).max_tokens).toBeGreaterThan(100);
   });
 });

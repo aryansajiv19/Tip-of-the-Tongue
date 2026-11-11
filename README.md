@@ -51,6 +51,7 @@ Optional settings are in `.env.example`: a personal profile file, sensitivity an
 **Offers the right word, fast**
 
 - Guessing starts while you are still pausing; the pop-up typically appears 1.4–1.7 s after your last word.
+- Optional, off by default (Settings › Show how to continue): when the next words are strongly implied, the offer carries 2–4 of them after the word ("pharmacy to collect my tablets"), to help you back into the flow; accepting still means the word alone.
 - It prefers the specific word and keeps phrases whole ("phone cable", "car park"). Say the word, click it, or press ⌘1/⌘2/⌘3.
 - When it cannot find the word it says so with a quiet "…" for a moment, instead of just vanishing.
 - Meeting notes (PDF, Markdown or text), "About you" and words you have accepted before give it context. Words are remembered on this device only, never transcripts.
@@ -128,6 +129,7 @@ Hard and holdout sets, the methods and the caveats are in [docs/write-up.md](doc
 npm run lint && npm run typecheck && npm test && npm run build   # required before a PR
 npm run e2e                                                      # Playwright UI tests
 npm run eval -- --set hard --split dev --guesser claude          # word-guess evaluation
+npm run eval -- --set specialist --skills match --guesser claude # topic packs on/off/wrong: --skills match|off|wrong
 npm run scenarios -w eval -- --guesser claude --split dev       # whole-conversation replay
 ```
 
