@@ -16,9 +16,12 @@ export interface RenderedLine {
 
 // Puts rendered lines one after another on one track with the same gaps as the text replay, and
 // says where each line's speech starts and ends. Lines of the other person before the user's
-// first line are dropped: the user presses Start when they begin.
-export function buildTrack(lines: RenderedLine[]): { pcm: Buffer; placed: PlacedLine[] } {
-  const firstOfUser = lines.findIndex((l) => l.line.s === 'me');
+// first line are dropped (the user presses Start when they begin), unless `othersFirst`.
+export function buildTrack(
+  lines: RenderedLine[],
+  othersFirst = false,
+): { pcm: Buffer; placed: PlacedLine[] } {
+  const firstOfUser = othersFirst ? 0 : lines.findIndex((l) => l.line.s === 'me');
   const kept = lines.slice(Math.max(0, firstOfUser));
   const parts: Buffer[] = [silence(LEAD_IN_MS)];
   const placed: PlacedLine[] = [];

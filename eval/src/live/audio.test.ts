@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   BYTES_PER_MS,
   durationMs,
+  bandLimit,
   FRAME_BYTES,
   mixAtSnr,
+  scaleDb,
   silence,
   toFrames,
   trimSilence,
@@ -142,5 +144,35 @@ describe('mixAtSnr', () => {
     expect(mixAtSnr(silence(10), samples(900, -900), 5)).toEqual(silence(10));
     const speech = tone(100, 8000);
     expect(mixAtSnr(speech, silence(10), 5)).toEqual(speech);
+  });
+});
+
+const rms = (b: Buffer): number => {
+  let sum = 0;
+  for (let i = 0; i + 1 < b.length; i += 2) sum += b.readInt16LE(i) ** 2;
+  return Math.sqrt(sum / (b.length / 2));
+};
+const tone = (hz: number, ms = 1000): Buffer => {
+  const b = Buffer.alloc(ms * 16 * 2);
+  for (let i = 0; i < ms * 16; i++)
+    b.writeInt16LE(Math.round(10000 * Math.sin((2 * Math.PI * hz * i) / 16000)), i * 2);
+  return b;
+};
+
+describe('scaleDb', () => {
+  it('lowers the level by the given decibels and clips instead of wrapping', () => {
+    const t = tone(1000);
+    expect(20 * Math.log10(rms(scaleDb(t, -10)) / rms(t))).toBeCloseTo(-10, 1);
+    expect(scaleDb(samples(30000), 20).readInt16LE(0)).toBe(32767);
+  });
+});
+
+describe('bandLimit', () => {
+  it('keeps the middle of the voice band and cuts what is far outside it', () => {
+    const level = (hz: number) =>
+      20 * Math.log10(rms(bandLimit(tone(hz)).subarray(16000)) / rms(tone(hz).subarray(16000)));
+    expect(level(1000)).toBeGreaterThan(-1.5);
+    expect(level(100)).toBeLessThan(-20);
+    expect(level(6500)).toBeLessThan(-20);
   });
 });
