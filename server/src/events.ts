@@ -99,7 +99,7 @@ export interface Candidate {
   word: string;
   confidence: number;
   // The few words likely to come next, when the sentence clearly goes on and they are predictable
-  // (at most 40 characters and 5 words). Shown after the word; accepting still means `word` only.
+  // (at most 40 characters and 4 words, and only on a candidate of 0.8 or more). Shown after the word; accepting still means `word` only.
   continuation?: string;
   // The name of the loaded document the word appears in, when it does.
   source?: string;

@@ -37,7 +37,7 @@ describe('mock guesser (no api key)', () => {
     expect(r.candidates[0]).toEqual({
       word: 'pharmacy',
       confidence: 0.85,
-      continuation: 'to pick up my tablets',
+      continuation: 'to collect my tablets',
     });
   });
 

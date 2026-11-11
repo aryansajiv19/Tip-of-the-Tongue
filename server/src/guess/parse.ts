@@ -6,7 +6,9 @@ const MAX_CANDIDATES = 3;
 const MAX_WORD_CHARS = 60;
 // The words that may follow the guess: a short phrase, never a sentence.
 const MAX_CONTINUATION_CHARS = 40;
-const MAX_CONTINUATION_WORDS = 5;
+const MAX_CONTINUATION_WORDS = 4;
+// Only a word the model is sure of gets one: a doubtful word with a made-up tail is worse than the word.
+const MIN_CONTINUATION_CONFIDENCE = 0.8;
 const abstain = (): { candidates: Candidate[]; abstain: boolean } => ({
   candidates: [],
   abstain: true,
@@ -69,10 +71,13 @@ export function parseGuess(text: string): { candidates: Candidate[]; abstain: bo
   for (const raw of reply.data.candidates) {
     const item = CandidateSchema.safeParse(raw);
     if (!item.success || !Number.isFinite(item.data.confidence)) continue;
+    const confidence = Math.min(1, Math.max(0, item.data.confidence));
     valid.push({
       word: item.data.word,
-      confidence: Math.min(1, Math.max(0, item.data.confidence)),
-      ...(item.data.continuation ? { continuation: item.data.continuation } : {}),
+      confidence,
+      ...(item.data.continuation && confidence >= MIN_CONTINUATION_CONFIDENCE
+        ? { continuation: item.data.continuation }
+        : {}),
     });
   }
 
