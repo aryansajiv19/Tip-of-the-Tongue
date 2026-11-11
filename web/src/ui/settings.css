@@ -189,3 +189,67 @@
 .settings-confirm .settings-danger {
   color: var(--error);
 }
+
+.settings-pack small,
+.settings-skill-list small {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.settings-skill-list {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-skill-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--target);
+}
+
+.settings-skill-list li > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.settings-skill-list button {
+  display: grid;
+  place-items: center;
+  min-width: var(--target);
+  min-height: var(--target);
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.settings-skill-form {
+  margin-top: var(--space-3);
+}
+
+.settings-skill-form input,
+.settings-skill-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--target);
+  padding: var(--space-1) var(--space-2);
+  background: var(--hover);
+  border: var(--surface-border);
+  border-radius: var(--space-2);
+  color: inherit;
+  font: inherit;
+}
+
+.settings-skill-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.settings-skills button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

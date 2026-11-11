@@ -68,6 +68,8 @@ The app is for macOS. If you try the page in a browser on Windows or Linux, Ctrl
 
 Open it with the gear button.
 
+<p align="center"><img src="assets/settings-skills.png" width="420" alt="Settings, Skills: topic packs to tick and a form for your own skill"></p>
+
 - **How I help.** _First sound_ shows just the start of the word, like "w…", and you tap it (or press ⌘ Return again) to see the whole word. _Whole word_ shows the words straight away. _Only when I ask_ shows nothing unless you press ⌘ Return or say something like "what's it called".
 - **How quickly I offer words.** _Calm_ waits for a longer pause and only speaks when quite sure. _Balanced_ is the default. _Eager_ speaks up sooner, even when less sure, and is wrong more often. The app also adapts to how fast you talk.
 - **Language.** English, Español, Français, Deutsch, हिन्दी, or **Mixed languages** if you switch between languages mid-sentence. Pick the one you speak most of the time; recognition is less accurate for accents and mixed speech.
@@ -75,6 +77,7 @@ Open it with the gear button.
 - **Theme.** Light or dark, following your computer's setting. There is nothing to switch in the app.
 - **Microphone.** Choose which microphone to use.
 - **Keys.** Paste, check or remove your keys.
+- **Skills.** Topics whose words it should know and listen for: Medical visit, Job interview, Money & finance, Software & tech, Everyday errands. Tick the ones that fit the conversation. **New skill** makes your own: a name, what it is for (optional) and up to 60 words, separated by commas or new lines. Use the pencil to edit one and the bin to delete it. At most 5 skills are on at a time, packs and your own together. They are kept on this device.
 - **Privacy.** See section 7.
 
 **Notes** (the button on the control bar): drop in a PDF, Markdown or text file, and the app uses its names and terms. **About you** holds your name, role and words you often need.
@@ -85,7 +88,7 @@ Open it with the gear button.
 - **The conversation is not saved.** What was heard is kept in memory while the app runs, and gone when you press New conversation or quit.
 - **Claude sees text.** To find a word, the app sends Anthropic the recent words of the conversation, your meeting notes and the words in About you. Both providers handle that under their own terms; read them if this matters to you.
 - **On your computer only:** your settings, your name, role and words from About you, and **remembered words** (words you accepted, never what was said around them). Your keys are kept encrypted with the keychain. Meeting notes are not saved: they last until you remove them or quit.
-- **To forget:** open **Settings > Privacy**. Each remembered word has a remove button. **Forget everything** (it asks you to confirm) clears About you, remembered words and your meeting notes. **Clear About you** in the Notes panel clears only that. Remove a key under **Settings > Keys**.
+- **To forget:** open **Settings > Privacy**. Each remembered word has a remove button. **Forget everything** (it asks you to confirm) clears About you, remembered words, your skills and your meeting notes. The skills each have a remove button there too. **Clear About you** in the Notes panel clears only that. Remove a key under **Settings > Keys**.
 
 ## 8. Troubleshooting
 
