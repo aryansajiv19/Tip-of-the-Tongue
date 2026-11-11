@@ -60,6 +60,9 @@ interface Speculation {
   confirmed: boolean;
   // The stronger guesser has been asked (or is being) for this stall.
   escalated?: boolean;
+  // The stall has a sign that they are searching for a word (a description, a filler, a cue
+  // phrase or a hand ask), not just a pause: a pause alone is often a finished sentence.
+  searching?: boolean;
   // Asked for by the user (Space or "what's the word"): the offer cooldown does not apply.
   manual?: boolean;
   // A word they said and took back, which must not be offered.
@@ -298,7 +301,8 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
   }
 
   // On a confirmed stall where the first guesser came up short, asks the stronger one once and
-  // gates its answer instead. The stall stays in `spec`, so speech that goes on discards it.
+  // gates its answer instead. Only when the stall has a search marker: on a bare pause it tends to
+  // invent a word for a finished sentence. The stall stays in `spec`, so speech that goes on discards it.
   function escalate(current: Speculation, first: GuessResult): boolean {
     const stronger = opts.escalate;
     const short = first.abstain || (first.candidates[0]?.confidence ?? 0) < minConfidence;
@@ -306,6 +310,7 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
     if (
       !stronger ||
       current.escalated ||
+      !(current.searching || current.manual) ||
       first.error ||
       !short ||
       callTimes.length >= (opts.maxCallsPerMinute ?? MAX_CALLS_PER_MINUTE)
@@ -510,8 +515,14 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
     if (stuck.stuck && !(askOnly && automatic)) {
       handledUpToMs = last.endMs;
       send({ type: 'stuck.detected', reason: stuck.reason, contextWindow: stuck.contextWindow });
-      if (!spec) return startGuess(last.endMs, stuck.sinceMs, true, false, stuck.rejected);
+      const searching = stuck.reason === 'describing' || stuck.reason === 'filler';
+      if (!spec) {
+        startGuess(last.endMs, stuck.sinceMs, true, false, stuck.rejected);
+        if (spec) (spec as Speculation).searching = searching;
+        return;
+      }
       spec.confirmed = true;
+      spec.searching = searching;
       // Already answered: offer at once. Otherwise offer the moment it lands.
       if (spec.result) offerFrom(spec, spec.result);
       return;

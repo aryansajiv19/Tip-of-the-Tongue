@@ -1231,6 +1231,27 @@ describe('escalation to a stronger guesser', () => {
     session.close();
   });
 
+  it('does not ask on a bare pause, where the sentence is usually just finished', async () => {
+    const escalate = stronger('amortisation');
+    const { session, events, say } = setup(abstainer, { escalate });
+    say('thank you I will send the numbers over today');
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(escalate).not.toHaveBeenCalled();
+    expect(offers(events)).toBe(0);
+    session.close();
+  });
+
+  it('asks when the user asks by hand', async () => {
+    const escalate = stronger('pharmacy');
+    const { session, events, say } = setup(abstainer, { escalate });
+    say('so the plan for the week is to go to the');
+    session.handle({ type: 'stuck.manual' });
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(escalate).toHaveBeenCalledTimes(1);
+    expect(offers(events)).toBe(1);
+    session.close();
+  });
+
   it('never asks for an early guess, only once the stall is confirmed', async () => {
     const escalate = stronger('pharmacy');
     const { session, say } = setup(abstainer, { escalate, speculateAfterMs: 300 });
