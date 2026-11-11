@@ -124,3 +124,32 @@ export function labelStats(
     heard: heard.map((h) => h.join(' ')),
   };
 }
+
+// Each place where the speaker number changes between one labelled word and the next, in the
+// order the words came. With one voice speaking, every change is the recogniser relabelling it.
+export interface SpeakerChange {
+  atMs: number;
+  word: number;
+  from: number;
+  to: number;
+}
+export function speakerChanges(words: readonly { startMs: number; speaker?: number }[]): {
+  labelled: number;
+  counts: Record<number, number>;
+  changes: SpeakerChange[];
+} {
+  const counts: Record<number, number> = {};
+  const changes: SpeakerChange[] = [];
+  let labelled = 0;
+  let last: number | undefined;
+  words.forEach((w, word) => {
+    if (w.speaker === undefined) return;
+    labelled++;
+    counts[w.speaker] = (counts[w.speaker] ?? 0) + 1;
+    if (last !== undefined && w.speaker !== last) {
+      changes.push({ atMs: w.startMs, word, from: last, to: w.speaker });
+    }
+    last = w.speaker;
+  });
+  return { labelled, counts, changes };
+}

@@ -55,6 +55,7 @@ Optional settings are in `.env.example`: a personal profile file, sensitivity an
 - When the sentence clearly goes on and the next few words are predictable, the offer can carry them after the word ("pharmacy to pick up my tablets"), to help you back into the flow; accepting still means the word alone.
 - If the quick model is unsure once you have really stalled, a stronger one gets a second try (2 s at most) instead of leaving you with nothing.
 - It prefers the specific word and keeps phrases whole ("phone cable", "car park"). Say the word, click it, or press ⌘1/⌘2/⌘3.
+- When it cannot find the word it says so with a quiet "…" for a moment, instead of just vanishing.
 - Meeting notes (PDF, Markdown or text), "About you" and words you have accepted before give it context. Words are remembered on this device only, never transcripts.
 
 **Fits how you want to be helped**

@@ -32,6 +32,8 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 // `snrDb` below the speech.
 export interface AudioOpts {
   rate?: number;
+  // Only the user's lines: one voice, so any change of speaker number is the recogniser's.
+  solo?: boolean;
   noise?: { kind: NoiseKind; snrDb: number };
 }
 
@@ -39,11 +41,11 @@ async function renderScenario(
   sc: Scenario,
   userVoice: string,
   otherVoice: string,
-  { rate, noise }: AudioOpts = {},
+  { rate, noise, solo }: AudioOpts = {},
 ) {
   const pauseMs = sc.stallMs ?? 2000;
   const lines = [];
-  for (const line of sc.lines) {
+  for (const line of solo ? sc.lines.filter((l) => l.s === 'me') : sc.lines) {
     const pcm = await renderLine(line.s === 'me' ? userVoice : otherVoice, line.t, pauseMs, rate);
     lines.push({ line, pcm });
   }
@@ -185,6 +187,7 @@ async function main(): Promise<void> {
       rate: { type: 'string' },
       noise: { type: 'string' },
       snr: { type: 'string', default: '10' },
+      solo: { type: 'boolean', default: false },
     },
   });
   const split = values.split;
@@ -201,6 +204,7 @@ async function main(): Promise<void> {
   const audio: AudioOpts = {
     ...(rate === undefined ? {} : { rate }),
     ...(noiseKind ? { noise: { kind: noiseKind, snrDb } } : {}),
+    ...(values.solo ? { solo: true } : {}),
   };
   const voices = values.voices
     .split(',')
@@ -209,7 +213,7 @@ async function main(): Promise<void> {
   const installed = await installedVoices();
   for (const v of [
     ...voices,
-    ...voices.map(otherVoiceFor),
+    ...(values.solo ? [] : voices.map(otherVoiceFor)),
     ...(noiseKind === 'cafe' ? BABBLE_VOICES : []),
   ]) {
     if (!installed.has(v)) throw new Error(`the macOS voice "${v}" is not installed (say -v '?')`);
@@ -260,7 +264,7 @@ async function main(): Promise<void> {
   );
   runs.sort((a, b) => a.voice.localeCompare(b.voice) || a.score.id.localeCompare(b.score.id));
 
-  const md = renderLiveReport({ split, voices }, runs);
+  const md = renderLiveReport({ split, voices, solo: values.solo }, runs);
   const outDir = fileURLToPath(new URL('../../../eval-results/', import.meta.url));
   await mkdir(outDir, { recursive: true });
   const tag = [
@@ -268,6 +272,7 @@ async function main(): Promise<void> {
     values['pause-resume'] ? 'pause' : '',
     rate === undefined ? '' : `rate${rate}`,
     noiseKind ? `${noiseKind}${snrDb}dB` : '',
+    values.solo ? 'solo' : '',
   ]
     .filter(Boolean)
     .join('-');

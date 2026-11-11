@@ -3,6 +3,8 @@ import type { Candidate, ServerEvent } from '../../../server/src/events';
 // What the suggestion card shows. Nothing (null) means the card is not on screen.
 export type CardView =
   | { kind: 'thinking' }
+  // The search ended with no word: a quiet "…" for a moment, so the card does not just vanish.
+  | { kind: 'none' }
   | { kind: 'offer'; id: string; primary: Candidate; alternatives: Candidate[] }
   | { kind: 'accepted'; word: string };
 
@@ -18,8 +20,10 @@ export const emptyCard: CardState = { view: null, sinceMs: 0 };
 export const LINGER_MS = 6000;
 // The check mark stays this long before the card goes.
 export const ACCEPTED_MS = 900;
-// "Looking for the word" never outlasts this, even if the server says nothing more.
-export const THINKING_MAX_MS = 8000;
+// "Finding the word" never outlasts this (the server's escalation budget), even if it says nothing more.
+export const THINKING_MAX_MS = 4500;
+// The "…" that follows a search with no result.
+export const NONE_MS = 2000;
 // One main word and up to two alternatives.
 const MAX_WORDS = 3;
 
@@ -54,12 +58,11 @@ export function cardReducer(state: CardState, action: CardAction): CardState {
     case 'tick': {
       if (!view) return state;
       const age = action.nowMs - state.sinceMs;
+      if (view.kind === 'thinking') {
+        return age >= THINKING_MAX_MS ? show({ kind: 'none' }, action.nowMs) : state;
+      }
       const limit =
-        view.kind === 'thinking'
-          ? THINKING_MAX_MS
-          : view.kind === 'offer'
-            ? LINGER_MS
-            : ACCEPTED_MS;
+        view.kind === 'offer' ? LINGER_MS : view.kind === 'none' ? NONE_MS : ACCEPTED_MS;
       return age >= limit ? emptyCard : state;
     }
     case 'server':
@@ -71,10 +74,10 @@ function fromServer(state: CardState, event: ServerEvent, nowMs: number): CardSt
   const { view } = state;
   switch (event.type) {
     case 'stuck.detected':
-      // Already showing a suggestion: leave it alone.
-      return view ? state : show({ kind: 'thinking' }, nowMs);
+      // Already showing a suggestion: leave it alone. A "…" gives way to the new search.
+      return view && view.kind !== 'none' ? state : show({ kind: 'thinking' }, nowMs);
     case 'guess.idle':
-      return view?.kind === 'thinking' ? emptyCard : state;
+      return view?.kind === 'thinking' ? show({ kind: 'none' }, nowMs) : state;
     case 'guess.offered': {
       const ranked = [...event.candidates]
         .sort((a, b) => b.confidence - a.confidence)
