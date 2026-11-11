@@ -52,6 +52,7 @@ Optional settings are in `.env.example`: a personal profile file, sensitivity an
 
 - Guessing starts while you are still pausing; the pop-up typically appears 1.4–1.7 s after your last word.
 - It prefers the specific word and keeps phrases whole ("phone cable", "car park"). Say the word, click it, or press ⌘1/⌘2/⌘3.
+- When it cannot find the word it says so with a quiet "…" for a moment, instead of just vanishing.
 - Meeting notes (PDF, Markdown or text), "About you" and words you have accepted before give it context. Words are remembered on this device only, never transcripts.
 
 **Fits how you want to be helped**

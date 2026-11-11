@@ -26,6 +26,7 @@ interface Props {
 type Content =
   | { kind: 'problem'; line: string }
   | { kind: 'thinking' }
+  | { kind: 'none' }
   | { kind: 'accepted'; word: string }
   | { kind: 'offer'; id: string; primary: Candidate; alternatives: Candidate[] };
 
@@ -148,6 +149,13 @@ function Body({
   switch (content.kind) {
     case 'thinking':
       return <p className="card-thinking">Finding the word</p>;
+    case 'none':
+      return (
+        <p className="card-none">
+          <span aria-hidden="true">…</span>
+          <span className="sr-only">No word found</span>
+        </p>
+      );
     case 'problem':
       return (
         <p className="card-problem">
