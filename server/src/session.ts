@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Candidate, ClientEvent, Language, ServerEvent, Word } from './events.js';
+import type { Candidate, ClientEvent, Language, ServerEvent, Skill, Word } from './events.js';
 import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck, type VoiceInfo } from './stuck/detect.js';
 import { endsWithAskForWord } from './stuck/manual.js';
@@ -114,6 +114,7 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
   let briefSource: string | undefined;
   // What the page's "About you" sent. It stays for the connection, across new conversations.
   let uiProfile: UiProfile | undefined;
+  let skills: Skill[] = [];
   // The file's profile plus the page's.
   const profile = () => mergeProfiles(opts.profile, uiProfile);
   let keyterms: string[] = opts.profile ? selectKeyterms({ profile: opts.profile }) : [];
@@ -198,6 +199,7 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
     const merged = profile();
     const next = selectKeyterms({
       ...(merged ? { profile: merged } : {}),
+      skills,
       ...(brief ? { brief } : {}),
       ...(glossary ? { glossary } : {}),
     });
@@ -621,6 +623,9 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
       else if (event.type === 'session.help') askOnly = event.level === 'ask';
       else if (event.type === 'session.profile') {
         uiProfile = event;
+        refreshKeyterms();
+      } else if (event.type === 'session.skills') {
+        skills = event.skills;
         refreshKeyterms();
       } else if (event.type === 'session.settings') {
         if (event.pauseMs !== undefined) pauseMs = event.pauseMs;

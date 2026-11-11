@@ -129,7 +129,8 @@ async function main(): Promise<void> {
   if (split !== 'dev' && split !== 'holdout' && split !== 'all')
     throw new Error(`--split must be dev, holdout or all`);
   const set = values.set;
-  if (set !== 'main' && set !== 'hard') throw new Error(`--set must be main or hard`);
+  if (set !== 'main' && set !== 'hard' && set !== 'specialist')
+    throw new Error(`--set must be main, hard or specialist`);
   const model = values.model ?? config.anthropicModel;
   const briefMode = values['brief-mode'];
   if (briefMode !== undefined && !['full', 'glossary', 'head'].includes(briefMode))
@@ -174,7 +175,7 @@ async function main(): Promise<void> {
   for (let run = 0; run < Math.max(1, Number(values.runs)); run++) {
     for (const item of items) results.push(await runItem(item, guess, profile, opts));
   }
-  const tag = `${set === 'hard' ? '-hard' : ''}${only ? `-only-${only.join('+')}` : ''}${briefMode ? `-brief-${briefMode}` : ''}${values.model ? `-${values.model}` : ''}${opts.context ? '' : '-nocontext'}${opts.sttNoise ? '-noise' : ''}`;
+  const tag = `${set === 'main' ? '' : `-${set}`}${only ? `-only-${only.join('+')}` : ''}${briefMode ? `-brief-${briefMode}` : ''}${values.model ? `-${values.model}` : ''}${opts.context ? '' : '-nocontext'}${opts.sttNoise ? '-noise' : ''}`;
 
   const meta: RunMeta = {
     guesser: kind,

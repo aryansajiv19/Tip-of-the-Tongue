@@ -16,6 +16,8 @@ const ItemSchema = z.object({
   pause: z.boolean().optional(),
   // Key into data/eval/long-docs.json: a long document that contains this item's brief terms.
   doc: z.string().optional(),
+  // Specialist set: the skill pack (data/skills) whose words this item is about.
+  pack: z.string().optional(),
 });
 export type Item = z.infer<typeof ItemSchema>;
 
@@ -31,10 +33,11 @@ export const SILENT_CATEGORIES: readonly string[] = [
 export const dataPath = (rel: string): string =>
   fileURLToPath(new URL(`../../data/${rel}`, import.meta.url));
 
-export type ItemSet = 'main' | 'hard';
+export type ItemSet = 'main' | 'hard' | 'specialist';
 const SET_FILES: Record<ItemSet, string> = {
   main: 'eval/circumlocutions.json',
   hard: 'eval/hard.json',
+  specialist: 'eval/specialist.json',
 };
 
 export async function loadItems(
