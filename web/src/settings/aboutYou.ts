@@ -23,7 +23,7 @@ export interface AboutState {
 export const emptyAbout: AboutState = { about: { name: '', role: '', words: '' }, remembered: [] };
 
 // Control and line-break characters become spaces: the server refuses them.
-const clean = (text: string) =>
+export const clean = (text: string) =>
   text
     .replace(/[\p{C}\p{Zl}\p{Zp}]/gu, ' ')
     .replace(/\s+/g, ' ')
@@ -33,13 +33,13 @@ const hasWord = (list: string[], word: string) =>
   list.some((w) => w.toLowerCase() === word.toLowerCase());
 
 // "Northwind, SOC 2" or one per line, to a clean list: no blanks, no repeats (ignoring case), no
-// word over the limit, at most MAX_WORDS.
-export function parseWords(text: string): string[] {
+// word over the limit, at most `max` (MAX_WORDS unless told otherwise).
+export function parseWords(text: string, max = MAX_WORDS): string[] {
   const out: string[] = [];
   for (const piece of text.split(/[\n,;]/)) {
     const word = clean(piece);
     if (word && word.length <= MAX_WORD_CHARS && !hasWord(out, word)) out.push(word);
-    if (out.length === MAX_WORDS) break;
+    if (out.length === max) break;
   }
   return out;
 }

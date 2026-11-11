@@ -29,6 +29,8 @@ import { aboutYou } from './settings/aboutYou';
 import { demoChosen, needsSetup } from './settings/keys';
 import { useKeys } from './settings/useKeys';
 import { useSendAboutYou } from './settings/useAboutYou';
+import { skills } from './settings/skills';
+import { useSendSkills } from './settings/useSkills';
 import { ControlPill } from './ui/ControlPill';
 import { DevTools } from './ui/DevTools';
 import { recentWords, type RecentWord } from './ui/recentWords';
@@ -139,6 +141,7 @@ export function App() {
   const { status, send, sendBinary } = useSocket(onServerEvent, debugOn);
   const mic = useMic(sendBinary, micId);
   useSendAboutYou(status, send);
+  useSendSkills(status, send);
 
   // A dropped connection ends the server session, so its guesser problem is forgotten too.
   const [prevStatus, setPrevStatus] = useState(status);
@@ -320,6 +323,7 @@ export function App() {
   // and this conversation's recent words. Settings stay.
   const forgetAll = useCallback(() => {
     aboutYou.forgetAll();
+    skills.forgetAll();
     setBrief({ text: '' });
     setBriefTerms([]);
     setRecent([]);

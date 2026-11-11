@@ -13,6 +13,7 @@ import {
 } from '../settings/sensitivity';
 import { modifierLabel } from './commands';
 import { Privacy } from './Privacy';
+import { Skills } from './Skills';
 import { KeysForm } from './KeysForm';
 import type { DesktopBridge } from './desktop';
 import type { Presence, Provider } from '../settings/keys';
@@ -206,6 +207,8 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
           <KeysForm keys={p.keys.bridge} presence={p.keys.status} onSaved={p.keys.refresh} />
         </fieldset>
       )}
+
+      <Skills />
 
       <Privacy onForgetAll={p.onForgetAll} />
 
