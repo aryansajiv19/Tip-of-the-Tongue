@@ -75,6 +75,7 @@ What works today:
 
 ## Decisions
 
+- Users (2026-11-06): anyone who loses a word mid-conversation (meetings, calls, interviews); people with aphasia are one group, not the only one. No model training: prompting and rules, with evidence from our own eval sets.
 - MIT licence, © Aryan Sajiv. Lead on Opus, workers on Sonnet, one worktree each; workers wait for "push" unless pre-approved; the lead merges only after CI is green.
 - Haiku is the default guesser. On the hard set Sonnet was a few items better (not clearly) at about twice the latency; Opus no better. Sonnet via `ANTHROPIC_MODEL`.
 - Any mid-sentence pause is a candidate stall; the guesser decides whether the speaker is searching. Pauses are marked "…" between words in what it reads (never at the end). An offered word stays off the list for 3 minutes.

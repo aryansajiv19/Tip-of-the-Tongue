@@ -11,7 +11,7 @@ A live word-finding companion for anyone who loses a word mid-conversation: in a
 3. Optional meeting brief: agenda, names, product or client terms, notes. This makes it useful from the first minute.
 4. Notices when the user is stuck: a long pause, filler ("the thing", "you know", "what's it called"), or describing a thing instead of naming it ("the tool we use for invoices").
 5. Asks Claude for likely words with confidence scores, using the brief and the conversation so far.
-6. If confidence is high enough **and** the user hasn't found the word themselves, a small pop-up at the side asks "Is this the word you're looking for?" with up to 3 options. Optionally a soft spoken cue.
+6. If confidence is high enough **and** the user hasn't found the word themselves, a small pop-up at the side asks "Is this the word you're looking for?" with up to 3 options.
 7. If the user then says one of the words, it counts as accepted. If they find it themselves first, the pop-up is withdrawn.
 8. **Staying silent is a feature.** A wrong or premature guess is worse than no guess.
 

@@ -25,7 +25,7 @@ The speculative guess is why the pop-up beats "pause + guess". Each unconfirmed 
 - `filler_words` exists only for English; it is requested only when the language is `en`.
 - Keyterms change mid-stream with `{"type":"Configure","keyterms":[...]}`; the reply is `ConfigureSuccess` and words keep coming. Do not reconnect: a new stream renumbers speakers and the session forgets which voice is the user.
 - Word times are audio time. Audio dropped before Deepgram is added back per stream (`stt/deepgram.ts`), so pauses are not inflated.
-- Speaker labels (diarisation) decide "me": only the user's pauses can start a guess. Without labels (browser speech, or replay without `--diarize`) the other person's stalls can trigger guesses.
+- Speaker labels (diarisation), the loudest voice at the mic and the "That's me" button decide "me": only the user's pauses can start a guess. Similar voices can be merged into one label. Without labels (browser speech, or replay without `--diarize`) the other person's stalls can trigger guesses.
 
 ## Rules that keep it quiet
 
@@ -44,4 +44,4 @@ Before trusting a run, check the "failed or timed out" count per conversation an
 
 ## Parked (do not re-open without new evidence)
 
-Café noise costs accuracy (live: 83% clean, 58% at 10 dB), mostly as missed stalls. Other-speaker pop-ups without labels are run-to-run variance. Two tries, then park (see CLAUDE.md).
+Café noise costs accuracy (live: 83% clean, 58% at 10 dB), mostly as missed stalls. Other-speaker pop-ups without labels are run-to-run variance. Two tries, then park.
