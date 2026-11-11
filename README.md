@@ -53,6 +53,7 @@ Optional settings are in `.env.example`: a personal profile file, sensitivity an
 - Guessing starts while you are still pausing; the pop-up typically appears 1.4–1.7 s after your last word.
 - It prefers the specific word and keeps phrases whole ("phone cable", "car park"). Say the word, click it, or press ⌘1/⌘2/⌘3.
 - Meeting notes (PDF, Markdown or text), "About you" and words you have accepted before give it context. Words are remembered on this device only, never transcripts.
+- Skills: switch on a topic pack (Medical visit, Job interview, Software & tech, Money & finance, Everyday errands) or write your own, and the speech recogniser listens for that field's words and the guesser knows the topic. Packs live in `data/skills/`.
 
 **Fits how you want to be helped**
 

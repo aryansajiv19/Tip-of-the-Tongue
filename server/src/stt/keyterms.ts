@@ -1,3 +1,4 @@
+import type { Skill } from '../events.js';
 import { profileTermList, type Profile } from '../guess/profile.js';
 
 // Deepgram allows 100 keyterms and 500 tokens per request, and rejects the whole connection when
@@ -55,15 +56,17 @@ export function termsFromText(text: string): string[] {
   return found;
 }
 
-// The terms to give the speech recogniser: the user's own words first, then the glossary of a
-// long brief, or the names and jargon of a short one.
+// The terms to give the speech recogniser: the user's own words first, then the active skills'
+// terms, then the glossary of a long brief, or the names and jargon of a short one.
 export function selectKeyterms(input: {
   profile?: Profile;
+  skills?: Skill[];
   brief?: string;
   glossary?: string;
 }): string[] {
   const candidates = [
     ...(input.profile ? profileTermList(input.profile) : []),
+    ...(input.skills ?? []).flatMap((s) => s.terms),
     ...(input.glossary
       ? input.glossary.split(',')
       : input.brief
