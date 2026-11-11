@@ -1,0 +1,605 @@
+{
+  "note": "The specialist slice: about 12 items per skill pack (data/skills), each a word a person in that field loses. Run with the matching pack on, off, and a wrong pack on. Written for this project, not copied from any corpus. Scripted written text, not real speech. Do not tune on split \"holdout\".",
+  "items": [
+    {
+      "id": "sp-medical-01",
+      "pack": "medical",
+      "context": "At the GP, talking about a long-running knee problem.",
+      "utterance": "The doctor wants me to see a... the knee person, the one who does the exercises with you after",
+      "target": "physiotherapist",
+      "acceptable": ["physiotherapist", "physio", "physiotherapy"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-medical-02",
+      "pack": "medical",
+      "context": "Pharmacy counter, picking up tablets for an infection.",
+      "utterance": "These are the... the antibiotic one, you have to finish the whole course, I always forget what it's called, amox...",
+      "target": "amoxicillin",
+      "acceptable": ["amoxicillin"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-medical-03",
+      "pack": "medical",
+      "context": "Appointment about chest pains last week.",
+      "utterance": "They put little sticky pads on my chest and printed the heart... the line that goes up and down, the E, C, G thing",
+      "target": "ECG",
+      "acceptable": ["ECG", "electrocardiogram", "EKG"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-medical-04",
+      "pack": "medical",
+      "context": "Talking to a nurse about a child's hay fever.",
+      "utterance": "He needs the tablet for the, you know, the allergy one, anti... antihist...",
+      "target": "antihistamine",
+      "acceptable": ["antihistamine", "antihistamines"],
+      "category": "specialist",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-medical-05",
+      "pack": "medical",
+      "context": "Phone call to the surgery receptionist.",
+      "utterance": "I need to book the... the letter that sends me to the hospital specialist, the re... referral",
+      "target": "referral",
+      "acceptable": ["referral", "referral letter"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-medical-06",
+      "pack": "medical",
+      "context": "Doctor explains test results for a tired patient.",
+      "utterance": "My iron is low so it's called... when you don't have enough red blood cells, an... anaemia",
+      "target": "anaemia",
+      "acceptable": ["anaemia", "anemia"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-medical-07",
+      "pack": "medical",
+      "context": "Discussing a family member's bone injury.",
+      "utterance": "She slipped on the ice and it's not a break, it's a... when you twist the ankle and the ligament stretches, a sp...",
+      "target": "sprain",
+      "acceptable": ["sprain", "sprained ankle"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-medical-08",
+      "pack": "medical",
+      "context": "Asthma review with the nurse.",
+      "utterance": "I forgot the puffer, the... the thing you breathe the medicine in with, the in... inhaler",
+      "target": "inhaler",
+      "acceptable": ["inhaler"],
+      "category": "specialist",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-medical-09",
+      "pack": "medical",
+      "context": "Explaining a skin problem to a pharmacist.",
+      "utterance": "It's red and itchy and flaky, the dry skin condition, I think it's called ecz... eczema",
+      "target": "eczema",
+      "acceptable": ["eczema"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-medical-10",
+      "pack": "medical",
+      "context": "Booking a blood test.",
+      "utterance": "Do I need to not eat beforehand? The... fasting one, where you can't have breakfast",
+      "target": "fasting",
+      "acceptable": ["fasting", "fast"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-medical-11",
+      "pack": "medical",
+      "context": "Describing a scan to a relative.",
+      "utterance": "They did the, the big tube machine with the magnets, the M... MRI",
+      "target": "MRI",
+      "acceptable": ["MRI", "MRI scan"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-medical-12",
+      "pack": "medical",
+      "context": "Introducing yourself at the surgery desk.",
+      "utterance": "Hello, I'm here for my appointment, my name is...",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck_unknowable",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-interview-01",
+      "pack": "interview",
+      "context": "Final round, asked about starting dates.",
+      "utterance": "I'd have to give my current employer a month, so my... the period you have to work before you leave, my notice...",
+      "target": "notice period",
+      "acceptable": ["notice period", "notice"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-interview-02",
+      "pack": "interview",
+      "context": "Asked about experience managing people.",
+      "utterance": "I had three people who reported to me, my... the people under me, my direct... reports",
+      "target": "direct reports",
+      "acceptable": ["direct reports", "direct report"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-interview-03",
+      "pack": "interview",
+      "context": "Asked about how success was measured.",
+      "utterance": "We were measured on the, the numbers, the key... performance... K, P, I's",
+      "target": "KPIs",
+      "acceptable": ["KPIs", "KPI", "key performance indicators"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-interview-04",
+      "pack": "interview",
+      "context": "Discussing a gap in a CV.",
+      "utterance": "I took a year off to travel, it was a... a long break from work, a sab... sabbatical",
+      "target": "sabbatical",
+      "acceptable": ["sabbatical"],
+      "category": "specialist",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-interview-05",
+      "pack": "interview",
+      "context": "Asked about pay.",
+      "utterance": "I'd like to talk about the... what I'm hoping to earn, my salary exp... expectations",
+      "target": "salary expectations",
+      "acceptable": ["salary expectations", "salary expectation"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-interview-06",
+      "pack": "interview",
+      "context": "Asked how they work with other departments.",
+      "utterance": "I worked a lot with sales and design together, it was very... across the teams, cross... functional",
+      "target": "cross-functional",
+      "acceptable": ["cross-functional", "cross functional"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-interview-07",
+      "pack": "interview",
+      "context": "Candidate asked about the first three months.",
+      "utterance": "Is there a period at the start where you check I'm a good fit before it's permanent, a... probation",
+      "target": "probation",
+      "acceptable": ["probation", "probation period"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-interview-08",
+      "pack": "interview",
+      "context": "Interviewer asking a candidate to describe a weakness.",
+      "utterance": "Tell me about a time you had two deadlines, how did you... put things in order of importance, pri... prioritise",
+      "target": "prioritise",
+      "acceptable": ["prioritise", "prioritize", "prioritising"],
+      "category": "specialist",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-interview-09",
+      "pack": "interview",
+      "context": "Candidate wrapping up.",
+      "utterance": "Thank you for the time, and I should send you my... the list of people who can vouch for me, my ref... references",
+      "target": "references",
+      "acceptable": ["references", "reference"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-interview-10",
+      "pack": "interview",
+      "context": "Offer stage.",
+      "utterance": "Great, so you'll send the... the written offer, the formal offer... letter, with the start date on it",
+      "target": "offer letter",
+      "acceptable": ["offer letter", "offer"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-interview-11",
+      "pack": "interview",
+      "context": "Candidate describing a promotion.",
+      "utterance": "After two years I moved up, I got a... the step up to team lead, a pro... promotion",
+      "target": "promotion",
+      "acceptable": ["promotion"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-interview-12",
+      "pack": "interview",
+      "context": "Interviewer opening.",
+      "utterance": "Welcome, thanks for coming in, so first, tell me a bit about...",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck_unknowable",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-tech-01",
+      "pack": "tech",
+      "context": "Standup, a release broke checkout.",
+      "utterance": "We need to undo it, the, the go back to the last good version, a roll... rollback",
+      "target": "rollback",
+      "acceptable": ["rollback", "roll back"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-tech-02",
+      "pack": "tech",
+      "context": "Code review chat.",
+      "utterance": "Can you review my... the request to merge my branch, the pull... request",
+      "target": "pull request",
+      "acceptable": ["pull request", "PR"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-tech-03",
+      "pack": "tech",
+      "context": "Debugging a slow page.",
+      "utterance": "The slowness is the, the delay between click and response, the late... latency",
+      "target": "latency",
+      "acceptable": ["latency"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-tech-04",
+      "pack": "tech",
+      "context": "Planning meeting.",
+      "utterance": "We keep putting off cleaning up the old code, the... the cost of shortcuts we took, tech... technical debt",
+      "target": "technical debt",
+      "acceptable": ["technical debt", "tech debt"],
+      "category": "specialist",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-tech-05",
+      "pack": "tech",
+      "context": "Git trouble.",
+      "utterance": "Two of us changed the same line so now there's a, the clash, a merge... conflict",
+      "target": "merge conflict",
+      "acceptable": ["merge conflict", "conflict"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-tech-06",
+      "pack": "tech",
+      "context": "Security review.",
+      "utterance": "Someone could guess the login, we should check who you are, the... authentication",
+      "target": "authentication",
+      "acceptable": ["authentication", "auth"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-tech-07",
+      "pack": "tech",
+      "context": "Infrastructure meeting.",
+      "utterance": "We put it in a box that runs the same everywhere, a... Docker, a con... container",
+      "target": "container",
+      "acceptable": ["container", "docker"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-tech-08",
+      "pack": "tech",
+      "context": "Postmortem.",
+      "utterance": "The server slowly ate more and more RAM until it died, a mem... memory leak",
+      "target": "memory leak",
+      "acceptable": ["memory leak", "leak"],
+      "category": "specialist",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-tech-09",
+      "pack": "tech",
+      "context": "Planning a launch.",
+      "utterance": "We turn the feature on for ten percent of people first with a... a switch, a feature... flag",
+      "target": "feature flag",
+      "acceptable": ["feature flag", "flag"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-tech-10",
+      "pack": "tech",
+      "context": "Backend discussion.",
+      "utterance": "When one service calls another over HTTP, the address it calls, the end... endpoint",
+      "target": "endpoint",
+      "acceptable": ["endpoint", "API endpoint"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-tech-11",
+      "pack": "tech",
+      "context": "Debugging a crash.",
+      "utterance": "The error shows all the function calls leading up to it, the stack... trace",
+      "target": "stack trace",
+      "acceptable": ["stack trace", "stacktrace", "trace"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-tech-12",
+      "pack": "tech",
+      "context": "Daily standup opening.",
+      "utterance": "Morning everyone, so yesterday I was working on...",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck_unknowable",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-finance-01",
+      "pack": "finance",
+      "context": "At the bank, about buying a flat.",
+      "utterance": "We need a... the loan for the house, the mort... mortgage",
+      "target": "mortgage",
+      "acceptable": ["mortgage"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-finance-02",
+      "pack": "finance",
+      "context": "Talking to an accountant in April.",
+      "utterance": "I have to file my... the form for how much I earned, my tax... return",
+      "target": "tax return",
+      "acceptable": ["tax return", "return"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-finance-03",
+      "pack": "finance",
+      "context": "Checking the bank statement.",
+      "utterance": "There's a payment that goes out every month automatically, a direct... debit",
+      "target": "direct debit",
+      "acceptable": ["direct debit"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-finance-04",
+      "pack": "finance",
+      "context": "Chatting about the economy.",
+      "utterance": "Prices keep going up everywhere, the rise in prices, in... inflation",
+      "target": "inflation",
+      "acceptable": ["inflation"],
+      "category": "specialist",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-finance-05",
+      "pack": "finance",
+      "context": "Planning for retirement.",
+      "utterance": "I'm paying into the... the work scheme for when I stop working, my pen... pension",
+      "target": "pension",
+      "acceptable": ["pension"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-finance-06",
+      "pack": "finance",
+      "context": "Explaining a loan.",
+      "utterance": "It's the percentage they charge for borrowing, the in... interest rate",
+      "target": "interest rate",
+      "acceptable": ["interest rate", "interest"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-finance-07",
+      "pack": "finance",
+      "context": "Insurance call.",
+      "utterance": "If I make a claim I first pay a part myself, the... the first bit, the ex... excess",
+      "target": "excess",
+      "acceptable": ["excess", "deductible"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-finance-08",
+      "pack": "finance",
+      "context": "Talking about a parent's estate.",
+      "utterance": "Dad left it to us in his will, so it's an... what you receive when someone dies, an inher... inheritance",
+      "target": "inheritance",
+      "acceptable": ["inheritance"],
+      "category": "specialist",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-finance-09",
+      "pack": "finance",
+      "context": "Investing chat.",
+      "utterance": "I put money in a fund that tracks the whole market, an in... index fund",
+      "target": "index fund",
+      "acceptable": ["index fund", "index"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-finance-10",
+      "pack": "finance",
+      "context": "Business owner meeting.",
+      "utterance": "The money coming in minus the money going out each month, our cash... flow",
+      "target": "cash flow",
+      "acceptable": ["cash flow", "cashflow"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-finance-11",
+      "pack": "finance",
+      "context": "Bank phone call about a suspicious payment.",
+      "utterance": "Someone used my card, I want to dispute it, a charge... chargeback",
+      "target": "chargeback",
+      "acceptable": ["chargeback", "dispute"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-finance-12",
+      "pack": "finance",
+      "context": "Bank greeting.",
+      "utterance": "Hello, I'd like to ask about my account, my name is...",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck_unknowable",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-everyday-01",
+      "pack": "everyday",
+      "context": "Returning a toaster.",
+      "utterance": "I've lost the... the paper that proves I bought it, the rec... receipt",
+      "target": "receipt",
+      "acceptable": ["receipt"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-everyday-02",
+      "pack": "everyday",
+      "context": "At home, nothing is warm.",
+      "utterance": "The heating isn't working, I think it's the... the thing that heats the water, the boi... boiler",
+      "target": "boiler",
+      "acceptable": ["boiler"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-everyday-03",
+      "pack": "everyday",
+      "context": "Phoning a delivery firm.",
+      "utterance": "I need the number to follow my package, the track... tracking number",
+      "target": "tracking number",
+      "acceptable": ["tracking number", "tracking"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-everyday-04",
+      "pack": "everyday",
+      "context": "In the kitchen.",
+      "utterance": "Can you pass me the, the thing for draining pasta, the... colan... colander",
+      "target": "colander",
+      "acceptable": ["colander", "strainer"],
+      "category": "specialist",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-everyday-05",
+      "pack": "everyday",
+      "context": "Taking the car in.",
+      "utterance": "It's due for the yearly test, the M... O... T",
+      "target": "MOT",
+      "acceptable": ["MOT"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-everyday-06",
+      "pack": "everyday",
+      "context": "Train station.",
+      "utterance": "Which one do we leave from? The number of the... the bit where the train stops, the plat... platform",
+      "target": "platform",
+      "acceptable": ["platform"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-everyday-07",
+      "pack": "everyday",
+      "context": "Moving into a flat.",
+      "utterance": "The landlord wants a month's rent upfront as a... safety money, a dep... deposit",
+      "target": "deposit",
+      "acceptable": ["deposit"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-everyday-08",
+      "pack": "everyday",
+      "context": "Fixing a light.",
+      "utterance": "The lamp is dead so I need a new... the glass thing that screws in, a light... bulb",
+      "target": "light bulb",
+      "acceptable": ["light bulb", "bulb"],
+      "category": "specialist",
+      "split": "holdout"
+    },
+    {
+      "id": "sp-everyday-09",
+      "pack": "everyday",
+      "context": "Cleaning day.",
+      "utterance": "Where's the, the vacuum cleaner, the hoo... hoover",
+      "target": "hoover",
+      "acceptable": ["hoover", "vacuum", "vacuum cleaner"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-everyday-10",
+      "pack": "everyday",
+      "context": "Setting up the internet.",
+      "utterance": "I need to plug in the... the box that gives us wifi, the rou... router",
+      "target": "router",
+      "acceptable": ["router"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-everyday-11",
+      "pack": "everyday",
+      "context": "Travelling.",
+      "utterance": "Don't forget the... the paper that lets you get on the plane, the boarding... pass",
+      "target": "boarding pass",
+      "acceptable": ["boarding pass"],
+      "category": "specialist",
+      "split": "dev"
+    },
+    {
+      "id": "sp-everyday-12",
+      "pack": "everyday",
+      "context": "At the till.",
+      "utterance": "Hi, how are you today, I'd like to pay for...",
+      "target": null,
+      "acceptable": [],
+      "category": "not_stuck_unknowable",
+      "split": "holdout"
+    }
+  ]
+}

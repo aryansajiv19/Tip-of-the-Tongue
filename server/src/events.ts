@@ -21,6 +21,21 @@ const ProfileWord = z
   .max(MAX_PROFILE_WORD_CHARS)
   .regex(/^[^\p{C}\p{Zl}\p{Zp}]+$/u);
 
+// Skills: topic packs and the user's own. At most 5 are active; a built-in pack may have 80 terms
+// (the page keeps its own skills to 60).
+export const MAX_SKILLS = 5;
+export const MAX_SKILL_TERMS = 80;
+const SkillSchema = z.object({
+  name: ProfileText.min(1),
+  description: z
+    .string()
+    .max(300)
+    .regex(/^[^\p{C}\p{Zl}\p{Zp}]*$/u)
+    .optional(),
+  terms: z.array(ProfileWord).max(MAX_SKILL_TERMS),
+});
+export type Skill = z.infer<typeof SkillSchema>;
+
 const WordSchema = z.object({
   text: z.string().min(1).max(100),
   startMs: z.number().finite(),
@@ -58,6 +73,13 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
     role: ProfileText.optional(),
     words: z.array(ProfileWord).max(MAX_PROFILE_WORDS),
     remembered: z.array(ProfileWord).max(MAX_PROFILE_WORDS),
+  }),
+  // The active skills (topic packs and the user's own): their terms go to the speech recogniser
+  // after the profile's, and their names and terms to the guesser. Replaces the previous list;
+  // an empty list turns skills off.
+  z.object({
+    type: z.literal('session.skills'),
+    skills: z.array(SkillSchema).max(MAX_SKILLS),
   }),
   // How the user wants to be helped. 'ask': suggestions only when they ask (Cmd/Ctrl+Enter) or say
   // a cue such as "what's it called", never after a mere pause. 'sound' and 'word' only differ in
