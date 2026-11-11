@@ -67,12 +67,27 @@ test('no source label when the word has none', async ({ page }) => {
   await expect(offer(page).locator('.card-alts')).toHaveCount(0);
 });
 
-test('thinking stops when the server says the guess went nowhere', async ({ page }) => {
+test('when the server says the guess went nowhere, a quiet "…" shows, then clears', async ({
+  page,
+}) => {
   const server = await start(page);
   server.send(stuck);
   await expect(offer(page)).toContainText('Finding the word');
   server.send({ type: 'guess.idle' });
-  await expect(offer(page)).toHaveText('');
+  await expect(offer(page).locator('.card-none')).toBeVisible();
+  await expect(offer(page)).toContainText('No word found'); // for screen readers
+  await expect(offer(page).locator('.card-none [aria-hidden]')).toHaveText('…');
+  await expect(offer(page)).toHaveText('', { timeout: 4000 });
+});
+
+test('with no answer at all, thinking gives up after a few seconds with the same "…"', async ({
+  page,
+}) => {
+  const server = await start(page);
+  server.send(stuck);
+  await expect(offer(page)).toContainText('Finding the word');
+  await expect(offer(page).locator('.card-none')).toBeVisible({ timeout: 6000 });
+  await expect(offer(page)).toHaveText('', { timeout: 4000 });
 });
 
 test('uses the spec sizes: 420 wide, radius 16, 36 px semibold word, 18 px muted alternatives', async ({

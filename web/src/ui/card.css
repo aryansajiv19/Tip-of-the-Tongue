@@ -135,6 +135,11 @@
   color: var(--error);
 }
 
+.card-none {
+  font-size: var(--text-md);
+  color: var(--text-faint);
+}
+
 .card-thinking {
   font-size: var(--text-md);
   color: var(--text-muted);

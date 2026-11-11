@@ -45,6 +45,7 @@ Keep your keys private. The app stores them on your computer, encrypted with you
 
 - When you pause on a word, say a phrase like "what's it called", or describe the thing instead of naming it, the app asks Claude for likely words and shows up to three. The main word is large; the others are underneath. The dots show how sure the guess is.
 - **Pick a word** by clicking it, pressing **⌘1, ⌘2 or ⌘3**, or simply saying it. The card shows a tick and goes away.
+- If it looked for a word and found none, you see a quiet **…** for about 2 seconds (a screen reader says "No word found"). That means "I tried", not an error.
 - **Dismiss** it with **Esc**. It also fades after about 6 seconds, but **stays while you hover over it or have it focused**.
 - It stays **silent** when you are speaking fluently, when you find the word yourself, when someone else is talking (with Deepgram the app tells voices apart, but it chooses yours from your first words after Start and can choose wrong), during a stutter or block, and when it is not confident enough. Staying silent is on purpose.
 - A word it has offered is kept off the list for about 3 minutes, so you are not shown the same word again and again.

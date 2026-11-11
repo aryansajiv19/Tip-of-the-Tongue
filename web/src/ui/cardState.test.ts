@@ -6,6 +6,7 @@ import {
   cardReducer,
   emptyCard,
   LINGER_MS,
+  NONE_MS,
   THINKING_MAX_MS,
   type CardAction,
   type CardState,
@@ -60,8 +61,17 @@ describe('cardReducer', () => {
     expect(run([server(offered('a', []))], thinking)).toBe(thinking);
   });
 
-  it('thinking stops when the server says the guess went nowhere', () => {
-    expect(run([server(stuck), server({ type: 'guess.idle' })]).view).toBeNull();
+  it('when the server says the guess went nowhere, a quiet "…" shows, then clears', () => {
+    const none = run([server(stuck), server({ type: 'guess.idle' }, T0 + 1000)]);
+    expect(none.view).toEqual({ kind: 'none' });
+    expect(cardReducer(none, { type: 'tick', nowMs: T0 + 1000 + NONE_MS - 1 })).toBe(none);
+    expect(cardReducer(none, { type: 'tick', nowMs: T0 + 1000 + NONE_MS }).view).toBeNull();
+  });
+
+  it('a new stall replaces the "…", and Escape clears it', () => {
+    const none = run([server(stuck), server({ type: 'guess.idle' })]);
+    expect(cardReducer(none, server(stuck, T0 + 500)).view).toEqual({ kind: 'thinking' });
+    expect(cardReducer(none, { type: 'dismiss' }).view).toBeNull();
   });
 
   it('guess.idle does not remove a suggestion that is showing', () => {
@@ -158,7 +168,11 @@ describe('cardReducer', () => {
   it('thinking times out even if the server never says more', () => {
     const s = run([server(stuck)]);
     expect(cardReducer(s, { type: 'tick', nowMs: T0 + THINKING_MAX_MS - 1 })).toBe(s);
-    expect(cardReducer(s, { type: 'tick', nowMs: T0 + THINKING_MAX_MS }).view).toBeNull();
+    const none = cardReducer(s, { type: 'tick', nowMs: T0 + THINKING_MAX_MS });
+    expect(none).toEqual({ view: { kind: 'none' }, sinceMs: T0 + THINKING_MAX_MS });
+    expect(
+      cardReducer(none, { type: 'tick', nowMs: T0 + THINKING_MAX_MS + NONE_MS }).view,
+    ).toBeNull();
   });
 
   it('dismiss closes a suggestion or thinking, but not the check mark', () => {
