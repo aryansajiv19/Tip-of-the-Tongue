@@ -17,7 +17,7 @@
   <a href="#limitations">Limitations</a>
 </p>
 
-It's for people whose work is talking: back-to-back meetings, sales, support and recruiting calls, interviews, video calls. It's also for people working in their second language, and for people who lose words more often than most, for example after a concussion, with a stammer, fatigue or brain fog, with aphasia, or later in life. Everyone loses a word now and then, so it is built for the general public first. It does not treat any condition. It just supplies the word in the moment so the conversation can carry on.
+Everyone loses a word now and then, and on a call the cost is visible: the pause stretches, someone jumps in, the point lands weaker. Tip of the Tongue is built for people whose work is talking (back-to-back meetings, sales, support and recruiting calls, interviews) and for people working in their second language. It also suits people who lose words more often than most, for example after a concussion, with a stammer, fatigue or brain fog, with aphasia, or later in life. It is a conversation aid, not a medical device.
 
 Entry for the **Hiya Voice AI Challenge, Real-time Assistance track**.
 
@@ -40,7 +40,7 @@ With the app running and listening (press play), try these. Each should take a f
 3. **No good guess.** Stall on something nobody could guess: "I spoke to… um… what's his name". It shows a quiet **…** or nothing, never a made-up name.
 4. **Ask on demand.** Press ⌘↵ at any time to get a guess without waiting for a pause.
 5. **A topic.** Turn on a skill in Settings › Skills (for example Medical visit) and stall on a word from that field. It should offer the field's term.
-6. **Another voice.** Play a video or call with someone else talking. Their pauses should not trigger cards. If it ever follows the wrong voice, speak, then press **That’s me**. This needs the Deepgram key.
+6. **Another voice.** Play a video or call with someone else talking. Their pauses should not trigger cards. If it ever follows the wrong voice, speak, then press **That's me**. This needs the Deepgram key.
 
 Without keys the guesser is a simple mock that knows only a few phrases. Try "I have to go to the… where you get medicine" and it offers **pharmacy**; other stalls stay silent.
 
@@ -105,7 +105,7 @@ All numbers come from scripted conversations I wrote, not real users; LLM result
 
 | Test                                                                | Result                                                                                                                                                                                   |
 | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 20 conversations (dev split), real Claude, three runs               | 93–96% of stalls get the right word, 2–4 wrong of 71; 0–1 pop-ups in 165 fluent lines.                                                                                                   |
+| 20 dev conversations, real Claude, three runs                       | 93–96% of stalls get the right word, 2–4 wrong of 71; 0–1 pop-ups in 165 fluent lines.                                                                                                   |
 | 8 held-back conversations, never tuned on, one run                  | 94% (17/18) [74–99%], 1 wrong, 1/65 fluent pop-ups.                                                                                                                                      |
 | Live audio, one sales call in six voices (real Deepgram and Claude) | 20/24 stalls, 1 wrong, 1/66 fluent pop-ups. With café noise 10 dB below: 14/24, 2 wrong.                                                                                                 |
 | Live audio, 3–4 voices with others on a call, 66 stalls             | 85% correct strictly [74–92%], about 92% [83–97%] counting the right word that arrived as the next speaker began. Voice pick 14/14; 0/44 fluent pop-ups; 8/164 pop-ups on others' lines. |
@@ -133,7 +133,7 @@ npm run bench                                                    # standard suit
 
 ## Limitations
 
-- **Not tested with people with aphasia**, and I make no clinical claim.
+- **Not yet tested with outside users**, including people with aphasia, and I make no clinical claim.
 - Speech-to-text can mishear atypical speech; severe dysarthria is a weak spot for every recogniser.
 - Similar voices can be merged into one by Deepgram's speaker labels. With browser speech there are no labels, so other people's pauses can trigger a guess.
 - Background noise lowers how often it catches a stall (83% clean, 58% with café noise). Use a headset; on laptop speakers others' voices leak into the mic.
