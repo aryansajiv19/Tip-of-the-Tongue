@@ -54,6 +54,7 @@ Optional settings are in `.env.example`: a personal profile file, sensitivity an
 - Guessing starts while you are still pausing; the pop-up typically appears 1.4–1.7 s after your last word.
 - Optional, off by default (Settings › Show how to continue): when the next words are strongly implied, the offer carries 2–4 of them after the word ("pharmacy to collect my tablets"), to help you back into the flow; accepting still means the word alone.
 - It prefers the specific word and keeps phrases whole ("phone cable", "car park"). Say the word, click it, or press ⌘1/⌘2/⌘3.
+- Optional **Show how to continue** (Settings, off by default): the main word is followed by a few muted words that probably come next ("pharmacy to pick up my tablets"). Picking or saying it still means the word alone; it is slightly less accurate.
 - When it cannot find the word it says so with a quiet "…" for a moment, instead of just vanishing.
 - Meeting notes (PDF, Markdown or text), "About you" and words you have accepted before give it context. Words are remembered on this device only, never transcripts.
 - Skills: switch on a topic pack (Medical visit, Job interview, Software & tech, Money & finance, Everyday errands) or write your own under Settings › Skills (up to 5 on at once, kept on this device), and the speech recogniser listens for that field's words and the guesser knows the topic. Packs live in `data/skills/`.

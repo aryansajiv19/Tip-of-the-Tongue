@@ -272,3 +272,55 @@ test.describe('problems show as one short line, in red, never a dialog', () => {
     await expect(offer(page).locator('.card-problem')).toHaveCount(0);
   });
 });
+
+test.describe('continuation', () => {
+  const withContinuation = (continuation: string, word = 'pharmacy') => ({
+    type: 'guess.offered',
+    id: 'c',
+    latencyMs: 300,
+    candidates: [
+      { word, confidence: 0.9, continuation },
+      { word: 'chemist', confidence: 0.5, continuation: 'ignored' },
+    ],
+  });
+
+  test('shows after the bold word, quiet and not bold, on the primary only', async ({ page }) => {
+    const server = await start(page);
+    server.send(withContinuation('to pick up my tablets'));
+    const cont = offer(page).locator('.card-cont');
+    await expect(cont).toHaveText('to pick up my tablets');
+    expect(await cont.evaluate((e) => getComputedStyle(e).fontWeight)).toBe('400');
+    expect(await primary(page).evaluate((e) => getComputedStyle(e).fontWeight)).toBe('600');
+    await expect(offer(page).locator('.card-cont')).toHaveCount(1);
+    // Read after the word.
+    expect(await offer(page).locator('.card-word').innerText()).toMatch(
+      /^pharmacy[\s\S]*to pick up/,
+    );
+    // The button, and so picking, is the word alone.
+    await expect(primary(page)).toHaveText('pharmacy');
+  });
+
+  test('a long one wraps inside the 420 px card instead of overflowing', async ({ page }) => {
+    const server = await start(page);
+    server.send(withContinuation('and then the rest of it goes on', 'electrocardiogram'));
+    await expect(offer(page).locator('.card-cont')).toBeVisible();
+    const fits = await offer(page)
+      .locator('.suggestion')
+      .evaluate((card) => {
+        const box = card.getBoundingClientRect();
+        return [...card.querySelectorAll('*')].every((e) => {
+          const r = e.getBoundingClientRect();
+          return r.left >= box.left - 0.5 && r.right <= box.right + 0.5;
+        });
+      });
+    expect(fits).toBe(true);
+  });
+
+  test('is hidden in "first sound" mode', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('tott.help', 'sound'));
+    const server = await start(page);
+    server.send(withContinuation('to pick up my tablets'));
+    await expect(primary(page)).toBeVisible();
+    await expect(offer(page).locator('.card-cont')).toHaveCount(0);
+  });
+});

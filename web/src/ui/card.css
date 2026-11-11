@@ -77,6 +77,27 @@
   text-underline-offset: calc(var(--space-1) * 1.5);
 }
 
+.card-word {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* The word and its key stay together; only the continuation wraps away from them. */
+.card-lead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* What probably comes next: quiet, after the bold word, wrapping rather than overflowing. */
+.card-cont {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--text-md);
+  font-weight: var(--weight-regular);
+  color: var(--text-muted);
+}
+
 .card-dots {
   display: inline-flex;
   gap: var(--space-1);

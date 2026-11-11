@@ -20,7 +20,7 @@ export const emptyCard: CardState = { view: null, sinceMs: 0 };
 export const LINGER_MS = 6000;
 // The check mark stays this long before the card goes.
 export const ACCEPTED_MS = 900;
-// "Finding the word" never outlasts this (the server's escalation budget), even if it says nothing more.
+// "Finding the word" never outlasts this, even if the server says nothing more.
 export const THINKING_MAX_MS = 4500;
 // The "…" that follows a search with no result.
 export const NONE_MS = 2000;

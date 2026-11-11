@@ -176,19 +176,26 @@ function Body({
         <>
           <div className="card-main">
             <span className="card-word">
-              <button
-                type="button"
-                className="card-primary"
-                dir="auto"
-                aria-keyshortcuts={`${SHORTCUT}+1`}
-                {...(masked
-                  ? { 'aria-label': `Show the word that starts ${cue(content.primary.word)}` }
-                  : {})}
-                onClick={() => (masked ? onReveal() : onPick(content.id, content.primary.word))}
-              >
-                {masked ? cue(content.primary.word) : content.primary.word}
-              </button>
-              <Hint n={1} />
+              <span className="card-lead">
+                <button
+                  type="button"
+                  className="card-primary"
+                  dir="auto"
+                  aria-keyshortcuts={`${SHORTCUT}+1`}
+                  {...(masked
+                    ? { 'aria-label': `Show the word that starts ${cue(content.primary.word)}` }
+                    : {})}
+                  onClick={() => (masked ? onReveal() : onPick(content.id, content.primary.word))}
+                >
+                  {masked ? cue(content.primary.word) : content.primary.word}
+                </button>
+                <Hint n={1} />
+              </span>
+              {!masked && content.primary.continuation && (
+                <span className="card-cont" dir="auto">
+                  {content.primary.continuation}
+                </span>
+              )}
             </span>
             <span
               className="card-dots"
