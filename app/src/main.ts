@@ -252,6 +252,8 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       sandbox: true,
+      // An always-listening app must not be throttled when hidden or in the background.
+      backgroundThrottling: false,
     },
   });
   // Above normal windows and on every desktop. Deliberately NOT content-protected: the overlay
