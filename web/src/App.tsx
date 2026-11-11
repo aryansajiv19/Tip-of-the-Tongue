@@ -13,6 +13,7 @@ import { isFirstRun, markStarted } from './settings/firstRun';
 import { saveHelp, savedHelp, type HelpLevel } from './settings/help';
 import { applyTextSize, savedTextSize, type TextSize } from './settings/textSize';
 import { saveLanguage, savedLanguage, speechLang } from './settings/language';
+import { saveContinuations, savedContinuations } from './settings/continuations';
 import { saveMicId, savedMicId } from './settings/mic';
 import { useManualKey } from './audio/useManualKey';
 import { useMic } from './audio/useMic';
@@ -66,6 +67,7 @@ export function App() {
   const [micId, setMicId] = useState<string | null>(savedMicId);
   const [debugOn, setDebugOn] = useState(() => DEBUG && savedDebug());
   const [language, setLanguage] = useState<Language | null>(savedLanguage);
+  const [continuations, setContinuations] = useState(savedContinuations);
   const [textSize, setTextSize] = useState<TextSize>(savedTextSize);
   const [settingsOpen, setSettingsOpen] = useState(false);
   // Bumped by a tray command so an already open panel is opened afresh, and takes focus again.
@@ -276,6 +278,14 @@ export function App() {
     }
   }, [status, language, send]);
 
+  // Off is the server's default, so nothing is sent until it has been on; turning it off sends.
+  const continuationsSent = useRef(false);
+  useEffect(() => {
+    if (status !== 'connected' || (!continuations && !continuationsSent.current)) return;
+    continuationsSent.current = continuations;
+    send({ type: 'session.settings', continuations } satisfies ClientEvent);
+  }, [status, continuations, send]);
+
   const dismissCard = useCallback(() => dispatchCard({ type: 'dismiss' }), []);
   // Hovering or focusing the card keeps it on screen; leaving gives the timer back.
   const [held, setHeld] = useState(false);
@@ -442,6 +452,12 @@ export function App() {
               sensitivity={sensitivity}
               onSensitivity={changeSensitivity}
               language={language}
+              continuations={continuations}
+              onContinuations={(on) => {
+                saveContinuations(on);
+                setContinuations(on);
+              }}
+              hasNotes={(brief?.text ?? '').trim() !== ''}
               onLanguage={changeLanguage}
               textSize={textSize}
               onTextSize={changeTextSize}

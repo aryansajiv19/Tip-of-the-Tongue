@@ -43,7 +43,10 @@ Keep your keys private. The app stores them on your computer, encrypted with you
 
 <p align="center"><img src="assets/state-suggestion.png" width="420" alt="A suggested word with two alternatives"></p>
 
+<p align="center"><img src="assets/state-continuation.png" width="420" alt="The main word followed by a few muted words that probably come next"></p>
+
 - When you pause on a word, say a phrase like "what's it called", or describe the thing instead of naming it, the app asks Claude for likely words and shows up to three. The main word is large; the others are underneath. The dots show how sure the guess is.
+- If you turn on **Settings > Show how to continue** (off by default; it adds the next few words and is slightly less accurate), then when it is fairly sure how the sentence goes on, a few muted words follow the main word (for example "pharmacy" then "to pick up my tablets"). They are only a hint, only on the main word, and not shown in First sound mode. Picking the word, or saying it, is the word alone.
 - **Pick a word** by clicking it, pressing **⌘1, ⌘2 or ⌘3**, or simply saying it. The card shows a tick and goes away.
 - If it looked for a word and found none, you see a quiet **…** for about 2 seconds (a screen reader says "No word found"). That means "I tried", not an error.
 - **Dismiss** it with **Esc**. It also fades after about 6 seconds, but **stays while you hover over it or have it focused**.
@@ -77,6 +80,7 @@ Open it with the gear button.
 - **How I help.** _First sound_ shows just the start of the word, like "w…", and you tap it (or press ⌘ Return again) to see the whole word. _Whole word_ shows the words straight away. _Only when I ask_ shows nothing unless you press ⌘ Return or say something like "what's it called".
 - **How quickly I offer words.** _Calm_ waits for a longer pause and only speaks when quite sure. _Balanced_ is the default. _Eager_ speaks up sooner, even when less sure, and is wrong more often. The app also adapts to how fast you talk.
 - **Language.** English, Español, Français, Deutsch, हिन्दी, or **Mixed languages** if you switch between languages mid-sentence. Pick the one you speak most of the time; recognition is less accurate for accents and mixed speech.
+- **Show how to continue.** Off by default. When on, the main word is followed by a few muted words that probably come next. It is slightly less accurate, and works best with meeting notes loaded.
 - **Text size.** Normal or Large. Large makes the words and notes bigger; the control bar keeps its size.
 - **Theme.** Light or dark, following your computer's setting. There is nothing to switch in the app.
 - **Microphone.** Choose which microphone to use.

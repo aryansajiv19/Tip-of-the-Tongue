@@ -26,6 +26,10 @@ interface Props {
   sensitivity: Sensitivity | null;
   onSensitivity: (value: Sensitivity) => void;
   language: Language | null;
+  continuations: boolean;
+  onContinuations: (on: boolean) => void;
+  // Meeting notes are loaded.
+  hasNotes: boolean;
   onLanguage: (value: Language) => void;
   textSize: TextSize;
   onTextSize: (value: TextSize) => void;
@@ -187,6 +191,22 @@ export function SettingsPanel(p: Props & { onClose: () => void }) {
             {MIXED_HINT}
           </p>
         )}
+      </div>
+
+      <div className="settings-field">
+        <label className="settings-check">
+          <input
+            type="checkbox"
+            checked={p.continuations}
+            aria-describedby="settings-continue-hint"
+            onChange={(e) => p.onContinuations(e.target.checked)}
+          />
+          <span>Show how to continue</span>
+        </label>
+        <p id="settings-continue-hint" className="settings-hint">
+          Adds the next few words; slightly less accurate.
+          {p.hasNotes && <> Works best with meeting notes.</>}
+        </p>
       </div>
 
       <label className="settings-field">
