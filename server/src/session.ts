@@ -444,6 +444,26 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
     return pause;
   }
 
+  // The words of the user's current turn: after the last time another voice said a few words in a
+  // row. The other person's description ("the thing that takes the smoke away") followed by the
+  // user's fluent reply must not read as the user describing. A single stray label stays theirs.
+  function userTurn(words: readonly Word[]): readonly Word[] {
+    if (me === undefined) return words;
+    let cut = 0;
+    let run = 0;
+    let who: number | undefined;
+    words.forEach((w, i) => {
+      if (w.speaker === undefined || w.speaker === me) {
+        run = 0;
+        return;
+      }
+      run = w.speaker === who ? run + 1 : 1;
+      who = w.speaker;
+      if (run >= REAL_VOICE_WORDS) cut = i + 1;
+    });
+    return cut === 0 ? words : words.slice(cut);
+  }
+
   function check() {
     if (closed) return;
     if (offer) return trackOffer(offer);
@@ -469,7 +489,8 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
     if (endsWithAskForWord(words, language)) return askNow();
 
     const pause = paceFor(words);
-    const stuck = detectStuck(words, now(), { pauseMs: pause, language, ...voiceOpt() });
+    const turn = userTurn(words);
+    const stuck = detectStuck(turn, now(), { pauseMs: pause, language, ...voiceOpt() });
     const decision = stuck.stuck ? `${stuck.reason}@${stuck.sinceMs}` : 'no';
     if (decision !== lastDetector) {
       lastDetector = decision;
@@ -498,7 +519,12 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
       baseEarlyMs > 0 ? Math.max(baseEarlyMs, typicalStepMs(words, isOwnWord) ?? 0) : 0;
     // "Ask only" starts nothing early either.
     if (earlyMs > 0 && !spec && !askOnly && now() >= backoffUntilMs) {
-      const early = detectStuck(words, now(), { pauseMs: pause, earlyMs, language, ...voiceOpt() });
+      const early = detectStuck(turn, now(), {
+        pauseMs: pause,
+        earlyMs,
+        language,
+        ...voiceOpt(),
+      });
       if (early.stuck) startGuess(last.endMs, early.sinceMs, false, false, early.rejected);
     }
   }

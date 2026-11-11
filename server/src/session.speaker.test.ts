@@ -135,6 +135,20 @@ describe('who is speaking', () => {
     session.close();
   });
 
+  it("does not read the other person's description as the user describing", async () => {
+    const { session, events, say, introduce } = setup();
+    introduce();
+    await vi.advanceTimersByTimeAsync(3000);
+    say(1, 'the thing that takes the smoke away');
+    vi.advanceTimersByTime(400);
+    say(0, 'An extractor');
+    // Short of a plain pause stall: only the other person's description could make this one.
+    await vi.advanceTimersByTimeAsync(1000);
+    const reasons = events.flatMap((e) => (e.type === 'stuck.detected' ? [e.reason] : []));
+    expect(reasons).not.toContain('describing');
+    session.close();
+  });
+
   it('does not guess early for the other voice either', async () => {
     const guess = vi.fn(mockGuesser);
     const session = createSession(() => undefined, {
