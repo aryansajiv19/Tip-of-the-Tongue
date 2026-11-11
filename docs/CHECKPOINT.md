@@ -2,11 +2,25 @@
 
 Single source of current status. Updated by the lead session when a branch lands or a decision changes.
 
-_Last updated: 2026-11-10, close of day_
+_Last updated: 2026-11-11, overnight round_
 
 ## Now
 
-**Close of day 2026-11-10:** main is at the accuracy pass (#95) and its docs (#96); no PRs are open; all four workers are idle with their worktrees removed. The only worktrees left are main and the lead's `~/tott-eval`. Next is the owner's morning test with `npm run demo`, then small fixes from what it shows.
+**2026-11-11 overnight round (owner asleep, lead autonomous):** merged #103–#125. That covers:
+
+- the "…" no-match card (#104);
+- skills: topic packs plus custom (#106, #110), with the Topics block and optional continuations, default off and the prompt unchanged when off (#122, #125);
+- the multi-voice harness (#114, #121, #123), the loudness-based "me" plus `speaker.count` and the cue-phrase fix (#117), and the "That's me" button (#120);
+- README screenshots on a plain backdrop (#111, #112);
+- this close-out PR: hygiene, the track rename to **Real-time Assistance**, and the README/ai.md trim.
+
+Measured and dropped:
+
+- escalation to Sonnet failed its bars twice;
+- caching changed the prompt layout and cost about 3 points;
+- the specialist-term prompt line;
+- interim-label and user-turn detector fixes, which showed no live gain (#124 closed).
+  Live multi-voice on main: 85% strict, about 92% counting late-correct, voice pick 14/14.
 
 **Prototype status: runnable, and about 90% of the way to "a stranger can install and use it".** Everything planned for the ship round is merged (#67–#91). What remains is hand-checking by a person at the Mac (list below) and the parked items.
 
@@ -105,8 +119,8 @@ What works today:
 
 Scope (owner, 2026-11-10): a runnable, decent prototype, not a perfect product. Two tries, then park it. For now it is demoed from the owner's Mac with the `.env` keys (`npm run demo`); user accounts and own keys come later.
 
-1. The owner: a morning test, speaking normal English with `npm run demo` (keys in `.env`; no setup screen), then the hand-check above. Anything broken goes to a worker as a small fix.
-2. The owner: publish a GitHub release with the .dmg when ready; send the Hiya logo file (the tray icon and app icon are placeholders); rotate keys; delete stale remote branches from rebases (`feat/stt-languages`, `feat/guess-cap`, `feat/heartbeat`, `feat/language-setting`, `fix/deepgram-recovery`, `feat/ux-ship`, `feat/ux-ship-2`, `fix/timing-drift`, …).
-3. Parked: café-noise accuracy; other-speaker pop-ups without speaker labels; one holdout run before any final write-up; code signing and notarisation; a Windows build; a Deepgram "Could not reach" seen once on the first key check (not reproduced).
+1. The owner (2026-11-12): the brag demo video (longer, 80–90% of the product; plan G was paused overnight), GitHub polish, the write-up, then submit.
+2. The owner: send the Hiya logo file (the tray and app icons are placeholders); rotate keys; delete stale remote branches from rebases.
+3. Parked: similar voices merged by Deepgram's labels (s30); a describing stall read across the other person's words (#124 didn't help live); café-noise accuracy; other-speaker pop-ups without speaker labels; one holdout run before any final write-up; code signing and notarisation; a Windows build; a Deepgram "Could not reach" seen once on the first key check (not reproduced).
 
 Workers (all idle at the end of the round): c1 (detector, guesser, session), 4c (web UI), 93 (desktop app, packaging), 75 (`aryansajiv-75`, speech-to-text, audio, languages). One `~/tott-*` worktree each, removed after merge. Rules for the shared machine are in CLAUDE.md. Code map: `graphify-out/` in the lead's checkout.
