@@ -53,7 +53,7 @@ Optional settings are in `.env.example`: a personal profile file, sensitivity an
 
 - Guessing starts while you are still pausing; the pop-up typically appears 1.4–1.7 s after your last word.
 - When the sentence clearly goes on and the next few words are predictable, the offer can carry them after the word ("pharmacy to pick up my tablets"), to help you back into the flow; accepting still means the word alone.
-- If the quick model is unsure once you have really stalled, a stronger one gets a second try (2 s at most) instead of leaving you with nothing.
+- If the quick model is unsure when you are clearly searching for a word (a description, a filler, or a hand ask), a stronger one gets a second try (2 s at most) instead of leaving you with nothing.
 - It prefers the specific word and keeps phrases whole ("phone cable", "car park"). Say the word, click it, or press ⌘1/⌘2/⌘3.
 - When it cannot find the word it says so with a quiet "…" for a moment, instead of just vanishing.
 - Meeting notes (PDF, Markdown or text), "About you" and words you have accepted before give it context. Words are remembered on this device only, never transcripts.
