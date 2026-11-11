@@ -131,6 +131,7 @@ npm run e2e                                                      # Playwright UI
 npm run eval -- --set hard --split dev --guesser claude          # word-guess evaluation
 npm run eval -- --set specialist --skills match --guesser claude # topic packs on/off/wrong: --skills match|off|wrong
 npm run scenarios -w eval -- --guesser claude --split dev       # whole-conversation replay
+npm run bench                                                    # the standard suite, compared with the last run (--live adds real speech)
 ```
 
 ```
