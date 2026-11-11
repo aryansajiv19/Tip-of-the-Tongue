@@ -4,6 +4,7 @@ import { TranscriptBuffer } from './transcript/buffer.js';
 import { detectStuck, type VoiceInfo } from './stuck/detect.js';
 import { endsWithAskForWord } from './stuck/manual.js';
 import { effectivePauseMs, typicalStepMs } from './stuck/pace.js';
+import { LevelLog, pickByLevel } from './stuck/loudness.js';
 import { speakerOfFirstUtterance } from './stuck/speaker.js';
 import { mergeProfiles, type Profile, type UiProfile } from './guess/profile.js';
 import { briefForGuesser, LONG_BRIEF_CHARS, type GlossaryBuilder } from './guess/glossary.js';
@@ -150,14 +151,26 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
   // accepted, or a word they asked for by hand).
   // Whose voice is the user's is learned again: after a new Deepgram stream (it numbers voices from
   // 0 again) and after a new conversation.
+  // The user's own choice (an accepted pop-up, a hand ask) stands: loudness no longer changes it.
+  // A new stream numbers voices afresh, so only words from after it say anything about loudness.
+  const levels = new LevelLog();
+  let pinned = false;
+  // The voice of the first words is only a first guess: loudness may replace it readily.
+  let firstGuess = false;
+  let numbersFromMs = -Infinity;
   function forgetMe(why: 'new stream' | 'new conversation') {
+    pinned = false;
+    firstGuess = false;
+    numbersFromMs = now();
     if (me === undefined) return;
     me = undefined;
     debug(() => ({ kind: 'speaker', me: undefined, why }));
   }
 
-  function setMe(speaker: number, why: 'first words' | 'accepted' | 'manual') {
+  function setMe(speaker: number, why: 'first words' | 'loudest' | 'accepted' | 'manual') {
+    if (why === 'accepted' || why === 'manual') pinned = true;
     if (speaker === me) return;
+    firstGuess = why === 'first words';
     me = speaker;
     debug(() => ({ kind: 'speaker', me: speaker, why }));
   }
@@ -588,7 +601,11 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
         debug(sttInfo);
       } else if (event.type === 'guess.picked') pick(event.id, event.word);
       else if (event.type === 'voice.activity') onVoice(event.voiced, event.atMs);
-      else if (event.type === 'stuck.manual') askNow();
+      else if (event.type === 'voice.level') levels.add(event.atMs, event.levels);
+      else if (event.type === 'speaker.mine') {
+        const last = buffer.words().at(-1)?.speaker;
+        if (last !== undefined) setMe(last, 'manual');
+      } else if (event.type === 'stuck.manual') askNow();
       else if (event.type === 'session.reset') reset();
       else {
         const words = afterReset(event.words);
@@ -605,6 +622,14 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
           buffer.applyFinal(words);
           const first = me === undefined ? speakerOfFirstUtterance(words) : undefined;
           if (first !== undefined) setMe(first, 'first words');
+          const loud = pinned
+            ? undefined
+            : pickByLevel(
+                buffer.words().filter((w) => w.startMs >= numbersFromMs),
+                levels,
+                firstGuess ? undefined : me,
+              );
+          if (loud !== undefined) setMe(loud, 'loudest');
         }
       }
       check();
