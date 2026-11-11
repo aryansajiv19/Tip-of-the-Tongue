@@ -53,7 +53,7 @@ describe('session pipeline', () => {
     expect(offer?.type === 'guess.offered' && offer.candidates[0]?.word).toBe('pharmacy');
     // The continuation rides along on the offer; accepting still means the word alone.
     expect(offer?.type === 'guess.offered' && offer.candidates[0]?.continuation).toBe(
-      'to pick up my tablets',
+      'to collect my tablets',
     );
 
     say('pharmacy');
