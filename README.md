@@ -3,9 +3,9 @@
 **Real-time help when a word escapes you.** You stall mid-sentence, and about 1.5 s later the word you were reaching for appears in a small overlay. The rest of the time it stays quiet.
 
 <p align="center">
-  <a href="docs/assets/demo.mp4"><img src="docs/assets/demo.gif" width="760" alt="Demo: the speaker stalls on 'the thing you fly in', the overlay offers 'plane', and nothing pops up during fluent speech"></a>
+  <a href="docs/assets/demo.mp4"><img src="docs/assets/demo.gif" width="760" alt="Demo: the speaker stalls on 'the thing you fly in' and the overlay offers 'plane'; it stays quiet during fluent speech, can show how the sentence continues, shows '…' when it has no good guess, and covers help levels, skills, following your voice on a call, languages, privacy and text size"></a>
   <br>
-  <sub><a href="docs/assets/demo.mp4">Watch the 25-second demo with sound</a></sub>
+  <sub><a href="docs/assets/demo.mp4">Watch the 70-second demo with sound</a></sub>
 </p>
 
 <p align="center">

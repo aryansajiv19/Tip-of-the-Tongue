@@ -8,7 +8,7 @@ Which AI tools did what, and how the owner (Aryan Sajiv) directed and checked th
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
 | Claude Code (Claude Opus and Sonnet) | Building and testing the project: code, unit and end-to-end tests, evaluation sets and runners, docs                |
 | Claude Haiku (inside the product)    | Guessing the word the speaker is reaching for, with confidence scores, and extracting key terms from long documents |
-| The brag skill with Hyperframes      | The 25-second demo video at the top of the README, built from the product's own styles                              |
+| The brag skill with Hyperframes      | The 70-second demo video at the top of the README, built from the product's own styles                              |
 | Deepgram Nova-3 (inside the product) | Streaming speech-to-text with word timings, filler words and speaker labels                                         |
 
 ## How the owner directed the work
