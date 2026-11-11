@@ -4,6 +4,9 @@ import type { Candidate } from '../events.js';
 const MAX_CANDIDATES = 3;
 // A word or a short name. Anything longer is the model rambling, and would not fit the pop-up.
 const MAX_WORD_CHARS = 60;
+// The words that may follow the guess: a short phrase, never a sentence.
+const MAX_CONTINUATION_CHARS = 40;
+const MAX_CONTINUATION_WORDS = 5;
 const abstain = (): { candidates: Candidate[]; abstain: boolean } => ({
   candidates: [],
   abstain: true,
@@ -13,6 +16,14 @@ const abstain = (): { candidates: Candidate[]; abstain: boolean } => ({
 const CandidateSchema = z.object({
   word: z.string().trim().min(1).max(MAX_WORD_CHARS),
   confidence: z.union([z.number(), z.string().trim().min(1).pipe(z.coerce.number())]),
+  // Anything that is not a short phrase is dropped; the word itself is still good.
+  continuation: z
+    .string()
+    .trim()
+    .max(MAX_CONTINUATION_CHARS)
+    .refine((t) => t.split(/\s+/).length <= MAX_CONTINUATION_WORDS)
+    .optional()
+    .catch(undefined),
 });
 const ReplySchema = z.object({
   candidates: z.array(z.unknown()).default([]),
@@ -61,6 +72,7 @@ export function parseGuess(text: string): { candidates: Candidate[]; abstain: bo
     valid.push({
       word: item.data.word,
       confidence: Math.min(1, Math.max(0, item.data.confidence)),
+      ...(item.data.continuation ? { continuation: item.data.continuation } : {}),
     });
   }
 

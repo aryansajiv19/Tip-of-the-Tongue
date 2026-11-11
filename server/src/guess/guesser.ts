@@ -6,12 +6,13 @@ import { profileForPrompt } from './profile.js';
 import type { GuessInput, GuessResult, Guesser } from './types.js';
 
 const SYSTEM = `Someone has lost a word mid-conversation. Guess the word they are reaching for.
-Reply with JSON only: {"candidates":[{"word":"...","confidence":0.0}],"abstain":false}
+Reply with JSON only: {"candidates":[{"word":"...","confidence":0.0,"continuation":"..."}],"abstain":false}
 "…" marks a pause in their speech. Up to 3 candidates, confidence 0 to 1. Keep multi-word names together as one candidate (e.g. "post office"). If you are not fairly sure, or they are not clearly searching for a specific word (the sentence is complete, or they are just thinking), reply {"candidates":[],"abstain":true}. A finished sentence is never a search. Offer a word only if it completes what they were just saying, not because it came up earlier in the call. A wrong guess is worse than none.
+"continuation" is optional: the next few words (at most 5) that would follow the word in this sentence. Give it only when the sentence clearly goes on and those words are predictable from the conversation (for example "to pick up my tablets"); otherwise leave it out. Never invent one.
 When they describe the thing instead of naming it ("the thing that…", "a place where…", "the one with…"), they are searching: the word must be exactly what the description defines, not just something on the same topic. Offer the ordinary word a speaker would use, the specific one rather than a vague cousin ("allergic" not "sensitive", "refund" not "receipt"). Give a compound whole when the description points to one ("phone cable", "price list", "car park", "control group").`;
 
-// 3 candidates of a few words each is about 70 tokens of JSON.
-const MAX_TOKENS = 100;
+// 3 candidates of a few words each, some with a continuation, is about 130 tokens of JSON.
+const MAX_TOKENS = 160;
 
 const LANGUAGE_NAMES = { es: 'Spanish', fr: 'French', de: 'German', hi: 'Hindi' } as const;
 

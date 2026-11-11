@@ -34,7 +34,11 @@ describe('mock guesser (no api key)', () => {
   it('offers pharmacy for the demo line', async () => {
     const r = await guess(input);
     expect(r.abstain).toBe(false);
-    expect(r.candidates[0]).toEqual({ word: 'pharmacy', confidence: 0.85 });
+    expect(r.candidates[0]).toEqual({
+      word: 'pharmacy',
+      confidence: 0.85,
+      continuation: 'to pick up my tablets',
+    });
   });
 
   it('is deterministic', async () => {
@@ -99,7 +103,7 @@ describe('Claude guesser', () => {
       model: 'test-model',
       thinking: { type: 'disabled' },
     });
-    expect(params.max_tokens).toBeLessThanOrEqual(100);
+    expect(params.max_tokens).toBeLessThanOrEqual(160);
     expect(params.max_tokens).toBeGreaterThanOrEqual(70);
   });
 
@@ -234,8 +238,8 @@ describe('modelOptions', () => {
     expect(o.max_tokens).toBeGreaterThan(1000);
   });
   it('keeps the small output cap for the fast models', () => {
-    expect(modelOptions('claude-haiku-5-5').max_tokens).toBeLessThanOrEqual(100);
-    expect(modelOptions('claude-sonnet-5-5').max_tokens).toBeLessThanOrEqual(100);
+    expect(modelOptions('claude-haiku-5-5').max_tokens).toBeLessThanOrEqual(160);
+    expect(modelOptions('claude-sonnet-5-5').max_tokens).toBeLessThanOrEqual(160);
   });
 });
 

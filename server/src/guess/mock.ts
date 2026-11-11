@@ -7,7 +7,7 @@ const RULES: { all: string[]; candidates: Candidate[] }[] = [
   {
     all: ['medicine'],
     candidates: [
-      { word: 'pharmacy', confidence: 0.85 },
+      { word: 'pharmacy', confidence: 0.85, continuation: 'to pick up my tablets' },
       { word: 'chemist', confidence: 0.6 },
       { word: 'hospital', confidence: 0.25 },
     ],
@@ -29,7 +29,7 @@ const RULES: { all: string[]; candidates: Candidate[] }[] = [
   {
     all: ['hold over your head'],
     candidates: [
-      { word: 'umbrella', confidence: 0.9 },
+      { word: 'umbrella', confidence: 0.9, continuation: 'because it is raining' },
       { word: 'hat', confidence: 0.2 },
     ],
   },

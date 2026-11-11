@@ -194,3 +194,29 @@ describe('a model that rambles or misbehaves', () => {
     expect(result).toEqual({ candidates: [], abstain: true });
   });
 });
+
+describe('continuation', () => {
+  const reply = (continuation: unknown) =>
+    JSON.stringify({ candidates: [{ word: 'pharmacy', confidence: 0.8, continuation }] });
+
+  it('keeps a short continuation, trimmed', () => {
+    expect(parseGuess(reply('  to pick up my tablets ')).candidates[0]).toEqual({
+      word: 'pharmacy',
+      confidence: 0.8,
+      continuation: 'to pick up my tablets',
+    });
+  });
+
+  it('drops a continuation that is too long or not text, but keeps the word', () => {
+    for (const bad of ['one two three four five six', 'x'.repeat(41), 7, null, ['a']]) {
+      expect(parseGuess(reply(bad)).candidates).toEqual([{ word: 'pharmacy', confidence: 0.8 }]);
+    }
+  });
+
+  it('has no continuation key when the model gave none or an empty one', () => {
+    expect(parseGuess(reply('')).candidates[0]).not.toHaveProperty('continuation');
+    expect(
+      parseGuess(JSON.stringify({ candidates: [{ word: 'a', confidence: 1 }] })).candidates[0],
+    ).not.toHaveProperty('continuation');
+  });
+});
