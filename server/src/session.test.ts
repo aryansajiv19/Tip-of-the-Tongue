@@ -12,6 +12,7 @@ function setup(
     speculateAfterMs?: number;
     maxCallsPerMinute?: number;
     trace?: (r: Record<string, unknown>) => void;
+    escalate?: Guesser;
   } = {},
 ) {
   const events: ServerEvent[] = [];
@@ -1165,6 +1166,122 @@ describe('session trace', () => {
     const { session, say, events } = setup();
     say('hello there');
     expect(events.some((e) => e.type === 'debug')).toBe(false);
+    session.close();
+  });
+});
+
+describe('escalation to a stronger guesser', () => {
+  const abstainer: Guesser = () => Promise.resolve({ candidates: [], abstain: true, latencyMs: 0 });
+  const unsure: Guesser = () =>
+    Promise.resolve({
+      candidates: [{ word: 'pharmasy', confidence: 0.3 }],
+      abstain: false,
+      latencyMs: 0,
+    });
+  const stronger = (word: string | undefined) =>
+    vi.fn<Guesser>(() =>
+      Promise.resolve(
+        word
+          ? { candidates: [{ word, confidence: 0.8 }], abstain: false, latencyMs: 0 }
+          : { candidates: [], abstain: true, latencyMs: 0 },
+      ),
+    );
+  const STALL = 'I need to go to the the place where you get medicine';
+  const offers = (events: ServerEvent[]) => events.filter((e) => e.type === 'guess.offered').length;
+
+  it('asks once on a confirmed stall the first guesser abstained on, and offers its word', async () => {
+    const escalate = stronger('pharmacy');
+    const { session, events, say } = setup(abstainer, { escalate });
+    say(STALL);
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(escalate).toHaveBeenCalledTimes(1);
+    const offer = events.find((e) => e.type === 'guess.offered');
+    expect(offer?.type === 'guess.offered' && offer.candidates[0]?.word).toBe('pharmacy');
+    session.close();
+  });
+
+  it('also asks when the first guess is below the gate', async () => {
+    const escalate = stronger('pharmacy');
+    const { session, events, say } = setup(unsure, { escalate });
+    say(STALL);
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(escalate).toHaveBeenCalledTimes(1);
+    expect(offers(events)).toBe(1);
+    session.close();
+  });
+
+  it('does not ask when the first guess is confident enough', async () => {
+    const escalate = stronger('knife');
+    const { session, events, say } = setup(mockGuesser, { escalate });
+    say(STALL);
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(escalate).not.toHaveBeenCalled();
+    expect(offers(events)).toBe(1);
+    session.close();
+  });
+
+  it('stays silent when the stronger guesser abstains too', async () => {
+    const escalate = stronger(undefined);
+    const { session, events, say, types } = setup(abstainer, { escalate });
+    say(STALL);
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(escalate).toHaveBeenCalledTimes(1);
+    expect(offers(events)).toBe(0);
+    expect(types()).toContain('guess.idle');
+    session.close();
+  });
+
+  it('never asks for an early guess, only once the stall is confirmed', async () => {
+    const escalate = stronger('pharmacy');
+    const { session, say } = setup(abstainer, { escalate, speculateAfterMs: 300 });
+    say('so the plan for the week is to go to the shops');
+    await vi.advanceTimersByTimeAsync(900);
+    expect(escalate).not.toHaveBeenCalled();
+    session.close();
+  });
+
+  it('does not ask after a failed call: the provider is struggling', async () => {
+    const failing: Guesser = () =>
+      Promise.resolve({ candidates: [], abstain: true, latencyMs: 0, error: true });
+    const escalate = stronger('pharmacy');
+    const { session, say } = setup(failing, { escalate });
+    say(STALL);
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(escalate).not.toHaveBeenCalled();
+    session.close();
+  });
+
+  it('drops the answer if the speaker carries on while it is pending', async () => {
+    let release: () => void = () => undefined;
+    const slow = vi.fn<Guesser>(
+      () =>
+        new Promise((resolve) => {
+          release = () =>
+            resolve({
+              candidates: [{ word: 'pharmacy', confidence: 0.8 }],
+              abstain: false,
+              latencyMs: 0,
+            });
+        }),
+    );
+    const { session, events, say } = setup(abstainer, { escalate: slow });
+    say(STALL);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(slow).toHaveBeenCalledTimes(1);
+    say('actually never mind it was the post office');
+    release();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(offers(events)).toBe(0);
+    session.close();
+  });
+
+  it('counts toward the call cap', async () => {
+    const escalate = stronger('pharmacy');
+    // One call allowed a minute: the first guess uses it, so there is none left to escalate with.
+    const { session, say } = setup(abstainer, { escalate, maxCallsPerMinute: 1 });
+    say(STALL);
+    await vi.advanceTimersByTimeAsync(2500);
+    expect(escalate).not.toHaveBeenCalled();
     session.close();
   });
 });

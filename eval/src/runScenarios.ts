@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { config } from '../../server/src/config.js';
-import { createGuesser } from '../../server/src/guess/guesser.js';
+import { createGuesser, ESCALATE_BUDGET_MS } from '../../server/src/guess/guesser.js';
 import { loadProfile } from '../../server/src/guess/profile.js';
 import { dataPath } from './dataset.js';
 import { layoutScenario } from './layout.js';
@@ -36,6 +36,14 @@ async function main(): Promise<void> {
     model,
     timeoutMs: config.guessTimeoutMs,
   });
+  const escalate =
+    kind === 'claude' && config.anthropicApiKey && config.anthropicEscalateModel
+      ? createGuesser({
+          apiKey: config.anthropicApiKey,
+          model: config.anthropicEscalateModel,
+          timeoutMs: ESCALATE_BUDGET_MS,
+        })
+      : undefined;
   const profile = await loadProfile(dataPath('profiles/example.json'));
   const scenarios = await loadScenarios(split);
 
@@ -46,7 +54,7 @@ async function main(): Promise<void> {
       for (let sc = queue.shift(); sc; sc = queue.shift()) {
         const placed = layoutScenario(sc, values.diarize);
         const startedAt = Date.now();
-        const result = await replay(sc, placed, guess, sc.profile ? profile : undefined);
+        const result = await replay(sc, placed, guess, sc.profile ? profile : undefined, escalate);
         const errors = result.trace.guesses.filter((g) => g.error).length;
         console.error(
           `${sc.id} done in ${Math.round((Date.now() - startedAt) / 1000)} s: ${result.guessCalls} guess calls, ${errors} failed or timed out`,

@@ -5,7 +5,7 @@ import websocket from '@fastify/websocket';
 import { config } from './config.js';
 import { ClientEventSchema, type ServerEvent } from './events.js';
 import { createGlossaryBuilder, type GlossaryBuilder } from './guess/glossary.js';
-import { createGuesser } from './guess/guesser.js';
+import { createGuesser, ESCALATE_BUDGET_MS } from './guess/guesser.js';
 import type { Profile } from './guess/profile.js';
 import type { Guesser } from './guess/types.js';
 import { serveFolder } from './static.js';
@@ -68,6 +68,17 @@ export async function buildApp(deps: AppDeps = {}) {
       onFailure: (info) => app.log.warn(info, 'guesser: Claude call failed'),
       ...(config.anthropicApiKey ? { apiKey: config.anthropicApiKey } : {}),
     });
+
+  // The stronger second opinion for a confirmed stall Haiku could not answer; off without a key.
+  const escalate =
+    !deps.guess && config.anthropicApiKey && config.anthropicEscalateModel
+      ? createGuesser({
+          model: config.anthropicEscalateModel,
+          timeoutMs: ESCALATE_BUDGET_MS,
+          onFailure: (info) => app.log.warn(info, 'guesser: escalation call failed'),
+          apiKey: config.anthropicApiKey,
+        })
+      : undefined;
 
   // Injected guessers (tests) count as real ones.
   const guesserKind = deps.guess || config.anthropicApiKey ? 'claude' : 'mock';
@@ -159,6 +170,7 @@ export async function buildApp(deps: AppDeps = {}) {
       onKeytermsChange: () => stt?.updateKeyterms(),
       onLanguageChange: (language) => stt?.setLanguage(language),
       guess,
+      ...(escalate ? { escalate } : {}),
       buildGlossary,
       pauseMs: config.stuckPauseMs,
       minConfidence: config.gateMinConfidence,

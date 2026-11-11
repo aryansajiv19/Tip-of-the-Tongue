@@ -33,10 +33,11 @@ You need Node 22 (`nvm use`) and a Mac for the desktop overlay. On Windows or Li
 
 No keys? `npm run dev` runs the web version from a clean clone with a mock guesser and the browser's speech recognition (Chrome or Edge) at http://localhost:5173.
 
-| Variable            | What it enables                                                                                                                                       |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY` | Real word guessing with Claude (default model `claude-haiku-5-5`). Without it, a mock guesser runs.                                                   |
-| `DEEPGRAM_API_KEY`  | Streaming speech-to-text (Nova-3) with word timings, filler words and speaker labels. Without it, browser speech is used. The desktop app needs this. |
+| Variable                   | What it enables                                                                                                                                       |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`        | Real word guessing with Claude (default model `claude-haiku-5-5`). Without it, a mock guesser runs.                                                   |
+| `ANTHROPIC_ESCALATE_MODEL` | A stronger model (default `claude-sonnet-5-5`; empty turns it off) asked once, within 2 s, when the quick one is unsure on a confirmed stall.         |
+| `DEEPGRAM_API_KEY`         | Streaming speech-to-text (Nova-3) with word timings, filler words and speaker labels. Without it, browser speech is used. The desktop app needs this. |
 
 Optional settings are in `.env.example`: a personal profile file, sensitivity and the allowed browser origins.
 
@@ -52,6 +53,7 @@ Optional settings are in `.env.example`: a personal profile file, sensitivity an
 
 - Guessing starts while you are still pausing; the pop-up typically appears 1.4–1.7 s after your last word.
 - When the sentence clearly goes on and the next few words are predictable, the offer can carry them after the word ("pharmacy to pick up my tablets"), to help you back into the flow; accepting still means the word alone.
+- If the quick model is unsure once you have really stalled, a stronger one gets a second try (2 s at most) instead of leaving you with nothing.
 - It prefers the specific word and keeps phrases whole ("phone cable", "car park"). Say the word, click it, or press ⌘1/⌘2/⌘3.
 - Meeting notes (PDF, Markdown or text), "About you" and words you have accepted before give it context. Words are remembered on this device only, never transcripts.
 

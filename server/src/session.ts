@@ -7,7 +7,7 @@ import { effectivePauseMs, typicalStepMs } from './stuck/pace.js';
 import { speakerOfFirstUtterance } from './stuck/speaker.js';
 import { mergeProfiles, type Profile, type UiProfile } from './guess/profile.js';
 import { briefForGuesser, LONG_BRIEF_CHARS, type GlossaryBuilder } from './guess/glossary.js';
-import type { GuessResult, Guesser } from './guess/types.js';
+import type { GuessInput, GuessResult, Guesser } from './guess/types.js';
 import { decideOffer } from './gate/gate.js';
 import { checkAcceptance } from './accept/accept.js';
 import { normalizePhrase } from './gate/normalize.js';
@@ -35,6 +35,9 @@ export interface SessionOptions {
   now?: () => number;
   // Silence after which a guess starts early, before the stall is confirmed. 0 or unset: off.
   speculateAfterMs?: number;
+  // A stronger guesser, asked once on a confirmed stall where `guess` abstained or was below
+  // `minConfidence`, within its own time budget. Unset: off. Counts toward the call cap.
+  escalate?: Guesser;
   // Cap on Claude calls per minute; the default is MAX_CALLS_PER_MINUTE.
   maxCallsPerMinute?: number;
   // Timing and cost numbers (stall to offer, speculative calls wasted).
@@ -55,6 +58,8 @@ interface Speculation {
   sinceMs: number;
   abort: AbortController;
   confirmed: boolean;
+  // The stronger guesser has been asked (or is being) for this stall.
+  escalated?: boolean;
   // Asked for by the user (Space or "what's the word"): the offer cooldown does not apply.
   manual?: boolean;
   // A word they said and took back, which must not be offered.
@@ -280,6 +285,59 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
     opts.log?.({ speculated, discarded });
   }
 
+  function guessInput(rejected?: string): GuessInput {
+    const merged = profile();
+    return {
+      language,
+      conversation: buffer.markedText(CONVERSATION_WORDS),
+      stuckPhrase: buffer.markedText(STUCK_WORDS),
+      ...(rejected !== undefined ? { rejected: [rejected] } : {}),
+      ...(brief ? { brief: briefForGuesser(brief, glossary) } : {}),
+      ...(merged ? { profile: merged } : {}),
+    };
+  }
+
+  // On a confirmed stall where the first guesser came up short, asks the stronger one once and
+  // gates its answer instead. The stall stays in `spec`, so speech that goes on discards it.
+  function escalate(current: Speculation, first: GuessResult): boolean {
+    const stronger = opts.escalate;
+    const short = first.abstain || (first.candidates[0]?.confidence ?? 0) < minConfidence;
+    callTimes = callTimes.filter((t) => now() - t < 60_000);
+    if (
+      !stronger ||
+      current.escalated ||
+      first.error ||
+      !short ||
+      callTimes.length >= (opts.maxCallsPerMinute ?? MAX_CALLS_PER_MINUTE)
+    )
+      return false;
+    current.escalated = true;
+    callTimes.push(now());
+    spec = current;
+    stronger(guessInput(current.rejected), current.abort.signal)
+      .catch((err: unknown) => {
+        opts.onError?.(err);
+        return first;
+      })
+      .then((second) => {
+        const stale = closed || spec !== current;
+        debug(() => ({
+          kind: 'guess',
+          speculative: false,
+          stale,
+          escalated: true,
+          candidates: second.candidates,
+          abstain: second.abstain,
+          error: second.error === true,
+          latencyMs: second.latencyMs,
+        }));
+        if (stale) return;
+        offerFrom(current, second.error || second.abstain ? first : second);
+      })
+      .catch((err: unknown) => opts.onError?.(err));
+    return true;
+  }
+
   // Starts a guess and keeps it in `spec`. Whoever confirms the stall later offers it.
   function startGuess(
     lastEndMs: number,
@@ -307,20 +365,9 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
     }
     callTimes.push(now());
     if (!confirmed) speculated++;
-    const merged = profile();
     const failed: GuessResult = { candidates: [], abstain: true, latencyMs: 0, error: true };
     opts
-      .guess(
-        {
-          language,
-          conversation: buffer.markedText(CONVERSATION_WORDS),
-          stuckPhrase: buffer.markedText(STUCK_WORDS),
-          ...(rejected !== undefined ? { rejected: [rejected] } : {}),
-          ...(brief ? { brief: briefForGuesser(brief, glossary) } : {}),
-          ...(merged ? { profile: merged } : {}),
-        },
-        mine.abort.signal,
-      )
+      .guess(guessInput(rejected), mine.abort.signal)
       .catch((err: unknown) => {
         // The guesser promises never to throw; if it does, stay silent rather than crash.
         opts.onError?.(err);
@@ -336,6 +383,9 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
           abstain: result.abstain,
           error: result.error === true,
           latencyMs: result.latencyMs,
+          ...(result.cacheRead !== undefined
+            ? { cacheRead: result.cacheRead, cacheWrite: result.cacheWrite ?? 0 }
+            : {}),
         }));
         // Stale (new words arrived, or closed): nothing to do, not even count a failure.
         if (stale) return;
@@ -347,6 +397,7 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
   }
 
   function offerFrom(current: Speculation, result: GuessResult) {
+    if (escalate(current, result)) return;
     spec = undefined;
     const decision = decideOffer(
       result,

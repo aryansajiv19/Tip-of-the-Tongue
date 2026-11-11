@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it } from 'vitest';
-import { buildPrompt, createGuesser, modelOptions } from './guesser.js';
+import { buildPrompt, createGuesser, modelOptions, stablePrompt } from './guesser.js';
 import { ProfileSchema } from './profile.js';
 
 const cfg = { model: 'test-model', timeoutMs: 50 };
@@ -245,7 +245,7 @@ describe('modelOptions', () => {
 
 describe('language in the prompt', () => {
   const line = (language?: Parameters<typeof buildPrompt>[0]['language']) =>
-    buildPrompt({ ...input, ...(language ? { language } : {}) });
+    stablePrompt({ ...input, ...(language ? { language } : {}) });
 
   it('English asks for the English word, never the foreign one', () => {
     expect(line()).toContain('offer the English word for it, never the foreign word');
@@ -266,7 +266,8 @@ describe('buildPrompt', () => {
       pets: { dog: 'Biscuit' },
       frequentlyLostWords: ['kettle'],
     });
-    const p = buildPrompt({ ...input, brief: 'Q3 review with Northwind', profile });
+    const i = { ...input, brief: 'Q3 review with Northwind', profile };
+    const p = `${stablePrompt(i)}\n${buildPrompt(i)}`;
     expect(p).toContain('Northwind');
     expect(p).toContain('Biscuit');
     expect(p).toContain('kettle');
@@ -274,8 +275,51 @@ describe('buildPrompt', () => {
   });
 
   it('leaves out the brief and profile when absent', () => {
-    const p = buildPrompt(input);
+    const p = `${stablePrompt(input)}\n${buildPrompt(input)}`;
     expect(p).not.toContain('brief');
     expect(p).not.toContain('personal');
+  });
+});
+
+describe('prompt caching', () => {
+  const json = '{"candidates":[{"word":"pharmacy","confidence":0.8}],"abstain":false}';
+
+  it('puts the brief, profile and language in a cached system block, and the conversation in the message', async () => {
+    let params: { system?: unknown; messages?: { content: string }[] } = {};
+    const guess = createGuesser(
+      cfg,
+      fakeClient((p) => {
+        params = p as typeof params;
+        return Promise.resolve(streamOf([json]));
+      }),
+    );
+    await guess({ ...input, brief: 'Q3 review with Northwind' });
+    const system = params.system as { text: string; cache_control?: unknown }[];
+    expect(system).toHaveLength(2);
+    expect(system[0]?.cache_control).toBeUndefined();
+    expect(system[1]?.text).toContain('Northwind');
+    expect(system[1]?.cache_control).toEqual({ type: 'ephemeral' });
+    expect(params.messages?.[0]?.content).toContain('the place where you get medicine');
+    expect(params.messages?.[0]?.content).not.toContain('Northwind');
+  });
+
+  it('reports the cache tokens the API says it read and wrote', async () => {
+    async function* withUsage() {
+      yield {
+        type: 'message_start',
+        message: { usage: { cache_read_input_tokens: 900, cache_creation_input_tokens: 0 } },
+      };
+      yield* streamOf([json]);
+    }
+    const r = await createGuesser(
+      cfg,
+      fakeClient(() => Promise.resolve(withUsage())),
+    )(input);
+    expect(r).toMatchObject({ cacheRead: 900, cacheWrite: 0 });
+  });
+
+  it('has no cache fields when the stream sends no usage', async () => {
+    const r = await createGuesser(cfg, streamClient([json]))(input);
+    expect(r).not.toHaveProperty('cacheRead');
   });
 });

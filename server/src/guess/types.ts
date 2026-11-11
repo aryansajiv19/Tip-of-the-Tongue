@@ -16,6 +16,10 @@ export interface GuessResult {
   candidates: Candidate[];
   abstain: boolean;
   latencyMs: number;
+  // Prompt tokens read from / written to the cache on this call (Claude only). Both 0 means the
+  // prefix was too short to cache.
+  cacheRead?: number;
+  cacheWrite?: number;
   // Set when the provider failed or timed out, as opposed to the model choosing to abstain.
   error?: true;
   // The HTTP status of an Anthropic error, and the wait it asked for (retry-after), if any.

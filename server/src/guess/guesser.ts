@@ -9,7 +9,10 @@ const SYSTEM = `Someone has lost a word mid-conversation. Guess the word they ar
 Reply with JSON only: {"candidates":[{"word":"...","confidence":0.0,"continuation":"..."}],"abstain":false}
 "…" marks a pause in their speech. Up to 3 candidates, confidence 0 to 1. Keep multi-word names together as one candidate (e.g. "post office"). If you are not fairly sure, or they are not clearly searching for a specific word (the sentence is complete, or they are just thinking), reply {"candidates":[],"abstain":true}. A finished sentence is never a search. Offer a word only if it completes what they were just saying, not because it came up earlier in the call. A wrong guess is worse than none.
 "continuation" is optional: the next few words (at most 5) that would follow the word in this sentence. Give it only when the sentence clearly goes on and those words are predictable from the conversation (for example "to pick up my tablets"); otherwise leave it out. Never invent one.
-When they describe the thing instead of naming it ("the thing that…", "a place where…", "the one with…"), they are searching: the word must be exactly what the description defines, not just something on the same topic. Offer the ordinary word a speaker would use, the specific one rather than a vague cousin ("allergic" not "sensitive", "refund" not "receipt"). Give a compound whole when the description points to one ("phone cable", "price list", "car park", "control group").`;
+When they describe the thing instead of naming it ("the thing that…", "a place where…", "the one with…"), they are searching: the word must be exactly what the description defines, not just something on the same topic. Offer the ordinary word a speaker would use, the specific one rather than a vague cousin ("allergic" not "sensitive", "refund" not "receipt"). If what they describe is a specialist's term (a medical, legal, technical or financial word), give that exact term, not its everyday near-synonym ("amortisation" not "depreciation", "firmware" not "software"). Give a compound whole when the description points to one ("phone cable", "price list", "car park", "control group").`;
+
+// How long the stronger model gets when Haiku came up short on a confirmed stall.
+export const ESCALATE_BUDGET_MS = 2000;
 
 // 3 candidates of a few words each, some with a continuation, is about 130 tokens of JSON.
 const MAX_TOKENS = 160;
@@ -25,13 +28,22 @@ export function languageLine(language: Language = 'en'): string {
   return `They speak ${LANGUAGE_NAMES[language]}. Offer words in ${LANGUAGE_NAMES[language]}, not English.`;
 }
 
-export function buildPrompt(input: GuessInput): string {
+// What stays the same from call to call within a session: the brief, the personal words and the
+// language. It follows SYSTEM in the system prompt, and the first cache breakpoint sits after it.
+export function stablePrompt(input: GuessInput): string {
   const parts: string[] = [];
   if (input.brief) parts.push(`Meeting brief:\n${input.brief}`);
   if (input.profile) parts.push(`Their personal words: ${profileForPrompt(input.profile)}`);
   parts.push(languageLine(input.language));
-  parts.push(`Conversation so far:\n${input.conversation}`);
-  parts.push(`Just said (they are stuck here):\n${input.stuckPhrase}`);
+  return parts.join('\n\n');
+}
+
+// What changes on every call.
+export function buildPrompt(input: GuessInput): string {
+  const parts = [
+    `Conversation so far:\n${input.conversation}`,
+    `Just said (they are stuck here):\n${input.stuckPhrase}`,
+  ];
   if (input.rejected?.length)
     parts.push(
       `They said ${input.rejected.map((w) => `"${w}"`).join(', ')} and took it back, so it is not the word.`,
@@ -46,12 +58,18 @@ async function readReply(
   model: string,
   input: GuessInput,
   controller: AbortController,
+  cache: { read?: number; write?: number },
 ): Promise<string | undefined> {
   const stream = await api.messages.create(
     {
       model,
       ...modelOptions(model),
-      system: SYSTEM,
+      // Cached after the stable part. The API ignores the marker on a prefix under the model's
+      // minimum, so a short prompt is simply not cached.
+      system: [
+        { type: 'text', text: SYSTEM },
+        { type: 'text', text: stablePrompt(input), cache_control: { type: 'ephemeral' } },
+      ],
       messages: [{ role: 'user', content: buildPrompt(input) }],
       stream: true,
     },
@@ -59,7 +77,10 @@ async function readReply(
   );
   let text = '';
   for await (const event of stream) {
-    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+    if (event.type === 'message_start') {
+      cache.read = event.message.usage.cache_read_input_tokens ?? 0;
+      cache.write = event.message.usage.cache_creation_input_tokens ?? 0;
+    } else if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
       text += event.delta.text;
       const end = firstObjectEnd(text);
       if (end !== undefined) {
@@ -140,10 +161,20 @@ export function createGuesser(
       );
     });
     try {
-      const text = await Promise.race([readReply(api, cfg.model, input, controller), timedOut]);
+      const cache: { read?: number; write?: number } = {};
+      const text = await Promise.race([
+        readReply(api, cfg.model, input, controller, cache),
+        timedOut,
+      ]);
       if (text === null) return abstain(true); // timed out
       if (text === undefined) return abstain(); // refused
-      return { ...parseGuess(text), latencyMs: Date.now() - started };
+      return {
+        ...parseGuess(text),
+        latencyMs: Date.now() - started,
+        ...(cache.read !== undefined
+          ? { cacheRead: cache.read, cacheWrite: cache.write ?? 0 }
+          : {}),
+      };
     } catch (err) {
       const info = failureInfo(err);
       cfg.onFailure?.({ ...(info.status ? { status: info.status } : {}), error: errorName(err) });

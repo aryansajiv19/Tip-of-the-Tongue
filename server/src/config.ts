@@ -15,6 +15,8 @@ const num = (name: string, fallback: number): number => {
 export const config = {
   port: num('PORT', 3000),
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || undefined,
+  // Asked once on a confirmed stall where the main model abstains or is unsure. Empty turns it off.
+  anthropicEscalateModel: process.env.ANTHROPIC_ESCALATE_MODEL ?? 'claude-sonnet-5-5',
   anthropicModel: process.env.ANTHROPIC_MODEL || 'claude-haiku-5-5',
   // Optional: server-side speech-to-text with real word timings. Without it the browser's own
   // speech recognition is used.

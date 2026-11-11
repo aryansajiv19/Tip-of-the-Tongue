@@ -118,10 +118,15 @@ export type DebugInfo =
       speculative: boolean;
       // The speaker went on (or the session ended) before it was used.
       stale: boolean;
+      // The stronger model's second try after the first came up short.
+      escalated?: true;
       candidates: Candidate[];
       abstain: boolean;
       error: boolean;
       latencyMs: number;
+      // Prompt tokens read from and written to the cache (Claude only).
+      cacheRead?: number;
+      cacheWrite?: number;
     }
   | { kind: 'gate'; offered: boolean; reason?: string; words?: string[] }
   | { kind: 'stt'; mode: 'deepgram' | 'browser'; keyterms: string[] }

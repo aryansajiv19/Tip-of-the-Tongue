@@ -56,6 +56,8 @@ export async function replay(
   placed: PlacedLine[],
   guess: Guesser,
   profile?: Profile,
+  // The stronger guesser for a confirmed stall the first one could not answer.
+  escalate?: Guesser,
 ): Promise<Replay> {
   let now = 0;
   const offers: Offer[] = [];
@@ -65,26 +67,29 @@ export async function replay(
 
   const inFlight = new Set<Promise<void>>();
   let waiting: { releaseAt: number; fire: () => void }[] = [];
-  const delayed: Guesser = (input, signal) =>
-    new Promise<GuessResult>((resolve) => {
-      guessCalls++;
-      const startedAt = now;
-      const call = guess(input, signal).then((result) => {
-        trace.guesses.push({
-          atMs: startedAt,
-          line: lineAt(placed, startedAt),
-          phrase: input.stuckPhrase.split(' ').slice(-10).join(' '),
-          words: result.candidates.map((c) => `${c.word} ${c.confidence.toFixed(2)}`),
-          abstain: result.abstain,
-          error: result.error === true,
-          latencyMs: result.latencyMs,
+  const delay =
+    (guess: Guesser, escalated = false): Guesser =>
+    (input, signal) =>
+      new Promise<GuessResult>((resolve) => {
+        guessCalls++;
+        const startedAt = now;
+        const call = guess(input, signal).then((result) => {
+          trace.guesses.push({
+            atMs: startedAt,
+            line: lineAt(placed, startedAt),
+            phrase: `${escalated ? '(escalated) ' : ''}${input.stuckPhrase.split(' ').slice(-10).join(' ')}`,
+            words: result.candidates.map((c) => `${c.word} ${c.confidence.toFixed(2)}`),
+            abstain: result.abstain,
+            error: result.error === true,
+            latencyMs: result.latencyMs,
+          });
+          waiting.push({ releaseAt: startedAt + result.latencyMs, fire: () => resolve(result) });
         });
-        waiting.push({ releaseAt: startedAt + result.latencyMs, fire: () => resolve(result) });
+        inFlight.add(call);
+        void call.finally(() => inFlight.delete(call));
       });
-      inFlight.add(call);
-      void call.finally(() => inFlight.delete(call));
-    });
 
+  const delayed = delay(guess);
   const allWords = placed.flatMap((p) => p.words);
   const session = createSession(
     (event) => {
@@ -103,6 +108,7 @@ export async function replay(
     },
     {
       guess: delayed,
+      ...(escalate ? { escalate: delay(escalate, true) } : {}),
       ...(profile ? { profile } : {}),
       pauseMs: sc.settings?.pauseMs ?? config.stuckPauseMs,
       minConfidence: config.gateMinConfidence,
