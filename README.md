@@ -17,7 +17,7 @@
   <a href="#limitations">Limitations</a>
 </p>
 
-It's for anyone who loses words mid-conversation, in meetings, interviews, calls or day to day. That includes people with anomic aphasia, brain fog or a stammer, people speaking a second language, and older adults, including those living with early dementia, for whom forgetting everyday words is often one of the first and most frustrating changes. It does not treat any condition. It just supplies the word in the moment so the conversation can carry on.
+It's for people whose work is talking: back-to-back meetings, sales, support and recruiting calls, interviews, video calls. It's also for people working in their second language, and for people who lose words more often than most, for example after a concussion, with a stammer, fatigue or brain fog, with aphasia, or later in life. Everyone loses a word now and then, so it is built for the general public first. It does not treat any condition. It just supplies the word in the moment so the conversation can carry on.
 
 Entry for the **Hiya Voice AI Challenge, Real-time Assistance track**.
 
