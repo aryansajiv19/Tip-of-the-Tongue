@@ -46,7 +46,7 @@ No keys? `npm run dev` runs the web version at http://localhost:5173 with a mock
 - Guessing starts while you are still pausing; the pop-up usually appears 1.4–1.7 s after your last word, with up to three words. Say one, click it, or press ⌘1/⌘2/⌘3.
 - It prefers the specific word and keeps phrases whole ("phone cable", "car park"). When it finds nothing it shows a quiet "…" for a moment.
 - Context from meeting notes (PDF, Markdown or text), "About you" and words you accepted before.
-- **Skills**: topic packs (Medical visit, Job interview, Software & tech, Money & finance, Everyday errands) or your own, up to 5 at once. The recogniser listens for the topic's words and the guesser knows the field.
+- **Skills**: topic packs (Medical visit, Job interview, Software & tech, Money & finance, Everyday errands) or your own, up to 5 at once. The recogniser listens for the topic's words and the guesser is told the topic.
 - Optional **Show how to continue** (off by default): a few muted words after the main word ("pharmacy to pick up my tablets"). Picking it still means the word alone.
 
 **Fits how you want to be helped**
@@ -61,10 +61,17 @@ No keys? `npm run dev` runs the web version at http://localhost:5173 with a mock
 - Settings › Privacy lists everything kept on your device, with Forget everything.
 - Recovers from network drops, sleep and mic changes, and warns about a muted mic.
 
-|                                                                                                                        |                                                                                                                             |                                                                                                                                    |
-| :--------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------: |
-| <img src="docs/assets/state-listening.png" width="260" alt="Listening: the pill with a live level meter"><br>Listening |            <img src="docs/assets/state-thinking.png" width="260" alt="Thinking: it noticed a pause"><br>Thinking            |       <img src="docs/assets/state-suggestion.png" width="260" alt="Suggestion: the word and two alternatives"><br>Suggestion       |
-|   <img src="docs/assets/state-accepted.png" width="260" alt="Accepted: the word you said is confirmed"><br>Accepted    | <img src="docs/assets/state-first-run.png" width="260" alt="First run: how should I help when you are stuck?"><br>First run | <img src="docs/assets/state-settings.png" width="180" alt="Settings: help level, speed, language, text size, privacy"><br>Settings |
+<p align="center"><img src="docs/assets/state-listening.png" width="520" alt="Listening: the pill with a live level meter"><br><b>Listening</b>: the pill with a live level meter</p>
+
+<p align="center"><img src="docs/assets/state-thinking.png" width="520" alt="Thinking: it noticed a pause"><br><b>Thinking</b>: it noticed a pause</p>
+
+<p align="center"><img src="docs/assets/state-suggestion.png" width="520" alt="Suggestion: the word and two alternatives"><br><b>Suggestion</b>: the word and two alternatives</p>
+
+<p align="center"><img src="docs/assets/state-accepted.png" width="520" alt="Accepted: the word you said is confirmed"><br><b>Accepted</b>: the word you said is confirmed</p>
+
+<p align="center"><img src="docs/assets/state-first-run.png" width="520" alt="First run: how should I help when you are stuck?"><br><b>First run</b>: how should I help when you are stuck?</p>
+
+<p align="center"><img src="docs/assets/state-settings.png" width="340" alt="Settings: help level, speed, language, text size, skills, privacy"><br><b>Settings</b>: help level, speed, language, text size, skills, privacy</p>
 
 Shortcuts: ⌘\\ show or hide, ⌘↵ ask now, ⌘1/2/3 pick, Esc dismiss, ⌘⇧N new conversation (Ctrl on Windows and Linux). All settings are in the [user guide](docs/USER-GUIDE.md).
 
@@ -83,13 +90,13 @@ The server holds one session per connection. It keeps the transcript in memory, 
 
 All numbers come from scripted conversations we wrote, not real users; LLM results vary between runs. 95% Wilson intervals in brackets.
 
-| Test                                                                | Result                                                                                                                                                                 |
-| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 20 conversations (dev split), real Claude, three runs               | 93–96% of stalls get the right word, 2–4 wrong of 71; 0–1 pop-ups in 165 fluent lines.                                                                                 |
-| 8 held-back conversations, never tuned on, one run                  | 94% (17/18) [74–99%], 1 wrong, 1/65 fluent pop-ups.                                                                                                                    |
-| Live audio, one sales call in six voices (real Deepgram and Claude) | 20/24 stalls, 1 wrong, 1/66 fluent pop-ups. With café noise 10 dB below: 14/24, 2 wrong.                                                                               |
-| Live audio, 3–4 voices with others on a call, 66 stalls             | 85% correct strictly, about 92% counting the right word that arrived as the next speaker began. Voice pick 14/14; 0/44 fluent pop-ups; 8/164 pop-ups on others' lines. |
-| Mixing in Spanish (two runs)                                        | 4/4 and 3/4; the Spanish word is never offered.                                                                                                                        |
+| Test                                                                | Result                                                                                                                                                                                   |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 20 conversations (dev split), real Claude, three runs               | 93–96% of stalls get the right word, 2–4 wrong of 71; 0–1 pop-ups in 165 fluent lines.                                                                                                   |
+| 8 held-back conversations, never tuned on, one run                  | 94% (17/18) [74–99%], 1 wrong, 1/65 fluent pop-ups.                                                                                                                                      |
+| Live audio, one sales call in six voices (real Deepgram and Claude) | 20/24 stalls, 1 wrong, 1/66 fluent pop-ups. With café noise 10 dB below: 14/24, 2 wrong.                                                                                                 |
+| Live audio, 3–4 voices with others on a call, 66 stalls             | 85% correct strictly [74–92%], about 92% [83–97%] counting the right word that arrived as the next speaker began. Voice pick 14/14; 0/44 fluent pop-ups; 8/164 pop-ups on others' lines. |
+| Mixing in Spanish (two runs)                                        | 4/4 and 3/4; the Spanish word is never offered.                                                                                                                                          |
 
 The live tests use synthetic macOS voices reading scripts. Methods, the hard and holdout sets and all caveats: [docs/write-up.md](docs/write-up.md). Research on how people speak: [docs/RESEARCH.md](docs/RESEARCH.md).
 
