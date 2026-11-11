@@ -12,6 +12,7 @@ const TYPES = new Set([
   'guess.expired',
   'guess.idle',
   'session.cleared',
+  'speaker.count',
   'guesser.status',
   'brief.terms',
   'debug',

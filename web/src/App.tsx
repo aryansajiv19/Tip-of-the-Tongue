@@ -101,6 +101,9 @@ export function App() {
   // Who recognises speech: the server (Deepgram, audio streamed from here) or this browser.
   const [stt, setStt] = useState<'deepgram' | 'browser'>('browser');
   const [notice, setNotice] = useState('');
+  // How many voices the server has heard; "That's me" is offered from two, until it is pressed.
+  const [voices, setVoices] = useState(0);
+  const [mineSent, setMineSent] = useState(false);
   const sttRef = useRef(stt);
   // Words arriving, for the check that the microphone and the words agree (set below).
   const wordsArrived = useRef<() => void>(() => undefined);
@@ -118,6 +121,8 @@ export function App() {
         setGuesser(e.guesser);
         // A new connection is a new server session.
         gate.connected();
+        setVoices(0);
+        setMineSent(false);
         dispatchCard({ type: 'clear' });
         // Only claim the browser's recognition when there is one (Firefox has none; the problem
         // line below says so).
@@ -129,6 +134,10 @@ export function App() {
       }
       // Anything the server sent before it answered a reset belongs to the old conversation.
       if (!gate.pass(e)) return;
+      if (e.type === 'speaker.count') {
+        setVoices(e.n);
+        if (e.n < 2) setMineSent(false);
+      }
       dispatchCard({ type: 'server', event: e, nowMs: Date.now() });
       if (e.type === 'transcript.partial' || e.type === 'transcript.final') wordsArrived.current();
       if (e.type === 'transcript.partial') setPartial(text(e.words));
@@ -320,6 +329,8 @@ export function App() {
     dispatchCard({ type: 'clear' });
     setHeard([]);
     setRecent([]);
+    setVoices(0);
+    setMineSent(false);
     setPartial('');
     resetSpeech();
     send({ type: 'session.reset' });
@@ -397,6 +408,15 @@ export function App() {
             modifier={modifierLabel(navigator.platform)}
             onToggleListening={listening ? pauseListening : startListening}
             onNewConversation={newConversation}
+            onThatsMe={
+              voices >= 2 && !mineSent
+                ? () => {
+                    send({ type: 'speaker.mine' });
+                    setMineSent(true);
+                    setNotice('Got it: I will follow your voice.');
+                  }
+                : undefined
+            }
             gear={<SettingsGear open={settingsOpen} onToggle={() => setSettingsOpen((o) => !o)} />}
           />
 

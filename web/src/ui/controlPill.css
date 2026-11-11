@@ -105,6 +105,22 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.pill-thatsme {
+  flex: none;
+  min-height: var(--target);
+  padding: 0 var(--space-2);
+  font: inherit;
+  color: var(--text);
+  white-space: nowrap;
+  background: var(--hover);
+  border: var(--surface-border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.pill-thatsme:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
 .pill-keys {
   flex: none;
   display: flex;

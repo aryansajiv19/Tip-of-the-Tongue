@@ -20,6 +20,9 @@ interface Props {
   modifier: string;
   onToggleListening: () => void;
   onNewConversation: () => void;
+  // Set once a second voice has been heard: the last voice heard is the user's. The button takes
+  // the place of the key hints, so the pill keeps its size.
+  onThatsMe?: (() => void) | undefined;
   // True until the user has answered "How should I help?": Play only appears after.
   askFirst?: boolean;
   // The settings gear, placed just before New conversation.
@@ -74,24 +77,35 @@ export function ControlPill(p: Props) {
         </span>
       </button>
 
-      <span className="pill-keys">
-        <kbd
-          className="keycap"
-          role="img"
-          aria-label={`${p.modifier} backslash: show or hide this overlay`}
-          title="Show or hide this overlay"
+      {p.onThatsMe ? (
+        <button
+          type="button"
+          className="pill-thatsme"
+          title="The voice that spoke last is mine"
+          onClick={p.onThatsMe}
         >
-          {p.modifier}\
-        </kbd>
-        <kbd
-          className="keycap"
-          role="img"
-          aria-label={`${p.modifier} return: I'm stuck, help now`}
-          title="I'm stuck: suggest a word now"
-        >
-          {p.modifier}↵
-        </kbd>
-      </span>
+          That&rsquo;s me
+        </button>
+      ) : (
+        <span className="pill-keys">
+          <kbd
+            className="keycap"
+            role="img"
+            aria-label={`${p.modifier} backslash: show or hide this overlay`}
+            title="Show or hide this overlay"
+          >
+            {p.modifier}\
+          </kbd>
+          <kbd
+            className="keycap"
+            role="img"
+            aria-label={`${p.modifier} return: I'm stuck, help now`}
+            title="I'm stuck: suggest a word now"
+          >
+            {p.modifier}↵
+          </kbd>
+        </span>
+      )}
 
       {p.gear}
 

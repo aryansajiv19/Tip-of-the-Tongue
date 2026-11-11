@@ -47,6 +47,7 @@ Optional settings are in `.env.example`: a personal profile file, sensitivity an
 - Triggers on a pause, a filler, a cue phrase ("what's it called") or a description of the thing ("the place where you get medicine").
 - The pause it waits for adapts to your pace. It stays quiet during stutters and blocks and never finishes a word you have started.
 - It never offers a word you just rejected ("the fork, no, the…"), and only your own stalls count: Deepgram tells the voices apart.
+- If it follows the wrong voice, a **That's me** button appears in the control bar once a second voice has been heard. Press it right after you speak.
 
 **Offers the right word, fast**
 
