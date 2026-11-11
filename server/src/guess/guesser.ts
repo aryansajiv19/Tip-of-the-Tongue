@@ -12,6 +12,11 @@ When they describe the thing instead of naming it ("the thing that…", "a place
 
 // 3 candidates of a few words each is about 70 tokens of JSON.
 const MAX_TOKENS = 100;
+// A continuation on each candidate takes more room.
+const MAX_TOKENS_WITH_CONTINUATION = 160;
+
+// Only sent when the user turned continuations on.
+const CONTINUATION_LINE = `Each candidate may also have "continuation": the next 2 to 4 words of their sentence after the word, only when they are strongly implied by what they were saying (for example {"word":"pharmacy","confidence":0.9,"continuation":"to collect my tablets"}). Never repeat or restate words already said, never start a new clause, and leave it out whenever you are not sure; most answers should have none.`;
 
 const LANGUAGE_NAMES = { es: 'Spanish', fr: 'French', de: 'German', hi: 'Hindi' } as const;
 
@@ -28,6 +33,16 @@ export function buildPrompt(input: GuessInput): string {
   const parts: string[] = [];
   if (input.brief) parts.push(`Meeting brief:\n${input.brief}`);
   if (input.profile) parts.push(`Their personal words: ${profileForPrompt(input.profile)}`);
+  // Only when the user has skills on: otherwise the prompt is exactly what it was without them.
+  if (input.skills?.length)
+    parts.push(
+      `Topics they may be talking about (use these words and fields as a hint, never as the answer unless it fits what they said):\n${input.skills
+        .map(
+          (k) =>
+            `- ${k.name}${k.description ? `: ${k.description}` : ''} Words: ${k.terms.join(', ')}`,
+        )
+        .join('\n')}`,
+    );
   parts.push(languageLine(input.language));
   parts.push(`Conversation so far:\n${input.conversation}`);
   parts.push(`Just said (they are stuck here):\n${input.stuckPhrase}`);
@@ -35,6 +50,7 @@ export function buildPrompt(input: GuessInput): string {
     parts.push(
       `They said ${input.rejected.map((w) => `"${w}"`).join(', ')} and took it back, so it is not the word.`,
     );
+  if (input.continuations) parts.push(CONTINUATION_LINE);
   return parts.join('\n\n');
 }
 
@@ -49,7 +65,7 @@ async function readReply(
   const stream = await api.messages.create(
     {
       model,
-      ...modelOptions(model),
+      ...modelOptions(model, input.continuations),
       system: SYSTEM,
       messages: [{ role: 'user', content: buildPrompt(input) }],
       stream: true,
@@ -75,14 +91,18 @@ async function readReply(
 // Newer models reject thinking: {type: 'disabled'}. Sonnet 5.5 turns thinking off with
 // 'between_tools'. Opus 5.5 cannot turn it off, so it gets the lowest effort and room for the
 // thinking tokens that count against max_tokens. Everything else (Haiku) uses 'disabled'.
-export function modelOptions(model: string): {
+export function modelOptions(
+  model: string,
+  continuations = false,
+): {
   max_tokens: number;
   thinking?: { type: 'disabled' } | { type: 'between_tools' };
   output_config?: { effort: 'low' };
 } {
   if (/opus|fable/.test(model)) return { max_tokens: 2000, output_config: { effort: 'low' } };
-  if (/sonnet/.test(model)) return { max_tokens: MAX_TOKENS, thinking: { type: 'between_tools' } };
-  return { max_tokens: MAX_TOKENS, thinking: { type: 'disabled' } };
+  const max_tokens = continuations ? MAX_TOKENS_WITH_CONTINUATION : MAX_TOKENS;
+  if (/sonnet/.test(model)) return { max_tokens, thinking: { type: 'between_tools' } };
+  return { max_tokens, thinking: { type: 'disabled' } };
 }
 
 // What a failed call tells us: its status and, for 429/529, how long the API asked us to wait.
@@ -142,7 +162,7 @@ export function createGuesser(
       const text = await Promise.race([readReply(api, cfg.model, input, controller), timedOut]);
       if (text === null) return abstain(true); // timed out
       if (text === undefined) return abstain(); // refused
-      return { ...parseGuess(text), latencyMs: Date.now() - started };
+      return { ...parseGuess(text, input.continuations), latencyMs: Date.now() - started };
     } catch (err) {
       const info = failureInfo(err);
       cfg.onFailure?.({ ...(info.status ? { status: info.status } : {}), error: errorName(err) });

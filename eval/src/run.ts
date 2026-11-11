@@ -8,6 +8,7 @@ import { normalizePhrase } from '../../server/src/gate/normalize.js';
 import { createGlossaryBuilder } from '../../server/src/guess/glossary.js';
 import { createGuesser } from '../../server/src/guess/guesser.js';
 import { loadProfile } from '../../server/src/guess/profile.js';
+import { loadPacks, skillsFor, SKILLS_MODES, type SkillsMode } from './skills.js';
 import { applyBriefMode, type BriefMode } from './briefmode.js';
 import { dataPath, loadItems, loadLongDocs, SILENT_CATEGORIES, type Item } from './dataset.js';
 import type { ItemResult } from './metrics.js';
@@ -23,6 +24,8 @@ export interface RunOptions {
   context: boolean;
   // Simulate Chrome's Web Speech on the transcript.
   sttNoise: boolean;
+  // Specialist set: which topic pack to switch on for each item. Unset: none.
+  skills?: SkillsMode;
 }
 
 const same = (a: string, b: string): boolean =>
@@ -77,11 +80,14 @@ export async function runItem(
   // Words heard after the stall marker may already be the answer, as in the live session.
   const saidSinceStuck = trigger.heard.filter((w) => w.startMs >= trigger.result.sinceMs);
 
+  const packs = opts.skills ? await loadPacks() : undefined;
+  const skills = packs && opts.skills ? skillsFor(opts.skills, item.pack, packs) : [];
   const result = await guess({
     conversation: item.context,
     stuckPhrase: trigger.result.contextWindow,
     ...(opts.context && item.brief ? { brief: item.brief } : {}),
     ...(opts.context ? { profile } : {}),
+    ...(skills.length > 0 ? { skills } : {}),
   });
   const decision = decideOffer(
     result,
@@ -119,6 +125,8 @@ async function main(): Promise<void> {
       model: { type: 'string' },
       'no-context': { type: 'boolean', default: false },
       'stt-noise': { type: 'boolean', default: false },
+      // Specialist set only: switch on the item's own topic pack, none, or a pack about something else.
+      skills: { type: 'string' },
       // Ids to run (comma separated) and how many times, to look at single items.
       only: { type: 'string' },
       runs: { type: 'string', default: '1' },
@@ -131,6 +139,9 @@ async function main(): Promise<void> {
   const set = values.set;
   if (set !== 'main' && set !== 'hard' && set !== 'specialist')
     throw new Error(`--set must be main, hard or specialist`);
+  const skillsMode = values.skills as SkillsMode | undefined;
+  if (skillsMode !== undefined && (!SKILLS_MODES.includes(skillsMode) || set !== 'specialist'))
+    throw new Error('--skills must be match, off or wrong, and needs --set specialist');
   const model = values.model ?? config.anthropicModel;
   const briefMode = values['brief-mode'];
   if (briefMode !== undefined && !['full', 'glossary', 'head'].includes(briefMode))
@@ -171,11 +182,15 @@ async function main(): Promise<void> {
   if (only) items = items.filter((i) => only.includes(i.id));
   if (items.length === 0) throw new Error('no items match');
   const results: ItemResult[] = [];
-  const opts: RunOptions = { context: !values['no-context'], sttNoise: values['stt-noise'] };
+  const opts: RunOptions = {
+    context: !values['no-context'],
+    sttNoise: values['stt-noise'],
+    ...(skillsMode ? { skills: skillsMode } : {}),
+  };
   for (let run = 0; run < Math.max(1, Number(values.runs)); run++) {
     for (const item of items) results.push(await runItem(item, guess, profile, opts));
   }
-  const tag = `${set === 'main' ? '' : `-${set}`}${only ? `-only-${only.join('+')}` : ''}${briefMode ? `-brief-${briefMode}` : ''}${values.model ? `-${values.model}` : ''}${opts.context ? '' : '-nocontext'}${opts.sttNoise ? '-noise' : ''}`;
+  const tag = `${set === 'main' ? '' : `-${set}`}${only ? `-only-${only.join('+')}` : ''}${briefMode ? `-brief-${briefMode}` : ''}${skillsMode ? `-skills-${skillsMode}` : ''}${values.model ? `-${values.model}` : ''}${opts.context ? '' : '-nocontext'}${opts.sttNoise ? '-noise' : ''}`;
 
   const meta: RunMeta = {
     guesser: kind,
@@ -183,6 +198,7 @@ async function main(): Promise<void> {
     noContext: !opts.context,
     sttNoise: opts.sttNoise,
     set,
+    ...(skillsMode ? { skills: skillsMode } : {}),
     ...(briefMode ? { briefMode } : {}),
     ...(kind === 'claude' ? { model } : {}),
   };

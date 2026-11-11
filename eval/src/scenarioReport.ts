@@ -25,6 +25,23 @@ function row(name: string, s: TypeSummary): string {
   return `| ${name} | ${s.scenarios} | ${s.stalls} | ${withCi(s.correct)} | ${pct(s.top1)} | ${s.wrong} | ${s.wrongShown} | ${s.missed} | ${pct(s.fluent)} | ${pct(s.selfRecovered)} | ${pct(s.other)} | ${ms(s.silenceP50)} / ${ms(s.silenceP95)} |`;
 }
 
+// Each offer whose top word carries a continuation, with the line it was for, to spot-check
+// that none contradicts the context. The first entry is how many offers carry one.
+function continuations(runs: ScenarioRun[]): string[] {
+  const shown: string[] = [];
+  let offers = 0;
+  for (const { score, placed, offers: made } of runs)
+    for (const o of made) {
+      offers++;
+      const top = o.candidates[0];
+      if (top?.continuation)
+        shown.push(
+          `- ${score.id}: "${top.word}" + "${top.continuation}" for "${placed[o.line]?.line.t}"`,
+        );
+    }
+  return [`${shown.length} of ${offers} offers carry a continuation.`, '', ...shown];
+}
+
 // What went wrong, line by line, so failures can be sorted into kinds.
 function failures(runs: ScenarioRun[]): string[] {
   const out: string[] = [];
@@ -41,7 +58,14 @@ function failures(runs: ScenarioRun[]): string[] {
     const show = (i: number) =>
       offers
         .filter((o) => o.line === i)
-        .map((o) => o.candidates.map((c) => `${c.word} ${c.confidence.toFixed(2)}`).join(', '))
+        .map((o) =>
+          o.candidates
+            .map(
+              (c) =>
+                `${c.word} ${c.confidence.toFixed(2)}${c.continuation ? ` [${c.continuation}]` : ''}`,
+            )
+            .join(', '),
+        )
         .join(' | ') || 'no pop-up';
     for (const st of score.stalls) {
       if (st.outcome === 'correct') continue;
@@ -98,6 +122,10 @@ export function renderScenarioReport(
           '',
         ]
       : []),
+    '## Continuations',
+    '',
+    ...continuations(runs),
+    '',
     '## Failures',
     '',
     ...(f.length > 0 ? f : ['None.']),

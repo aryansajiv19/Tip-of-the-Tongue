@@ -8,7 +8,8 @@
     "scenarios": "tsx src/runScenarios.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
-    "scenarios:live": "tsx src/live/run.ts"
+    "scenarios:live": "tsx src/live/run.ts",
+    "bench": "tsx src/bench.ts"
   },
   "devDependencies": {
     "tsx": "^4.23.15"
