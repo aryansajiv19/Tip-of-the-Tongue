@@ -9,11 +9,11 @@
 
 ## The moment
 
-Someone with aphasia is mid-conversation and can't find a word they know. They talk around it: "the place… where you get medicine…". The other person guesses, the conversation stalls, and confidence drops.
+Someone is mid-conversation, in a meeting or on a video call, and can't find a word they know. It happens to everyone, and far more often with aphasia, brain fog, a stammer, a second language or age. They talk around it: "the place… where you get medicine…". The other person guesses, the conversation stalls, and confidence drops.
 
 ## The friction
 
-Existing word-finding tools make you stop and search (type, draw, photograph) — exactly when you can't stop. Aphasia often affects reading and writing too.
+Existing word-finding tools make you stop and search (type, draw, photograph) — exactly when you can't stop. For people with aphasia, reading and writing are often affected too.
 
 ## What the agent does
 
@@ -27,7 +27,7 @@ Listens, notices the struggle, guesses the word from context, and offers it quie
 
 ## Evidence
 
-- Scale: ~350,000 people with aphasia in the UK.
+- Scale: everyone loses a word sometimes; ~350,000 people with aphasia in the UK lose them constantly.
 - Prior study: LLM identified the intended word 91.67% of the time from text.
 - **Our results** (Claude Haiku 5.5 guessing, our detector and gate; 95% Wilson intervals in brackets). Runs 1 and 2 are full runs of the same code, because the guesser is an LLM and results vary between runs. The "final" rows are the shipped prompt, which has one extra sentence added after run 2 (keep multi-word names together), tuned on dev; the holdout was run once with it:
 
@@ -129,4 +129,4 @@ Not tested with people with aphasia; scripted examples; STT on atypical speech u
 
 ## Wider reach and next steps
 
-Meetings, non-native speakers, older adults. Phone-call mode. Co-design with people with aphasia and speech and language therapists.
+Everyday meetings and video calls, non-native speakers, older adults. Phone-call mode. Co-design with people with aphasia and speech and language therapists.
