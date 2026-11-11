@@ -88,3 +88,32 @@ describe('summarize', () => {
     expect(s.silenceP50).toBeUndefined();
   });
 });
+
+describe('late right words', () => {
+  const at = (line: number, words: string[], atMs: number): Offer => ({
+    ...offer(line, words),
+    atMs,
+  });
+  const next = placed[1]?.startMs ?? 0; // the other person's line after the stall on line 0
+
+  it('counts a missed stall whose right word came up in the first 2 s of the next line', () => {
+    const s = scoreScenario('s', 't', placed, [at(1, ['pharmacy'], next + 1600)]);
+    expect(s.stalls[0]).toMatchObject({ outcome: 'miss', late: true });
+    expect(summarize([s])).toMatchObject({ missed: 3, late: 1 });
+    expect(summarize([s]).correct.hits).toBe(0);
+  });
+  it('does not count a later one, a wrong word, or a stall that was answered in time', () => {
+    expect(
+      scoreScenario('s', 't', placed, [at(1, ['pharmacy'], next + 2500)]).stalls[0]?.late,
+    ).toBeUndefined();
+    expect(
+      scoreScenario('s', 't', placed, [at(1, ['hospital'], next + 500)]).stalls[0]?.late,
+    ).toBeUndefined();
+    const both = scoreScenario('s', 't', placed, [
+      offer(0, ['pharmacy']),
+      at(1, ['pharmacy'], next + 500),
+    ]);
+    expect(both.stalls[0]).toMatchObject({ outcome: 'correct' });
+    expect(both.stalls[0]?.late).toBeUndefined();
+  });
+});

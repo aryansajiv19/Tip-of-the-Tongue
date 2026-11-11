@@ -45,7 +45,7 @@ function row(name: string, runs: LiveRun[]): string {
   const picks = runs.map(voicePick);
   const words = runs.reduce((n, r) => n + r.labels.words, 0);
   const right = runs.reduce((n, r) => n + r.labels.right, 0);
-  return `| ${name} | ${runs.length} | ${s.stalls} | ${withCi(s.correct)} | ${s.wrong} | ${s.missed} | ${pct(s.fluent)} | ${pct(s.other)} | ${picks.filter((p) => p === 'right').length}/${runs.length} | ${pct({ hits: right, total: words })} | ${ms(s.silenceP50)} / ${ms(s.silenceP95)} |`;
+  return `| ${name} | ${runs.length} | ${s.stalls} | ${withCi(s.correct)} | ${s.late} | ${s.wrong} | ${s.missed} | ${pct(s.fluent)} | ${pct(s.other)} | ${picks.filter((p) => p === 'right').length}/${runs.length} | ${pct({ hits: right, total: words })} | ${ms(s.silenceP50)} / ${ms(s.silenceP95)} |`;
 }
 
 // What went wrong, with what the recogniser heard on that line.
@@ -160,8 +160,8 @@ export function renderLiveReport(
   return [
     `# Live scenarios: spoken audio through real Deepgram and Claude, split ${meta.split}`,
     '',
-    '| User voice | Convs | Stalls | Correct | Wrong | Missed | Pop-up in fluent lines | on the other speaker | Voice pick right | Label accuracy | End of speech to pop-up p50 / p95 |',
-    '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+    '| User voice | Convs | Stalls | Correct | Right word late | Wrong | Missed | Pop-up in fluent lines | on the other speaker | Voice pick right | Label accuracy | End of speech to pop-up p50 / p95 |',
+    '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
     ...voices.map((v) =>
       row(
         v,
@@ -170,7 +170,7 @@ export function renderLiveReport(
     ),
     row('All', runs),
     '',
-    'The other person is spoken by a contrasting voice. Label accuracy is the share of words labelled with their speaker\'s usual voice number. "End of speech to pop-up" is measured from the end of the last word before the pop-up.',
+    '"Right word late" counts missed stalls whose right word appeared within 2 s of the next speaker starting (also listed as pop-ups on the other speaker); it is not in Correct. The other person is spoken by a contrasting voice. Label accuracy is the share of words labelled with their speaker\'s usual voice number. "End of speech to pop-up" is measured from the end of the last word before the pop-up.',
     '',
     ...(meta.solo ? drift(runs) : []),
     lagSummary(runs),

@@ -17,12 +17,18 @@ export interface ScenarioScore {
     wrongShown: number;
     // How long the silence had lasted when the pop-up appeared, for a correct one.
     silenceMs?: number;
+    // A missed stall whose right word came up in the first LATE_MS of the next line, when the other
+    // person had begun to answer. Not counted as correct.
+    late?: boolean;
   }[];
   // Lines where nothing should be offered, and how many of them got a pop-up.
   fluent: { lines: number; popups: number };
   selfRecovered: { lines: number; popups: number };
   other: { lines: number; popups: number };
 }
+
+// The right word counts as late, not missed, if it arrives this soon into the next line.
+export const LATE_MS = 2000;
 
 const key = (w: string) => normalizePhrase(w).join(' ');
 
@@ -52,12 +58,21 @@ export function scoreScenario(
       const right = new Set((line.a ?? [line.w ?? '']).map(key));
       const hit = here.find((o) => o.candidates.some((c) => right.has(key(c.word))));
       const outcome: StallOutcome = hit ? 'correct' : here.length > 0 ? 'wrong' : 'miss';
+      const next = placed[i + 1];
+      const late =
+        outcome === 'miss' &&
+        next !== undefined &&
+        (byLine.get(String(i + 1)) ?? []).some(
+          (o) =>
+            o.atMs - next.startMs <= LATE_MS && o.candidates.some((c) => right.has(key(c.word))),
+        );
       score.stalls.push({
         line: i,
         outcome,
         top1: Boolean(hit && right.has(key(hit.candidates[0]?.word ?? ''))),
         wrongShown: here.filter((o) => !o.candidates.some((c) => right.has(key(c.word)))).length,
         ...(hit ? { silenceMs: hit.silenceMs } : {}),
+        ...(late ? { late } : {}),
       });
     } else if (line.recover) {
       score.selfRecovered.lines++;
@@ -79,6 +94,8 @@ export interface TypeSummary {
   // Wrong pop-ups shown on stall lines, including ones followed by a right one.
   wrongShown: number;
   missed: number;
+  // Of the missed, the right word came up as the next speaker began (see `late`).
+  late: number;
   fluent: Rate;
   selfRecovered: Rate;
   other: Rate;
@@ -102,6 +119,7 @@ export function summarize(scores: ScenarioScore[]): TypeSummary {
     wrong: stalls.filter((s) => s.outcome === 'wrong').length,
     wrongShown: stalls.reduce((n, s) => n + s.wrongShown, 0),
     missed: stalls.filter((s) => s.outcome === 'miss').length,
+    late: stalls.filter((s) => s.late).length,
     fluent: sum((s) => s.fluent),
     selfRecovered: sum((s) => s.selfRecovered),
     other: sum((s) => s.other),
