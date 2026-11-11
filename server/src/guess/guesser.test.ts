@@ -35,6 +35,8 @@ describe('mock guesser (no api key)', () => {
     const r = await guess(input);
     expect(r.abstain).toBe(false);
     expect(r.candidates[0]).toEqual({ word: 'pharmacy', confidence: 0.85 });
+    const on = await guess({ ...input, continuations: true });
+    expect(on.candidates[0]?.continuation).toBe('to collect my tablets');
   });
 
   it('is deterministic', async () => {
@@ -273,5 +275,56 @@ describe('buildPrompt', () => {
     const p = buildPrompt(input);
     expect(p).not.toContain('brief');
     expect(p).not.toContain('personal');
+  });
+});
+
+describe('skills and continuations leave the default prompt alone', () => {
+  const skills = [
+    { name: 'Medical visit', description: 'Appointments.', terms: ['referral', 'dosage'] },
+  ];
+  const profile = ProfileSchema.parse({ pets: { dog: 'Biscuit' } });
+  const full = { ...input, brief: 'Q3 review', profile, rejected: ['fork'] };
+
+  it('with both off, the message is exactly the original layout', () => {
+    const parts = buildPrompt(full).split('\n\n');
+    expect(parts[0]).toBe('Meeting brief:\nQ3 review');
+    expect(parts[1]).toMatch(/^Their personal words: /);
+    expect(parts[2]).toMatch(/^They speak English/);
+    expect(parts[3]).toBe('Conversation so far:\nerrands');
+    expect(parts[4]).toBe('Just said (they are stuck here):\nthe place where you get medicine');
+    expect(parts[5]).toMatch(/^They said "fork" and took it back/);
+    expect(parts).toHaveLength(6);
+  });
+
+  it('sends the system text as one plain string and the original token cap', async () => {
+    let params: Record<string, unknown> = {};
+    const guess = createGuesser(
+      cfg,
+      fakeClient((p) => {
+        params = p as Record<string, unknown>;
+        return Promise.resolve(
+          streamOf(['{"candidates":[{"word":"a","confidence":0.8}],"abstain":false}']),
+        );
+      }),
+    );
+    await guess(full);
+    expect(typeof params.system).toBe('string');
+    expect(params.max_tokens).toBe(100);
+    expect(JSON.stringify(params)).not.toContain('cache_control');
+  });
+
+  it('adds the topics to the message, after the personal words, only when skills are on', () => {
+    const p = buildPrompt({ ...full, skills });
+    expect(p).toContain('Medical visit: Appointments. Words: referral, dosage');
+    expect(p.indexOf('Biscuit')).toBeLessThan(p.indexOf('Topics'));
+    expect(p.indexOf('Topics')).toBeLessThan(p.indexOf('They speak English'));
+    expect(buildPrompt({ ...full, skills: [] })).toBe(buildPrompt(full));
+  });
+
+  it('asks for continuations, with more room, only when on', async () => {
+    expect(buildPrompt(full)).not.toContain('continuation');
+    expect(buildPrompt({ ...full, continuations: true })).toContain('"continuation"');
+    expect(modelOptions('claude-haiku-5-5', true).max_tokens).toBeGreaterThan(100);
+    expect(modelOptions('claude-haiku-5-5').max_tokens).toBe(100);
   });
 });
