@@ -106,3 +106,21 @@ describe('lineAt', () => {
     expect(lineAt(placed, (placed[1]?.endMs ?? 0) + 100)).toBe(1);
   });
 });
+
+describe('layoutScenario with several people', () => {
+  const lines: Scenario['lines'] = [
+    { s: 'other', t: 'hello all' },
+    { s: 'other', who: 2, t: 'hi there' },
+    { s: 'me', t: 'good morning' },
+  ];
+  it('drops the others before the first line of the user, unless the call began with them', () => {
+    expect(layoutScenario(sc(lines), true)).toHaveLength(1);
+    expect(layoutScenario(sc(lines, { othersFirst: true }), true)).toHaveLength(3);
+  });
+  it('gives each other person their own voice number and the user 0', () => {
+    const labels = layoutScenario(sc(lines, { othersFirst: true }), true).map(
+      (p) => p.words[0]?.speaker,
+    );
+    expect(labels).toEqual([1, 2, 0]);
+  });
+});

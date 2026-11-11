@@ -22,11 +22,12 @@ export const isStall = (l: Line): boolean => l.s === 'me' && Boolean(l.w) && !l.
 // session gets the words in this order with no speaker labels.
 // `speakers` labels each word with its voice (the user is 0), as speaker separation would. It also
 // models the user pressing Start when they begin to talk: lines by the other person before the
-// user's first line are never heard.
+// user's first line are never heard (unless `othersFirst`: the user started listening at the
+// start of a call).
 export function layoutScenario(sc: Scenario, speakers = false): PlacedLine[] {
   const placed: PlacedLine[] = [];
   let at = 500;
-  const firstOfUser = sc.lines.findIndex((l) => l.s === 'me');
+  const firstOfUser = sc.othersFirst ? 0 : sc.lines.findIndex((l) => l.s === 'me');
   for (const line of speakers ? sc.lines.slice(Math.max(0, firstOfUser)) : sc.lines) {
     const words = toTimedWords(line.t, {
       startMs: at,
@@ -39,7 +40,7 @@ export function layoutScenario(sc: Scenario, speakers = false): PlacedLine[] {
       const text = spoken(w.text);
       return text === ''
         ? []
-        : [{ ...w, text, ...(speakers ? { speaker: line.s === 'me' ? 0 : 1 } : {}) }];
+        : [{ ...w, text, ...(speakers ? { speaker: line.s === 'me' ? 0 : (line.who ?? 1) } : {}) }];
     });
     placed.push({ line, words: heard, startMs: at, endMs });
     at = endMs + (line.gap ?? (isStall(line) ? STALL_GAP_MS : TURN_GAP_MS));

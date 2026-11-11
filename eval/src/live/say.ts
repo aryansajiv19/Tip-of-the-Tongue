@@ -15,6 +15,15 @@ export const USER_VOICES = ['Daniel', 'Samantha', 'Karen', 'Moira', 'Rishi', 'Te
 const MALE = new Set(['Daniel', 'Rishi', 'Fred']);
 export const otherVoiceFor = (user: string): string => (MALE.has(user) ? 'Samantha' : 'Daniel');
 
+// Up to three other people, each a voice unlike the user's and unlike each other: the usual
+// contrasting voice first, then the others in turn.
+const OTHER_POOL = ['Samantha', 'Daniel', 'Karen', 'Fred', 'Tessa', 'Moira'];
+export const otherVoicesFor = (user: string, count = 1): string[] =>
+  [otherVoiceFor(user), ...OTHER_POOL.filter((v) => v !== user && v !== otherVoiceFor(user))].slice(
+    0,
+    count,
+  );
+
 // The text `say` speaks: each "..." becomes real silence of `pauseMs`.
 export function speechText(text: string, pauseMs: number): string {
   return text.replace(/\s*\.\.\.\s*/g, ` [[slnc ${pauseMs}]] `).trim();

@@ -68,7 +68,7 @@ describe.skipIf(!canSpeak)('runLive, with a stand-in for Deepgram', () => {
   it('speaks the line, streams it in real time and scores the pop-up on the right line', async () => {
     const dg = await fakeDeepgram();
     servers.push(dg.wss);
-    const run = await runLive(sc, 'Daniel', 'Samantha', ProfileSchema.parse({}), false, {
+    const run = await runLive(sc, 'Daniel', ['Samantha'], ProfileSchema.parse({}), false, {
       guess: mockGuesser,
       deepgram: { apiKey: 'k', language: 'en', connect: dg.connect },
     });
