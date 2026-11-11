@@ -3417,6 +3417,507 @@
           "t": "I will. Love you all, see you soon."
         }
       ]
+    },
+    {
+      "id": "s32",
+      "type": "multi_work",
+      "split": "dev",
+      "title": "Work call, four people: the others speak first and stall, the user stalls seven times (nothing for the others)",
+      "othersFirst": true,
+      "lines": [
+        {
+          "s": "other",
+          "t": "Hi everyone, thanks for joining. Can you all hear me?"
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Yes, Priya, good morning."
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "Morning. Sam is joining in a minute, I think."
+        },
+        {
+          "s": "me",
+          "t": "Sorry I am late, I had a problem with my headset."
+        },
+        {
+          "s": "other",
+          "t": "No problem. Let's start with where we are on the project."
+        },
+        {
+          "s": "me",
+          "t": "Right. First, the... the list of things we promise to deliver and the dates for each, it needs one more update",
+          "w": "roadmap",
+          "a": ["roadmap", "plan", "schedule", "timeline", "project plan"]
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Okay. And who signs it off on the client side?"
+        },
+        {
+          "s": "me",
+          "t": "It is the... the person who pays for the project, the one we report to every month",
+          "w": "sponsor",
+          "a": ["sponsor", "stakeholder", "client", "customer", "project sponsor"]
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "Understood. Marco, how are the numbers looking?"
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Good, the... what do you call it... the amount we keep after all the costs, it is up four percent."
+        },
+        {
+          "s": "me",
+          "t": "That is great. Is that the... the number that shows how much we earn after all the costs are taken away",
+          "w": "profit",
+          "a": ["profit", "margin", "net profit", "net income", "earnings"]
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Yes, exactly."
+        },
+        {
+          "s": "other",
+          "t": "Next, the test version."
+        },
+        {
+          "s": "me",
+          "t": "We built the... the small first version we make to test the idea before the real one",
+          "w": "prototype",
+          "a": ["prototype", "pilot", "mvp", "proof of concept", "demo"]
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "And the users liked it?"
+        },
+        {
+          "s": "me",
+          "t": "Mostly. They asked for two changes, which we can do this week."
+        },
+        {
+          "s": "other",
+          "t": "Good. When does everything go out to customers?"
+        },
+        {
+          "s": "me",
+          "t": "The first day when it all goes live to everybody, we are aiming for the fifth",
+          "w": "launch",
+          "a": ["launch", "release", "go-live", "go live", "rollout", "roll-out", "launch day"]
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "That is tight. Do we have a safety margin?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, we keep the... the extra money we set aside in case something goes wrong",
+          "w": "contingency",
+          "a": ["contingency", "buffer", "reserve", "contingency fund", "emergency fund"]
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "Good. And after the launch?"
+        },
+        {
+          "s": "me",
+          "t": "We should have the... the meeting where we look back at what went well and what went wrong",
+          "w": "retrospective",
+          "a": ["retrospective", "retro", "review", "post-mortem", "postmortem", "lessons learned"]
+        },
+        {
+          "s": "other",
+          "t": "Agreed, let's put it in the diary."
+        },
+        {
+          "s": "me",
+          "t": "Thanks everyone, that is all from me."
+        },
+        {
+          "s": "other",
+          "t": "Thank you all, talk next week."
+        }
+      ]
+    },
+    {
+      "id": "s33",
+      "type": "multi_clinic",
+      "split": "dev",
+      "title": "Doctor appointment with a relative: the user is the patient and stalls seven times (nothing for the doctor or the daughter)",
+      "lines": [
+        {
+          "s": "me",
+          "t": "Good morning doctor. My daughter came with me today."
+        },
+        {
+          "s": "other",
+          "t": "Good morning. Hello Mrs Hayes. How have you been since last time?"
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "She has been a bit tired, doctor, and she forgets her... um... the things she takes in the morning."
+        },
+        {
+          "s": "me",
+          "t": "I take the... the small white things I swallow every morning for my blood pressure",
+          "w": "tablets",
+          "a": ["tablets", "pills", "medication", "medicine", "tablet", "pill", "meds"]
+        },
+        {
+          "s": "other",
+          "t": "Good. Have you checked your blood pressure at home?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, with the... the machine that wraps round my arm and pumps up to measure it",
+          "w": "blood pressure monitor",
+          "a": [
+            "blood pressure monitor",
+            "monitor",
+            "cuff",
+            "blood pressure cuff",
+            "bp monitor",
+            "blood pressure machine"
+          ]
+        },
+        {
+          "s": "other",
+          "t": "What were the readings?"
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "A bit high in the evenings, I wrote them in her... the little book."
+        },
+        {
+          "s": "me",
+          "t": "Also I felt hot on Tuesday, but I could not find the... the thing you put under your tongue to check if you have a fever",
+          "w": "thermometer",
+          "a": ["thermometer"]
+        },
+        {
+          "s": "other",
+          "t": "Did the fever last?"
+        },
+        {
+          "s": "me",
+          "t": "No, only one day. Then my chest felt tight, like last year, when they took the... the picture of the inside of my chest",
+          "w": "x-ray",
+          "a": ["x-ray", "xray", "x ray", "scan", "chest x-ray"]
+        },
+        {
+          "s": "other",
+          "t": "I remember. I can order another one if you like."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "That would help, doctor."
+        },
+        {
+          "s": "me",
+          "t": "I also need the... the paper from the chemist for the repeat medicine, it runs out on Friday",
+          "w": "prescription",
+          "a": ["prescription", "repeat prescription", "script", "scrip"]
+        },
+        {
+          "s": "other",
+          "t": "I will write that now."
+        },
+        {
+          "s": "me",
+          "t": "My leg hurts too, here, the... the back part between the knee and the foot, when I walk",
+          "w": "calf",
+          "a": ["calf", "calf muscle"]
+        },
+        {
+          "s": "other",
+          "t": "I see. Does it swell?"
+        },
+        {
+          "s": "me",
+          "t": "A little in the evening, yes."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "The... um... the district one, the person who visits, said to ask you."
+        },
+        {
+          "s": "me",
+          "t": "Yes, the... the person who comes to my house to see how I am, she said so too",
+          "w": "nurse",
+          "a": [
+            "nurse",
+            "district nurse",
+            "carer",
+            "health visitor",
+            "community nurse",
+            "visiting nurse"
+          ]
+        },
+        {
+          "s": "other",
+          "t": "Good. I will send you a letter and see you in two weeks."
+        },
+        {
+          "s": "me",
+          "t": "Thank you very much, doctor."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Thank you, doctor."
+        }
+      ]
+    },
+    {
+      "id": "s34",
+      "type": "multi_friends",
+      "split": "dev",
+      "title": "Friends planning a camping trip, four people: the user stalls seven times and the others stall too (nothing for the others)",
+      "lines": [
+        {
+          "s": "other",
+          "t": "So, who is bringing what for the weekend?"
+        },
+        {
+          "s": "me",
+          "t": "I made a list. I can bring the... the bag you sleep in when you go camping",
+          "w": "sleeping bag",
+          "a": ["sleeping bag", "sleeping-bag"]
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Good. I have the tent already."
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "I can bring the... what's it called... the little gas thing for cooking."
+        },
+        {
+          "s": "me",
+          "t": "The little stove we cook on outside, yes, we need that",
+          "w": "camping stove",
+          "a": ["camping stove", "stove", "gas stove", "burner", "cooker", "camp stove"]
+        },
+        {
+          "s": "other",
+          "t": "Who has a light for the evening?"
+        },
+        {
+          "s": "me",
+          "t": "I have the... the light you wear on your head so your hands are free",
+          "w": "headlamp",
+          "a": ["headlamp", "head torch", "headtorch", "torch", "head lamp", "headlight"]
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Perfect. How do we get there?"
+        },
+        {
+          "s": "me",
+          "t": "We follow the... the thing on the phone that tells you the way so we do not get lost",
+          "w": "gps",
+          "a": ["gps", "sat nav", "satnav", "navigation", "map", "maps", "navigator", "google maps"]
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "Okay. And the food?"
+        },
+        {
+          "s": "other",
+          "t": "Keep it cold, we need the... um... the box with the ice."
+        },
+        {
+          "s": "me",
+          "t": "The cold box with ice to keep the food fresh, I will ask my brother to lend ours",
+          "w": "cooler",
+          "a": ["cooler", "cool box", "cooler box", "icebox", "ice box", "cooler bag"]
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "What if it rains?"
+        },
+        {
+          "s": "me",
+          "t": "Then we put the... the big plastic sheet over everything so it stays dry",
+          "w": "tarp",
+          "a": ["tarp", "tarpaulin", "sheet", "plastic sheet", "groundsheet", "cover", "tarps"]
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "Good idea. What about the evenings?"
+        },
+        {
+          "s": "me",
+          "t": "We make the... the small fire to sit around and talk, if it is allowed",
+          "w": "campfire",
+          "a": ["campfire", "camp fire", "bonfire", "fire"]
+        },
+        {
+          "s": "other",
+          "t": "Sounds great. Saturday morning then?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, let's meet at nine at my house."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Nine is fine for me."
+        },
+        {
+          "s": "other",
+          "who": 3,
+          "t": "Me too. Do not forget the... the thing for... the cards!"
+        },
+        {
+          "s": "me",
+          "t": "Cards, of course. See you all on Saturday."
+        },
+        {
+          "s": "other",
+          "t": "See you!"
+        }
+      ]
+    },
+    {
+      "id": "s35",
+      "type": "multi_support",
+      "split": "dev",
+      "title": "Support call to an internet provider with a recorded hold voice (third voice): the user stalls six times (nothing for the agent or the recording)",
+      "lines": [
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Welcome to Brightline support. Your call is important to us. Please hold."
+        },
+        {
+          "s": "other",
+          "t": "Hello, this is Dan at Brightline. How can I help?"
+        },
+        {
+          "s": "me",
+          "t": "Hello. My internet stopped working this morning."
+        },
+        {
+          "s": "other",
+          "t": "I am sorry about that. Let's check your equipment. Do you see lights on the... what we call the unit?"
+        },
+        {
+          "s": "me",
+          "t": "Yes, on the... the little box with the flashing lights that the internet comes through",
+          "w": "router",
+          "a": ["router", "modem", "hub", "box", "wifi router"]
+        },
+        {
+          "s": "other",
+          "t": "Right, the router. What colour is the light?"
+        },
+        {
+          "s": "me",
+          "t": "It is red, and the... the long wire that goes from the box to the wall is plugged in",
+          "w": "cable",
+          "a": ["cable", "cord", "wire", "ethernet cable", "lead", "cables"]
+        },
+        {
+          "s": "other",
+          "t": "Good. Please hold for a moment while I check your line."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Thank you for holding. Your call is important to us. Please stay on the line."
+        },
+        {
+          "s": "other",
+          "t": "Thanks for waiting. I can see a fault in your area."
+        },
+        {
+          "s": "me",
+          "t": "Can I still connect my phone? I forgot the... the secret word I type to join the wifi",
+          "w": "password",
+          "a": ["password", "passcode", "wifi password", "key", "pass word", "passphrase"]
+        },
+        {
+          "s": "other",
+          "t": "It is on a sticker under the router."
+        },
+        {
+          "s": "me",
+          "t": "I also want to ask about the... the monthly paper that tells me how much to pay",
+          "w": "bill",
+          "a": ["bill", "invoice", "statement", "monthly bill"]
+        },
+        {
+          "s": "other",
+          "t": "I can send you a copy by email."
+        },
+        {
+          "s": "me",
+          "t": "Thank you. What should I do in the meantime? Should I do the... the thing when you switch it off and on again",
+          "w": "restart",
+          "a": [
+            "restart",
+            "reboot",
+            "reset",
+            "power cycle",
+            "turn it off and on",
+            "switch it off and on"
+          ]
+        },
+        {
+          "s": "other",
+          "t": "You can, but the fault is on our side."
+        },
+        {
+          "s": "other",
+          "who": 2,
+          "t": "Your call is being held in a queue. Thank you for your patience."
+        },
+        {
+          "s": "other",
+          "t": "Sorry about that. I will book a visit for you."
+        },
+        {
+          "s": "me",
+          "t": "Okay. Will the... the person who comes to my house to fix it bring the equipment?",
+          "w": "engineer",
+          "a": ["engineer", "technician", "installer", "repairman", "fitter", "repair man"]
+        },
+        {
+          "s": "other",
+          "t": "Yes, they will bring everything. Tomorrow between eight and twelve."
+        },
+        {
+          "s": "me",
+          "t": "That is fine. Thank you for your help."
+        },
+        {
+          "s": "other",
+          "t": "You are welcome. Goodbye."
+        }
+      ]
     }
   ]
 }
