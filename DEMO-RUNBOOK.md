@@ -10,6 +10,13 @@ For the live demo on a video call. Keep this open on a second screen.
 4. Say test line 1 below once. If "plane" appears, you are ready. Press ⌘⇧N to start a clean conversation.
 5. Open `docs/assets/demo.mp4` in QuickTime and leave it paused, as the backup.
 6. On the call, share the screen (not one window), so the overlay shows.
+7. Wear headphones. Then the mic hears only you, so the other people's voices can't be taken for yours. Without them, press **That's me** after your first sentence.
+
+## How to say the lines
+
+- Keep the first "…" short (under a second) and make the long pause at the end. A long pause after "book the" can get "appointment" before you have described anything.
+- After the description, stay silent for about 2 s. If the others talk straight away, the card can come late or be counted against their line.
+- Say "what's his name" with nothing about cars or places just before it, or it may guess from that context.
 
 ## Demo lines (in this order)
 
