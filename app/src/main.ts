@@ -386,13 +386,26 @@ async function boot() {
       onFail: fail,
     });
   } else {
+    // A server left over from an earlier run would answer instead of ours, without the keys.
+    // A server we just stopped (Retry) gets two seconds to let go of the port.
+    let free = false;
+    for (let i = 0; i < 10 && !free; i++) {
+      free = await portFree(PORTS.server);
+      if (!free) await new Promise((r) => setTimeout(r, 200));
+    }
+    if (!free) {
+      const p = PORTS.server;
+      fail(`port ${p} is in use, likely an old server: run "lsof -ti :${p} | xargs kill"`);
+      return;
+    }
     server = startChildren(ROOT, PORTS, savedKeys);
   }
+  // In development both children must answer: the page (Vite) and our own server.
   const health = PACKAGED
-    ? `http://127.0.0.1:${PACKAGED_PORT}/health`
-    : `http://localhost:${PORTS.web}`;
+    ? [`http://127.0.0.1:${PACKAGED_PORT}/health`]
+    : [`http://localhost:${PORTS.web}`, `http://127.0.0.1:${PORTS.server}/health`];
   try {
-    await waitForUrl(health, 60_000, () => failed !== undefined);
+    for (const url of health) await waitForUrl(url, 60_000, () => failed !== undefined);
   } catch (err) {
     if (failed === undefined) fail((err as Error).message.replace(/\.$/, ''));
     return;
@@ -433,3 +446,6 @@ app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   children.stop();
 });
+// Ctrl+C in the terminal reaches only Electron: the children lead their own process groups, so
+// quit properly (which stops them) instead of leaving a server holding the port.
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) process.on(signal, () => app.quit());

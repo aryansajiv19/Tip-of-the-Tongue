@@ -2,7 +2,7 @@
 
 Electron desktop app. Two modes:
 
-- **Development** (`npm run app`): the renderer is the Vite page at `http://localhost:5173`; `children.ts` starts the server and Vite as child processes and kills them on quit. Keys come from `.env` unless saved in the app.
+- **Development** (`npm run app`): the renderer is the Vite page at `http://localhost:5173`; `children.ts` starts the server and Vite as child processes and kills them on quit (Ctrl+C in the terminal quits properly too). If port 3000 is already held, likely by an old server, the tray says so instead of starting. Keys come from `.env` unless saved in the app.
 - **Installed** (`npm run dist` at the root → `release/*.dmg`, unsigned): `scripts/bundle-server.mjs` bundles the server with esbuild; `serverProcess.ts` runs it as a `utilityProcess` on port 47821 with `WEB_DIST` (the built page), a per-launch `TOTT_TOKEN` (the page loads `/?token=…`), `LOG_FILE` and the saved keys. `supervisor.ts` restarts it once; `port.ts` checks the port first; `log.ts` writes a rotating `app.log` under userData (tokens redacted, no words). Single-instance lock; the tray shows Starting… / Couldn't start + Retry.
 - Keys: `keyStore.ts` (Electron `safeStorage`, never written in plain text) and `keyCheck.ts` (one GET to each provider); the page gets only `window.tott.keys.{status, save, test}` and can never read a key back. Saving restarts the server.
 - External links open in the system browser (https only); the window never navigates away.
