@@ -29,6 +29,26 @@ contextBridge.exposeInMainWorld('tott', {
   report(state: { listening: boolean }) {
     ipcRenderer.send('overlay:state', state);
   },
+  // The overlay's recent words, for the app window. Never stored.
+  shareRecent(list: { word: string; accepted: boolean; at: number }[]) {
+    ipcRenderer.send('overlay:recent', list);
+  },
+  // The app window: what the overlay is doing, and buttons that act on it.
+  home: {
+    onState(
+      cb: (state: {
+        listening: boolean;
+        recent: { word: string; accepted: boolean; at: number }[];
+      }) => void,
+    ) {
+      const listener = (_event: unknown, state: Parameters<typeof cb>[0]) => cb(state);
+      ipcRenderer.on('home:state', listener);
+      return () => ipcRenderer.removeListener('home:state', listener);
+    },
+    command(command: 'toggle-listening' | 'new-conversation' | 'show-overlay') {
+      ipcRenderer.send('home:command', command);
+    },
+  },
   // The user's own provider keys. The page can set and test them but never read them back.
   keys: {
     status: (): Promise<{ anthropic: Presence; deepgram: Presence }> =>

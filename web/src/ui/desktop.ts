@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { Check, Presence } from '../settings/keys';
 import { commandForKey, type Command } from './commands';
+import type { RecentWord } from './recentWords';
 
 // What the desktop app's preload script exposes. Absent in a normal browser.
 export interface DesktopBridge {
@@ -11,6 +12,13 @@ export interface DesktopBridge {
   // gives them back.
   captureCardKeys(picks: number, cb: (key: 'escape' | 1 | 2 | 3) => void): () => void;
   report(state: { listening: boolean }): void;
+  // The overlay's recent words, for the app window. Absent in a browser.
+  shareRecent?(list: RecentWord[]): void;
+  // Only used by the app window (?view=home): what the overlay is doing, and buttons that act on it.
+  home?: {
+    onState(cb: (state: { listening: boolean; recent: RecentWord[] }) => void): () => void;
+    command(command: 'toggle-listening' | 'new-conversation' | 'show-overlay'): void;
+  };
   // The user's own provider keys. Absent before the keys backend exists, and in a browser.
   keys?: {
     status(): Promise<{ anthropic: Presence; deepgram: Presence }>;

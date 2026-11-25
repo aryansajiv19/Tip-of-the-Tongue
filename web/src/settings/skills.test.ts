@@ -134,4 +134,17 @@ describe('the store', () => {
     store.forgetAll();
     expect(store.snapshot()).toBe(emptySkills);
   });
+
+  it('takes up skills another window saved', () => {
+    const storage = fakeStorage();
+    const here = createSkills(storage);
+    const there = createSkills(storage);
+    let heard = 0;
+    here.subscribe(() => heard++);
+    there.setPack('medical', true);
+    expect(here.snapshot().packs).toEqual([]);
+    here.reload();
+    expect(here.snapshot().packs).toEqual(['medical']);
+    expect(heard).toBe(1);
+  });
 });
