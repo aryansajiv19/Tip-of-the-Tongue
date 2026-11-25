@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { greeting, lastWord, timeLabel, wordStats } from './homeView';
+import { greeting, timeLabel, wordStats } from './homeView';
 
 describe('greeting', () => {
   it('follows the time of day, including the small hours', () => {
@@ -31,15 +31,5 @@ describe('wordStats', () => {
         { word: 'sieve', accepted: true, at: 1 },
       ]),
     ).toEqual({ offered: 3, used: 2 });
-  });
-});
-
-describe('lastWord', () => {
-  it('prefers the newest word taken, else the newest offered', () => {
-    const offered = { word: 'ladle', accepted: false, at: 3 };
-    const taken = { word: 'whisk', accepted: true, at: 2 };
-    expect(lastWord([offered, taken])).toBe(taken);
-    expect(lastWord([offered])).toBe(offered);
-    expect(lastWord([])).toBeUndefined();
   });
 });

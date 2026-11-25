@@ -45,9 +45,10 @@ body:has(.home) {
 
 .home h1 {
   margin: 0;
+  font-family: var(--font-display);
   font-size: var(--text-display);
-  font-weight: var(--weight-semibold);
-  letter-spacing: -0.02em;
+  font-weight: var(--weight-regular);
+  letter-spacing: -0.01em;
 }
 
 .home section > h1 {
@@ -238,6 +239,7 @@ body:has(.home) {
 
 .home-side {
   gap: var(--space-4);
+  padding-top: calc(var(--text-display) * 1.2 + var(--space-8));
 }
 
 .home-lead {
@@ -247,178 +249,88 @@ body:has(.home) {
   line-height: 1.5;
 }
 
-/* Greeting */
-.home-head {
-  grid-column: 1 / -1;
+/* Hero: dark in both themes, a soft glow and still bars on the right */
+.home-hero {
+  position: relative;
   display: grid;
-  gap: var(--space-2);
-}
-
-.home-sub {
-  margin: 0;
-  color: var(--text-muted);
-}
-
-/* The moment: dark in both themes, with a still copy of the pop-up card */
-.home-moment {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-6) var(--space-8);
+  gap: var(--space-6);
   padding: var(--space-8);
   border-radius: var(--radius-panel);
   background: var(--hero-bg);
   color: var(--hero-text);
+  overflow: hidden;
 }
 
-.home-moment h2 {
+.home-hero-text {
+  padding-right: 220px; /* clear of the bars */
+}
+
+.home-hero h2 {
   margin-bottom: var(--space-2);
+  font-family: var(--font-display);
   font-size: var(--text-hero);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-regular);
   letter-spacing: -0.01em;
 }
 
-.home-moment p {
-  max-width: 40ch;
+.home-hero em {
+  color: var(--hero-accent);
+}
+
+.home-hero p {
+  max-width: 44ch;
   margin: 0;
   color: var(--hero-muted);
   line-height: 1.5;
 }
 
-.home-moment-actions {
-  grid-column: 1 / -1;
+.home-bars {
+  position: absolute;
+  top: var(--space-8);
+  right: var(--space-8);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 64px;
+  opacity: 0.5;
+}
+
+.home-bars span {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--hero-accent);
+}
+
+.home-hero-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-3);
 }
 
-.home-moment button {
+.home-hero button {
   color: var(--hero-text);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-pill);
 }
 
-.home-moment button:hover {
+.home-hero button:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.home-moment .home-primary {
+.home-hero .home-primary {
   color: var(--hero-ink);
-  background: var(--hero-accent);
-  border-color: var(--hero-accent);
-  font-weight: var(--weight-semibold);
-}
-
-.home-moment .home-primary:hover {
   background: var(--hero-text);
-}
-
-.home-keys {
-  display: inline-flex;
-  gap: 2px;
-  margin-left: var(--space-1);
-}
-
-.home-keys .keycap {
-  color: var(--hero-muted);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* The card copy: the same frosted glass, word size and underline as the pop-up */
-.home-card-demo {
-  --text: var(--hero-text);
-  --text-muted: var(--hero-muted);
-  min-width: 220px;
-  margin: 0;
-  padding: var(--space-4) var(--space-6) var(--space-6);
-  border-radius: var(--radius-card);
-  background: rgba(20, 20, 22, 0.72);
-  transform: rotate(-2deg);
-}
-
-.home-card-demo figcaption {
-  margin-bottom: var(--space-2);
-  font-size: var(--text-sm);
-  color: var(--hero-muted);
-  font-style: italic;
-}
-
-.home-moment .home-card-word {
-  margin: 0;
-  font-size: var(--text-word);
-  font-weight: var(--weight-semibold);
-  color: var(--hero-text);
-  text-decoration: underline;
-  text-decoration-color: var(--hero-accent);
-  text-decoration-thickness: 3px;
-  text-underline-offset: 8px;
-}
-
-.home-card-alts {
-  display: flex;
-  gap: var(--space-2);
-  margin: var(--space-4) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.home-card-alts li {
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: var(--radius-pill);
-  font-size: var(--text-alt);
-  color: var(--hero-muted);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-card-demo {
-    transform: none;
-  }
-}
-
-/* Words as chips, like the pop-up's alternatives */
-.home-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-3);
-  padding: 0;
-  list-style: none;
-}
-
-.home-chips li {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  min-height: var(--target);
-  padding: 0 var(--space-4);
-  border: var(--line-soft);
-  border-radius: var(--radius-pill);
-  font-size: var(--text-alt);
-  color: var(--text-muted);
-}
-
-.home-chips li[data-used='true'] {
-  color: var(--text);
-  border-color: var(--accent);
+  border-color: var(--hero-text);
   font-weight: var(--weight-medium);
 }
 
-.home-chips svg {
-  color: var(--accent);
+.home-hero .home-primary:hover {
+  background: var(--hero-muted);
 }
 
-/* Ratio */
-.home-ratio {
-  margin: var(--space-3) 0;
-  color: var(--text-muted);
-}
-
-.home-ratio strong {
-  font-size: var(--text-stat);
-  font-weight: var(--weight-semibold);
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
+.home-hint .keycap {
+  color: var(--hero-muted);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Word list */
@@ -508,6 +420,29 @@ body:has(.home) {
   border-radius: var(--radius-panel);
 }
 
+.home-stats {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.home-stats p {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.home-stats strong {
+  min-width: 1.5ch;
+  font-family: var(--font-display);
+  font-size: var(--text-stat);
+  font-weight: var(--weight-regular);
+  line-height: 1.1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
 .home-shortcuts {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -553,7 +488,21 @@ body:has(.home) {
     grid-template-columns: 1fr;
   }
 
-  .home-moment {
-    grid-template-columns: 1fr;
+  .home-side {
+    padding-top: 0;
+  }
+
+  .home-bars {
+    display: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .home-bars {
+    display: none;
+  }
+
+  .home-hero-text {
+    padding-right: 0;
   }
 }
