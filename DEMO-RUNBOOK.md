@@ -14,22 +14,21 @@ For the live demo on a video call. Keep this open on a second screen.
 
 ## How to say the lines
 
-- Keep the first "…" short (under a second) and make the long pause at the end. A long pause after "book the" can get "appointment" before you have described anything.
-- After the description, stay silent for about 2 s. If the others talk straight away, the card can come late or be counted against their line.
-- Say "what's his name" with nothing about cars or places just before it, or it may guess from that context.
+- **The pause goes after the description, not before it.** Say "I need to book the thing you fly in" in one breath, then stop. A long pause after "book the" gets a guess from the sentence alone ("appointment"), and the 8 s cooldown then holds back "plane". The same happens with "a new…" (→ "prescription") and "the fork, no, the…" (→ "spoon").
+- After the description, stay silent for about 2 s.
+- Leave out "what's his name". In live runs it offered the word "name" itself (3 of 5).
 
 ## Demo lines (in this order)
 
-| Say or do                                                                                      | What should happen                                        |
-| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| "I need to book the… the thing you fly in" (then pause)                                        | About 1.5 s later a card offers **plane**                 |
-| Talk normally for 20 s about your weekend                                                      | Nothing appears. Staying quiet is the point               |
-| "I spoke to… um… what's his name"                                                              | "…" or nothing: it can't know a name, so it doesn't guess |
-| Mid-sentence, press **⌘↵**                                                                     | A suggestion at once, without waiting for a pause         |
-| Settings › Skills › Medical visit, then: "the doctor gave me a… the thing you puff for asthma" | **inhaler**                                               |
-| "Pass me the fork, no, the…"                                                                   | Never offers "fork" (a word you rejected)                 |
-| ⌘1 picks the first word, Esc dismisses                                                         | The card goes away                                        |
-| ⌘\ hides and shows the overlay; ⌘⇧N starts a new conversation                                  | As described                                              |
+| Say or do                                                                                                           | What should happen                                 |
+| ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| "I need to book the thing you fly in" (then stop)                                                                   | About 1.5 s later a card offers **plane** / flight |
+| Talk normally for 20 s about your weekend                                                                           | Nothing appears. Staying quiet is the point        |
+| "It's freezing outside so I'm wearing my big warm" and press **⌘↵** straight away                                   | **coat** at once, without waiting for a pause      |
+| Settings › Skills › Medical visit, then: "they want to take a tiny piece to look at under the microscope, a" (stop) | **biopsy** (without the skill it said "sample")    |
+| "Pass me the fork, no, the one you cut the steak with" (then stop)                                                  | Never offers "fork" (a word you rejected)          |
+| ⌘1 picks the first word, Esc dismisses                                                                              | The card goes away                                 |
+| ⌘\ hides and shows the overlay; ⌘⇧N starts a new conversation                                                       | As described                                       |
 
 Talking points: it is silent unless it is confident, it never speaks aloud, no audio is stored, and the transcript lives only in memory.
 
