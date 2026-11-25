@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import WebSocket, { WebSocketServer } from 'ws';
 import type { AddressInfo } from 'node:net';
 import { buildApp } from '../app.js';
+import { config } from '../config.js';
 import type { ServerEvent } from '../events.js';
 import { mockGuesser } from '../guess/mock.js';
 import { ProfileSchema } from '../guess/profile.js';
@@ -493,10 +494,17 @@ describe('server with Deepgram', () => {
   });
 
   it('ignores audio and says "browser" when Deepgram is not configured', async () => {
-    const { app, ws, events } = await connectClient({});
-    ws.send(Buffer.alloc(3200));
-    await expect.poll(() => events[0]).toMatchObject({ type: 'session.ready', stt: 'browser' });
-    ws.close();
-    await app.close();
+    // A real key in the repo .env must not leak into this test.
+    const key = config.deepgramApiKey;
+    config.deepgramApiKey = undefined;
+    try {
+      const { app, ws, events } = await connectClient({});
+      ws.send(Buffer.alloc(3200));
+      await expect.poll(() => events[0]).toMatchObject({ type: 'session.ready', stt: 'browser' });
+      ws.close();
+      await app.close();
+    } finally {
+      config.deepgramApiKey = key;
+    }
   });
 });

@@ -1,5 +1,6 @@
 package-lock.json
 dist/
 .serena/
+.impeccable/
 app/server-bundle/
 release/
