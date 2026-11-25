@@ -124,9 +124,6 @@ export function Home() {
         {page === 'skills' && (
           <section aria-labelledby="skills-title">
             <h1 id="skills-title">Skills</h1>
-            <p className="home-lead">
-              Topics whose words it should know, so it can find the right one faster.
-            </p>
             <div className="settings-panel home-embedded">
               <Skills />
             </div>

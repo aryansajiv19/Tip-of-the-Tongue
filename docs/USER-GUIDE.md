@@ -67,7 +67,7 @@ Keep your keys private. The app stores them on your computer, encrypted with you
 | **⌘ 1, 2, 3** | Pick the first, second or third word while a card shows |
 | **Esc**       | Dismiss the card                                        |
 
-The app is for macOS. If you try the page in a browser on Windows or Linux, Ctrl takes the place of ⌘, and **Space** also asks for a word unless a button or a box has focus. The menu-bar icon has: Show or Hide, Pause or Start listening, New conversation, Settings…, Recent words, Start at login (installed app only), Reset window position, and Quit.
+The app is for macOS. If you try the page in a browser on Windows or Linux, Ctrl takes the place of ⌘, and **Space** also asks for a word unless a button or a box has focus. The menu-bar icon has: Open Tip of the Tongue (the app window, with Home, Words, Skills and Keys; clicking the Dock icon opens it too), Show or Hide, Pause or Start listening, New conversation, Settings…, Recent words, Start at login (installed app only), Reset window position, and Quit.
 
 ## 6. Settings
 

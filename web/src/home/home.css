@@ -261,6 +261,10 @@ body:has(.home) {
   overflow: hidden;
 }
 
+.home-hero-text {
+  padding-right: 220px; /* clear of the bars */
+}
+
 .home-hero h2 {
   margin-bottom: var(--space-2);
   font-family: var(--font-display);
@@ -460,7 +464,7 @@ body:has(.home) {
 .home .home-embedded {
   max-width: 640px;
   max-height: none;
-  margin: 0;
+  margin: var(--space-6) 0 0;
   background: var(--card-bg);
   border: var(--line-soft);
   border-radius: var(--radius-panel);
@@ -496,5 +500,9 @@ body:has(.home) {
 @media (max-width: 1180px) {
   .home-bars {
     display: none;
+  }
+
+  .home-hero-text {
+    padding-right: 0;
   }
 }
