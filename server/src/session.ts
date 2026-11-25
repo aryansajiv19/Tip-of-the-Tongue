@@ -11,7 +11,7 @@ import { briefForGuesser, LONG_BRIEF_CHARS, type GlossaryBuilder } from './guess
 import type { GuessInput, GuessResult, Guesser } from './guess/types.js';
 import { decideOffer } from './gate/gate.js';
 import { checkAcceptance } from './accept/accept.js';
-import { normalizePhrase } from './gate/normalize.js';
+import { findPhrase, normalizePhrase } from './gate/normalize.js';
 import { selectKeyterms } from './stt/keyterms.js';
 import { appearsIn } from './guess/source.js';
 import type { DebugInfo } from './events.js';
@@ -67,6 +67,8 @@ interface Offer {
   id: string;
   candidates: Candidate[];
   offeredAtMs: number;
+  // The stall marker the offer is for.
+  sinceMs: number;
   // The voice of the words just before the pause the offer is for.
   speaker?: number;
 }
@@ -235,6 +237,18 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
   });
 
   function trackOffer(current: Offer) {
+    // A guess made from a partial transcript can be the word they were already saying ("what is
+    // his… name"): it reaches the transcript after the card, but started before it, so they found
+    // it themselves. Same +1 as the gate: the word at the stall marker doesn't count.
+    const saidBefore = buffer
+      .wordsSince(current.sinceMs + 1)
+      .filter((w) => w.startMs <= current.offeredAtMs);
+    if (current.candidates.some((c) => findPhrase(saidBefore, c.word) !== -1)) {
+      send({ type: 'guess.withdrawn', id: current.id, reason: 'self-recovered' });
+      lastOfferAtMs = undefined;
+      closeOffer();
+      return;
+    }
     const spoken = buffer.wordsSince(current.offeredAtMs);
     const result = checkAcceptance(current, spoken, now(), opts.acceptWindowMs);
     if (result.status === 'accepted') {
@@ -417,6 +431,7 @@ export function createSession(sendToPage: (event: ServerEvent) => void, opts: Se
       id: randomUUID(),
       candidates,
       offeredAtMs,
+      sinceMs: current.sinceMs,
       ...(stallSpeaker !== undefined ? { speaker: stallSpeaker } : {}),
     };
     lastOfferAtMs = offeredAtMs;
