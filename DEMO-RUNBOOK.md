@@ -16,7 +16,7 @@ For the live demo on a video call. Keep this open on a second screen.
 
 - **The pause goes after the description, not before it.** Say "I need to book the thing you fly in" in one breath, then stop. A long pause after "book the" gets a guess from the sentence alone ("appointment"), and the 8 s cooldown then holds back "plane". The same happens with "a new…" (→ "prescription") and "the fork, no, the…" (→ "spoon").
 - After the description, stay silent for about 2 s.
-- Leave out "what's his name". In live runs it offered the word "name" itself (3 of 5).
+- Leave out "what's his name". It used to offer the word "name" itself; now that card is withdrawn within half a second, but it still flashes up.
 
 ## Demo lines (in this order)
 

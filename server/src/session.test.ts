@@ -197,6 +197,54 @@ describe('session pipeline', () => {
     session.close();
   });
 
+  it('withdraws a card for a word they were already saying when it went up ("what is his… name")', async () => {
+    // Seen live, 3 of 3 voices: the guess comes from the partial "what is his", the card shows
+    // "name", and the final "name" arrives after the card although it was said before it.
+    const guess: Guesser = async () => ({
+      candidates: [{ word: 'name', confidence: 0.9 }],
+      abstain: false,
+      latencyMs: 1,
+    });
+    const { session, events, types, say } = setup(guess);
+    say('Yes yesterday I spoke to');
+    await vi.advanceTimersByTimeAsync(2000);
+    const offer = events.find((e) => e.type === 'guess.offered');
+    expect(offer).toBeDefined();
+    // Spoken during the pause, before the card; the transcript only now catches up.
+    const t = Date.now() - 1800;
+    const late = ['what', 'is', 'his', 'name'].map((text, i) => ({
+      text,
+      startMs: t + i * 250,
+      endMs: t + i * 250 + 200,
+    }));
+    session.handle({ type: 'transcript.final', words: late });
+    await vi.advanceTimersByTimeAsync(100);
+    expect(events).toContainEqual({
+      type: 'guess.withdrawn',
+      id: offer?.type === 'guess.offered' ? offer.id : '',
+      reason: 'self-recovered',
+    });
+    expect(types()).not.toContain('guess.accepted');
+    session.close();
+  });
+
+  it('still counts the word as taken when it is said after the card appears', async () => {
+    const guess: Guesser = async () => ({
+      candidates: [{ word: 'name', confidence: 0.9 }],
+      abstain: false,
+      latencyMs: 1,
+    });
+    const { session, types, say } = setup(guess);
+    say('Yes yesterday I spoke to');
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(types()).toContain('guess.offered');
+    say('name');
+    await vi.advanceTimersByTimeAsync(100);
+    expect(types()).toContain('guess.accepted');
+    expect(types()).not.toContain('guess.withdrawn');
+    session.close();
+  });
+
   it('a lower minConfidence setting lets a weaker guess through', async () => {
     const guess: Guesser = async () => ({
       candidates: [{ word: 'pharmacy', confidence: 0.5 }],
