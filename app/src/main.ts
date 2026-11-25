@@ -9,6 +9,7 @@ import {
   globalShortcut,
   ipcMain,
   nativeImage,
+  nativeTheme,
   safeStorage,
   screen,
   session,
@@ -25,6 +26,7 @@ import { startServerProcess } from './serverProcess';
 import { checkKey } from './keyCheck';
 import { KEY_NAMES, createKeyStore } from './keyStore';
 import { allCardShortcuts, parseCapture, wantedShortcuts } from './cardKeys';
+import { parseHomeCommand, parseRecent, type RecentWord } from './homeState';
 import {
   MARGIN,
   clampHeight,
@@ -61,6 +63,11 @@ const WIDTH = 420;
 const START_HEIGHT = 44;
 
 let win: BrowserWindow | undefined;
+// The normal app window (home, keys, skills); created on demand, never at launch.
+let mainWin: BrowserWindow | undefined;
+// This conversation's offered words, as the overlay last reported them, for the app window.
+let recent: RecentWord[] = [];
+const sendHome = () => mainWin?.webContents.send('home:state', { listening, recent });
 let tray: Tray | undefined;
 let listening = false;
 let capture: { picks: number } | null = null;
@@ -205,6 +212,7 @@ const statusItems = (): Electron.MenuItemConstructorOptions[] =>
 const menu = () =>
   Menu.buildFromTemplate([
     ...statusItems(),
+    { label: 'Open Tip of the Tongue', enabled: status.state === 'ready', click: openMain },
     { label: win?.isVisible() ? 'Hide' : 'Show', click: toggle },
     {
       label: listening ? 'Pause listening' : 'Start listening',
@@ -235,6 +243,47 @@ const menu = () =>
 function showAnd(command: 'open-settings' | 'open-recent') {
   show();
   send(command);
+}
+
+// The normal window: framed, focusable, in the Dock while open. Closing it only hides the Dock icon.
+function openMain() {
+  if (mainWin) {
+    mainWin.show();
+    mainWin.focus();
+    return;
+  }
+  mainWin = new BrowserWindow({
+    width: 960,
+    height: 640,
+    minWidth: 640,
+    minHeight: 480,
+    title: 'Tip of the Tongue',
+    // No title bar: the traffic lights sit over the sidebar, whose top strip drags the window.
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 18, y: 18 },
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#0f0f11' : '#f3f2ee',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      sandbox: true,
+    },
+  });
+  app.dock?.show();
+  mainWin.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https://')) void shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  mainWin.webContents.on('will-navigate', (event, to) => {
+    if (new URL(to).origin !== new URL(PAGE_URL).origin) event.preventDefault();
+  });
+  const home = new URL(PAGE_URL);
+  home.searchParams.set('view', 'home');
+  mainWin.loadURL(home.toString()).catch((err: Error) => log('error', `page: ${err.message}`));
+  mainWin.webContents.on('did-finish-load', sendHome);
+  mainWin.on('closed', () => {
+    mainWin = undefined;
+    app.dock?.hide();
+  });
 }
 
 function createWindow() {
@@ -307,6 +356,20 @@ function wire() {
     if (event.sender !== win?.webContents) return;
     listening = Boolean((state as { listening?: unknown } | null)?.listening);
     tray?.setImage(trayIcon(listening));
+    sendHome();
+  });
+  ipcMain.on('overlay:recent', (event: IpcMainEvent, payload: unknown) => {
+    const next = parseRecent(payload);
+    if (event.sender !== win?.webContents || next === undefined) return;
+    recent = next;
+    sendHome();
+  });
+  // The app window's buttons act on the overlay, which owns the microphone.
+  ipcMain.on('home:command', (event: IpcMainEvent, payload: unknown) => {
+    const command = parseHomeCommand(payload);
+    if (event.sender !== mainWin?.webContents || command === undefined) return;
+    if (command === 'show-overlay') show();
+    else send(command);
   });
 
   ipcMain.on('overlay:card-keys', (event: IpcMainEvent, payload: unknown) => {
@@ -317,7 +380,8 @@ function wire() {
   });
 
   // Only the overlay page may ask; keys go in, never back out.
-  const fromPage = (event: IpcMainInvokeEvent) => event.sender === win?.webContents;
+  const fromPage = (event: IpcMainInvokeEvent) =>
+    event.sender === win?.webContents || event.sender === mainWin?.webContents;
   ipcMain.handle('keys:status', (event) => {
     if (!fromPage(event)) throw new Error('not allowed');
     return Object.fromEntries(KEY_NAMES.map((n) => [n, keyOf(n) ? 'set' : 'missing']));
@@ -420,6 +484,9 @@ async function boot() {
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
+  app.on('activate', () => {
+    if (status.state === 'ready') openMain();
+  });
   app.on('second-instance', () => {
     if (status.state === 'ready') show();
     else tray?.popUpContextMenu(menu());

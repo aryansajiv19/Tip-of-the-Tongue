@@ -128,6 +128,11 @@ export function createSkills(storage: Store | null) {
     removeCustom: (id: string) =>
       set({ ...state, custom: state.custom.filter((c) => c.id !== id) }),
     forgetAll: () => set(emptySkills),
+    // Another window of the app changed the saved skills: take them up here too.
+    reload: () => {
+      state = load(storage);
+      listeners.forEach((l) => l());
+    },
   };
 }
 
@@ -140,3 +145,8 @@ function browserStorage(): Store | null {
 }
 
 export const skills = createSkills(browserStorage());
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY) skills.reload();
+  });
+}

@@ -59,6 +59,28 @@
   --dur: 200ms;
   --shift: 4px;
   --card-linger: 6s; /* a suggestion fades out on its own after this */
+
+  /* The app window (?view=home): opaque and quiet, a sheet laid on a slightly darker desk */
+  --page-bg: #0f0f11;
+  --panel-bg: #161618;
+  --card-bg: #1c1c1f;
+  --line-soft: 1px solid rgba(255, 255, 255, 0.06);
+  --font-display: 'New York', ui-serif, 'Iowan Old Style', Georgia, serif;
+  --hero-bg:
+    radial-gradient(circle at 88% 20%, rgba(125, 211, 252, 0.28), transparent 42%),
+    linear-gradient(135deg, #0c1a24 0%, #0b0b0e 75%);
+  --hero-text: #f5f5f7; /* the hero stays dark in both themes */
+  --hero-muted: #c4c4cc;
+  --hero-accent: #7dd3fc;
+  --hero-ink: #0b0b0e; /* text on the hero's light button */
+  --text-display: calc(40px * var(--text-scale));
+  --text-hero: calc(32px * var(--text-scale));
+  --text-stat: calc(40px * var(--text-scale));
+  --radius-panel: 24px;
+  --radius-row: 10px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --sidebar-width: 248px;
 }
 
 :root[data-text-size='large'] {
@@ -80,6 +102,10 @@
     --accent: #0369a1;
     --error: #b91c1c;
     --hover: rgba(0, 0, 0, 0.06);
+    --page-bg: #f3f2ee;
+    --panel-bg: #fdfdfb;
+    --card-bg: #f6f5f1;
+    --line-soft: 1px solid rgba(0, 0, 0, 0.07);
   }
 }
 

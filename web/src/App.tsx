@@ -380,6 +380,7 @@ export function App() {
   // Tell the desktop app whether the mic is live (for its tray menu), and how tall the overlay
   // is, so its window fits the pill and the card.
   useEffect(() => desktop?.report({ listening }), [listening]);
+  useEffect(() => desktop?.shareRecent?.(recent), [recent]);
   const overlay = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = overlay.current;

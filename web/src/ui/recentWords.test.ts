@@ -24,18 +24,19 @@ describe('recentWords', () => {
   });
 
   it('marks an accepted word, even when it was an alternative', () => {
-    const list = recentWords(recentWords([], offered('renewal', 'chemist')), accepted('chemist'));
+    const first = recentWords([], offered('renewal', 'chemist'), 1000);
+    const list = recentWords(first, accepted('chemist'), 2000);
     expect(list).toEqual([
-      { word: 'chemist', accepted: true },
-      { word: 'renewal', accepted: false },
+      { word: 'chemist', accepted: true, at: 2000 },
+      { word: 'renewal', accepted: false, at: 1000 },
     ]);
   });
 
   it('lists a word once, ignoring case, and keeps it accepted if offered again', () => {
-    let list: RecentWord[] = recentWords([], offered('Renewal'));
-    list = recentWords(list, accepted('renewal'));
-    list = recentWords(list, offered('renewal', 'RENEWAL'));
-    expect(list).toEqual([{ word: 'renewal', accepted: true }]);
+    let list: RecentWord[] = recentWords([], offered('Renewal'), 1);
+    list = recentWords(list, accepted('renewal'), 2);
+    list = recentWords(list, offered('renewal', 'RENEWAL'), 3);
+    expect(list).toEqual([{ word: 'renewal', accepted: true, at: 3 }]);
   });
 
   it('keeps at most 30 and ignores other events', () => {
