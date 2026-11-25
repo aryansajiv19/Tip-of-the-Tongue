@@ -9,6 +9,7 @@ import {
   globalShortcut,
   ipcMain,
   nativeImage,
+  nativeTheme,
   safeStorage,
   screen,
   session,
@@ -257,6 +258,10 @@ function openMain() {
     minWidth: 640,
     minHeight: 480,
     title: 'Tip of the Tongue',
+    // No title bar: the traffic lights sit over the sidebar, whose top strip drags the window.
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 18, y: 18 },
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#0f0f11' : '#f3f2ee',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

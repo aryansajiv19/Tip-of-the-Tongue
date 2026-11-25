@@ -30,6 +30,8 @@ const NAV: { page: Page; label: string; Icon: typeof LayoutGrid }[] = [
   { page: 'skills', label: 'Skills', Icon: Sparkles },
   { page: 'keys', label: 'Keys', Icon: KeyRound },
 ];
+// Decorative bars for the hero: the same idea as the pill's waveform, still.
+const BARS = [3, 5, 8, 12, 7, 10, 15, 9, 13, 6, 11, 16, 12, 8, 14, 10, 6, 9, 5, 3];
 
 // The app window (?view=home): a normal window for setting up and looking back. It never opens
 // the microphone; the overlay does the listening, and its buttons here act on the overlay.
@@ -38,6 +40,12 @@ export function Home() {
   const [listening, setListening] = useState<boolean | null>(null);
   const [recent, setRecent] = useState<RecentWord[]>([]);
   const keys = useKeys();
+  const stats = wordStats(recent);
+  const steps = [
+    { done: keys.status?.anthropic === 'set', label: 'Add a word-service key' },
+    { done: keys.status?.deepgram === 'set', label: 'Add a speech key' },
+    { done: stats.offered > 0, label: 'Pause on a word and see a suggestion' },
+  ];
 
   useEffect(
     () =>
@@ -55,7 +63,7 @@ export function Home() {
           <AudioLines {...ICON} />
           <span>Tip of the Tongue</span>
         </div>
-        <ul>
+        <ul className="home-nav">
           {NAV.map(({ page: p, label, Icon }) => (
             <li key={p}>
               <button
@@ -69,6 +77,32 @@ export function Home() {
             </li>
           ))}
         </ul>
+
+        {!steps.every((s) => s.done) && (
+          <section className="home-setup" aria-labelledby="setup-title">
+            <h2 id="setup-title">Get set up</h2>
+            <div className="home-progress" aria-hidden>
+              <span style={{ width: `${(steps.filter((s) => s.done).length / 3) * 100}%` }} />
+            </div>
+            <ul>
+              {steps.map((s) => (
+                <li key={s.label} data-done={s.done}>
+                  {s.done ? <Check {...ICON} /> : <Circle {...ICON} />}
+                  <span>
+                    {s.label}
+                    <span className="sr-only">{s.done ? ', done' : ', not yet'}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {!(steps[0]?.done && steps[1]?.done) && (
+              <button type="button" className="home-link" onClick={() => setPage('keys')}>
+                Add keys
+              </button>
+            )}
+          </section>
+        )}
+
         <p className="home-status" role="status">
           <span className="home-dot" data-on={listening === true} aria-hidden />
           {listening === null ? 'Starting…' : listening ? 'Listening' : 'Paused'}
@@ -76,9 +110,7 @@ export function Home() {
       </nav>
 
       <main className="home-main">
-        {page === 'home' && (
-          <HomePage listening={listening} recent={recent} presence={keys.status} go={setPage} />
-        )}
+        {page === 'home' && <HomePage listening={listening} recent={recent} go={setPage} />}
         {page === 'words' && (
           <section aria-labelledby="words-title">
             <h1 id="words-title">Words</h1>
@@ -92,6 +124,9 @@ export function Home() {
         {page === 'skills' && (
           <section aria-labelledby="skills-title">
             <h1 id="skills-title">Skills</h1>
+            <p className="home-lead">
+              Topics whose words it should know, so it can find the right one faster.
+            </p>
             <div className="settings-panel home-embedded">
               <Skills />
             </div>
@@ -104,7 +139,7 @@ export function Home() {
               Your own keys for the speech and word services. They stay on this computer, encrypted,
               and are never shown again.
             </p>
-            <div className="home-panel">
+            <div className="home-card home-embedded-keys">
               {keys.bridge && keys.status ? (
                 <KeysForm keys={keys.bridge} presence={keys.status} onSaved={keys.refresh} />
               ) : (
@@ -121,22 +156,15 @@ export function Home() {
 function HomePage({
   listening,
   recent,
-  presence,
   go,
 }: {
   listening: boolean | null;
   recent: RecentWord[];
-  presence: ReturnType<typeof useKeys>['status'];
   go: (page: Page) => void;
 }) {
   const mod = modifierLabel(navigator.platform);
   const stats = wordStats(recent);
   const command = desktop?.home?.command;
-  const steps = [
-    { done: presence?.anthropic === 'set', label: 'Add a word-service key (Anthropic)' },
-    { done: presence?.deepgram === 'set', label: 'Add a speech key (Deepgram)' },
-    { done: stats.offered > 0, label: 'Pause on a word and see a suggestion' },
-  ];
 
   return (
     <div className="home-grid">
@@ -144,13 +172,17 @@ function HomePage({
         <h1>{greeting(new Date().getHours())}</h1>
 
         <section className="home-hero" aria-labelledby="hero-title">
-          <h2 id="hero-title">
-            Lost for a word? <em>Keep talking.</em>
-          </h2>
-          <p>
-            When you pause on a word, up to three appear in the pop-up. Nothing appears unless it is
-            fairly sure.
-          </p>
+          <div className="home-hero-text">
+            <h2 id="hero-title">
+              Lost for a word? <em>Keep talking.</em>
+            </h2>
+            <p>When you pause on a word, up to three appear in the pop-up. Only when it is sure.</p>
+          </div>
+          <div className="home-bars" aria-hidden>
+            {BARS.map((h, i) => (
+              <span key={i} style={{ height: `${h * 3.5}px` }} />
+            ))}
+          </div>
           <div className="home-hero-actions">
             <button
               type="button"
@@ -165,7 +197,7 @@ function HomePage({
               Show the pop-up
             </button>
             <span className="home-hint">
-              or press <kbd className="keycap">{mod}</kbd> <kbd className="keycap">\</kbd>
+              <kbd className="keycap">{mod}</kbd> <kbd className="keycap">\</kbd>
             </span>
           </div>
         </section>
@@ -196,7 +228,7 @@ function HomePage({
       </div>
 
       <aside className="home-col home-side" aria-label="Summary">
-        <section className="home-panel home-stats" aria-label="Today">
+        <section className="home-card home-stats" aria-label="This conversation in numbers">
           <p>
             <strong>{stats.offered}</strong> words offered
           </p>
@@ -205,27 +237,7 @@ function HomePage({
           </p>
         </section>
 
-        <section className="home-panel" aria-labelledby="setup-title">
-          <h2 id="setup-title">Get set up</h2>
-          <ul className="home-steps">
-            {steps.map((s) => (
-              <li key={s.label} data-done={s.done}>
-                {s.done ? <Check {...ICON} /> : <Circle {...ICON} />}
-                <span>
-                  {s.label}
-                  <span className="sr-only">{s.done ? ', done' : ', not yet'}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-          {!(steps[0]?.done && steps[1]?.done) && (
-            <button type="button" onClick={() => go('keys')}>
-              Add keys
-            </button>
-          )}
-        </section>
-
-        <section className="home-panel" aria-labelledby="shortcuts-title">
+        <section className="home-card" aria-labelledby="shortcuts-title">
           <h2 id="shortcuts-title">Shortcuts</h2>
           <dl className="home-shortcuts">
             <dt>Show or hide</dt>
