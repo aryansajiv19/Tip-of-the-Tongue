@@ -18,9 +18,9 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/app-home-light.png" width="760" alt="The app window: a sidebar with Home, Words, Skills and Keys; a greeting; a dark card saying 'Lost for a word? Keep talking.' with Pause listening and Show the pop-up; this conversation's words with times and 'Used' tags; counts of words offered and used; and the shortcuts">
+  <img src="docs/assets/app-home-light.png" width="760" alt="The app window: a sidebar with Home, Words, Skills and Keys; a greeting; a dark card showing the word you last reached for, 'plane', as the pop-up shows it, with Pause listening and Show the pop-up; the words you found as chips, the used ones ticked; how many were used; and the shortcuts">
   <br>
-  <sub>The app window: start or pause listening, see this conversation's words, set up skills and keys. The small pop-up does the listening.</sub>
+  <sub>The app window: the word you last reached for, the words you found, skills and keys. The small pop-up does the listening.</sub>
 </p>
 
 Everyone loses a word now and then, and on a call the cost is visible: the pause stretches, someone jumps in, the point lands weaker. Tip of the Tongue is built for people whose work is talking (back-to-back meetings, sales, support and recruiting calls, interviews) and for people working in their second language. It also suits people who lose words more often than most, for example after a concussion, with a stammer, fatigue or brain fog, with aphasia, or later in life. It is a conversation aid, not a medical device.
@@ -76,11 +76,11 @@ Without keys the guesser is a simple mock that knows only a few phrases. Try "I 
 
 **An app window when you want it**
 
-- Open it from the menu bar or the Dock: Home (start or pause, this conversation's words with times, words offered and used, a setup checklist, shortcuts), Words, Skills and Keys. It follows light or dark mode.
+- Open it from the menu bar or the Dock: Home (start or pause, the word you last reached for, the words you found, how many you used, a setup checklist, shortcuts), Words (with times), Skills and Keys. It follows light or dark mode.
 - It never opens the microphone itself; the pop-up does the listening, and nothing it shows is stored.
 
 <p align="center">
-  <img src="docs/assets/app-home-dark.png" width="49%" alt="The app window's Home page in dark mode">
+  <img src="docs/assets/app-home-dark.png" width="49%" alt="The app window's Home page in dark mode before any words: an example card with 'plane' and the alternatives 'flight' and 'jet'">
   <img src="docs/assets/app-skills.png" width="49%" alt="The app window's Skills page: topic packs to switch on and your own skills">
   <br>
   <sub><b>Home</b> in dark mode · <b>Skills</b>: topic packs and your own</sub>

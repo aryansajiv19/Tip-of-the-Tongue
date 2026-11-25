@@ -18,7 +18,7 @@ import { KeysForm } from '../ui/KeysForm';
 import { Skills } from '../ui/Skills';
 import { useKeys } from '../settings/useKeys';
 import type { RecentWord } from '../ui/recentWords';
-import { greeting, timeLabel, wordStats } from './homeView';
+import { greeting, lastWord, timeLabel, wordStats } from './homeView';
 import '../ui/settings.css';
 import './home.css';
 
@@ -30,8 +30,6 @@ const NAV: { page: Page; label: string; Icon: typeof LayoutGrid }[] = [
   { page: 'skills', label: 'Skills', Icon: Sparkles },
   { page: 'keys', label: 'Keys', Icon: KeyRound },
 ];
-// Decorative bars for the hero: the same idea as the pill's waveform, still.
-const BARS = [3, 5, 8, 12, 7, 10, 15, 9, 13, 6, 11, 16, 12, 8, 14, 10, 6, 9, 5, 3];
 
 // The app window (?view=home): a normal window for setting up and looking back. It never opens
 // the microphone; the overlay does the listening, and its buttons here act on the overlay.
@@ -161,26 +159,46 @@ function HomePage({
 }) {
   const mod = modifierLabel(navigator.platform);
   const stats = wordStats(recent);
+  const last = lastWord(recent);
   const command = desktop?.home?.command;
 
   return (
     <div className="home-grid">
-      <div className="home-col">
+      <header className="home-head">
         <h1>{greeting(new Date().getHours())}</h1>
+        <p className="home-sub">
+          {listening
+            ? 'Listening. It stays quiet until you pause on a word.'
+            : 'Paused. Press Start when you are ready to talk.'}
+        </p>
+      </header>
 
-        <section className="home-hero" aria-labelledby="hero-title">
-          <div className="home-hero-text">
-            <h2 id="hero-title">
-              Lost for a word? <em>Keep talking.</em>
+      <div className="home-col">
+        <section className="home-moment" aria-labelledby="moment-title">
+          <div className="home-moment-text">
+            <h2 id="moment-title">
+              {last ? 'The word you reached for' : 'When a word slips away'}
             </h2>
-            <p>When you pause on a word, up to three appear in the pop-up. Only when it is sure.</p>
+            <p>
+              {last
+                ? `${last.accepted ? 'You took it' : 'Offered'} at ${timeLabel(last.at)}.`
+                : 'Keep talking. A moment later, the word you meant appears in the pop-up.'}
+            </p>
           </div>
-          <div className="home-bars" aria-hidden>
-            {BARS.map((h, i) => (
-              <span key={i} style={{ height: `${h * 3.5}px` }} />
-            ))}
-          </div>
-          <div className="home-hero-actions">
+
+          {/* A still copy of the pop-up card: the product's one moment. */}
+          <figure className="home-card-demo glass" aria-label={last ? undefined : 'Example'}>
+            {!last && <figcaption>“…the thing you fly in”</figcaption>}
+            <p className="home-card-word">{last ? last.word : 'plane'}</p>
+            {!last && (
+              <ul className="home-card-alts" aria-label="Alternatives">
+                <li>flight</li>
+                <li>jet</li>
+              </ul>
+            )}
+          </figure>
+
+          <div className="home-moment-actions">
             <button
               type="button"
               className="home-primary"
@@ -192,17 +210,18 @@ function HomePage({
             <button type="button" onClick={() => command?.('show-overlay')}>
               <PanelTop {...ICON} />
               Show the pop-up
+              <span className="home-keys" aria-hidden>
+                <kbd className="keycap">{mod}</kbd>
+                <kbd className="keycap">\</kbd>
+              </span>
             </button>
-            <span className="home-hint">
-              <kbd className="keycap">{mod}</kbd> <kbd className="keycap">\</kbd>
-            </span>
           </div>
         </section>
 
         <section aria-labelledby="recent-title">
           <div className="home-row">
             <h2 id="recent-title" className="home-label">
-              This conversation
+              Words you found
             </h2>
             {recent.length > 0 && (
               <button
@@ -215,23 +234,46 @@ function HomePage({
               </button>
             )}
           </div>
-          <WordList recent={recent.slice(0, 8)} />
-          {recent.length > 8 && (
+          {recent.length === 0 ? (
+            <p className="home-empty">Nothing yet. Words you pause on will gather here.</p>
+          ) : (
+            <ul className="home-chips">
+              {recent.map((r) => (
+                <li key={r.word} data-used={r.accepted} title={timeLabel(r.at)}>
+                  {r.accepted && <Check {...ICON} />}
+                  {r.word}
+                  <span className="sr-only">
+                    , {r.accepted ? 'used' : 'offered'} at {timeLabel(r.at)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {recent.length > 0 && (
             <button type="button" className="home-quiet" onClick={() => go('words')}>
-              See all {recent.length} words
+              See them with times
             </button>
           )}
         </section>
       </div>
 
       <aside className="home-col home-side" aria-label="Summary">
-        <section className="home-card home-stats" aria-label="This conversation in numbers">
-          <p>
-            <strong>{stats.offered}</strong> words offered
+        <section className="home-card" aria-labelledby="stats-title">
+          <h2 id="stats-title" className="home-label">
+            This conversation
+          </h2>
+          <p className="home-ratio">
+            {stats.offered === 0 ? (
+              'No words yet'
+            ) : (
+              <>
+                <strong>{stats.used}</strong> of {stats.offered} words used
+              </>
+            )}
           </p>
-          <p>
-            <strong>{stats.used}</strong> words used
-          </p>
+          <div className="home-progress" aria-hidden>
+            <span style={{ width: `${stats.offered ? (stats.used / stats.offered) * 100 : 0}%` }} />
+          </div>
         </section>
 
         <section className="home-card" aria-labelledby="shortcuts-title">

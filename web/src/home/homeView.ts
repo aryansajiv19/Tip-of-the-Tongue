@@ -16,3 +16,7 @@ export const timeLabel = (at: number, locale?: string): string =>
 export function wordStats(recent: RecentWord[]): { offered: number; used: number } {
   return { offered: recent.length, used: recent.filter((r) => r.accepted).length };
 }
+
+// The word to show in the hero: the last one taken, else the last one offered.
+export const lastWord = (recent: RecentWord[]): RecentWord | undefined =>
+  recent.find((r) => r.accepted) ?? recent[0];
